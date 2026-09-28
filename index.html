@@ -326,14 +326,12 @@
     });
 
     function loginWithGoogle() {
-        auth.signInWithPopup(provider).then(async (result) => {
-            if (result && result.user) {
-                currentUserUID = result.user.uid; isLocalMode = false; localStorage.removeItem('mode_lokal');
-                document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block';
-                updateHeaderStatus(); await cloudDatenLaden(); renderDashboard();
-            }
-        }).catch((error) => { alert("Login Fehler: " + error.message); });
+        auth.signInWithRedirect(provider);
     }
+
+    auth.getRedirectResult().catch((error) => {
+        alert("Login Fehler: " + error.message);
+    });
 
     function logout() {
         isLocalMode = false; localStorage.removeItem('mode_lokal');
