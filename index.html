@@ -29,21 +29,20 @@
             --table-weekend-bg: #fef2f2; --table-border: #f1f5f9;
         }
 
-        /* VERBESSERTE KONTRASTE IM DUNKELMODUS */
         body.dark-mode {
             --bg-color: #000000; 
-            --card-bg: #121212; 
-            --text-main: #f8fafc; 
-            --text-muted: #a1a1aa;
-            --primary: #ffffff; 
-            --primary-hover: #cccccc; 
-            --border: #27272a;
-            --nav-bg: rgba(0, 0, 0, 0.85); 
-            --table-header-bg: #18181b; 
-            --table-header-text: #e2e8f0;
-            --table-row-even: #0f0f11; 
-            --table-weekend-bg: #2a1111; 
-            --table-border: #27272a;
+            --card-bg: #18181b; 
+            --text-main: #ffffff; 
+            --text-muted: #cbd5e1;
+            --primary: #60a5fa; 
+            --primary-hover: #3b82f6; 
+            --border: #3f3f46;
+            --nav-bg: rgba(9, 9, 11, 0.85); 
+            --table-header-bg: #27272a; 
+            --table-header-text: #f8fafc;
+            --table-row-even: #1f1f22; 
+            --table-weekend-bg: #3f1515; 
+            --table-border: #3f3f46;
         }
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
@@ -55,18 +54,14 @@
         .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
         
         label { font-weight: 600; font-size: 12px; text-transform: uppercase; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
+        body.dark-mode label, body.dark-mode h3, body.dark-mode span { color: #f8fafc; }
         
-        /* EINGABEFELDER KONTRAST */
         input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { 
             width: 100%; padding: 14px 16px; border: 1px solid var(--border); background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; 
         }
-        body.dark-mode input, body.dark-mode textarea {
-            background-color: #1a1a1e; 
-            color: #ffffff; 
-            border-color: #3f3f46;
-        }
+        body.dark-mode input, body.dark-mode textarea { background-color: #09090b; color: #ffffff; border-color: #52525b; }
         input:focus, textarea:focus { border: 1px solid var(--primary); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1); }
-        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15); border-color: var(--primary); }
+        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2); border-color: var(--primary); }
         textarea { resize: vertical; min-height: 120px; }
         
         button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: var(--bg-color); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -74,17 +69,18 @@
         button:active { transform: scale(0.97); }
         
         .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
-        body.dark-mode .btn-primary { background-color: #ffffff; }
+        body.dark-mode .btn-primary { background-color: var(--primary); color: #000000; }
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        body.dark-mode .btn-outline { color: #ffffff; border-color: #ffffff; background-color: transparent; }
+        body.dark-mode .btn-outline { color: var(--primary); border-color: var(--primary); background-color: transparent; }
         .btn-outline:hover { background-color: var(--primary); color: var(--bg-color); }
+        body.dark-mode .btn-outline:hover { color: #000000; }
         .btn-danger { background-color: transparent; border: 2px solid var(--danger); color: var(--danger); }
         
         .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 6px; border-radius: 14px; flex: 1; border: 1px solid var(--border); }
-        body.dark-mode .month-selector { background-color: #1a1a1e; border-color: #3f3f46; }
+        body.dark-mode .month-selector { background-color: #09090b; border-color: #52525b; }
         .month-selector input { font-size: 16px; font-weight: 800; border: none; background: transparent; padding: 0; color: var(--text-main); width: auto; text-align: center; outline: none; }
         .btn-nav { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; width: 44px; height: 44px; font-size: 18px; margin: 0; }
-        body.dark-mode .btn-nav { background-color: #27272a; border-color: #3f3f46; color: #ffffff; }
+        body.dark-mode .btn-nav { background-color: #27272a; border-color: #52525b; color: #ffffff; }
         
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 20px; background: var(--card-bg); }
         .excel-table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 14px; text-align: center; }
@@ -93,6 +89,7 @@
         .excel-table tr:nth-child(even) { background-color: var(--table-row-even); }
         .excel-table tr.weekend { background-color: var(--table-weekend-bg); }
         .excel-table tr.sum-row { font-weight: 800; background-color: var(--table-header-bg); border-top: 2px solid var(--border); }
+        body.dark-mode .excel-table td, body.dark-mode .excel-table th { color: #f8fafc; }
         
         .editable-cell { cursor: pointer; color: var(--primary); font-weight: 600; min-width: 50px; border-radius: 6px; border-bottom: 1px dashed var(--primary); }
         .editable-cell:empty:before { content: "-"; color: var(--text-muted); border-bottom: none;}
@@ -101,27 +98,32 @@
         .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; flex: 1; transition: color 0.2s; }
         .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; filter: grayscale(100%); opacity: 0.7;}
         .nav-item.active { color: var(--primary); }
-        body.dark-mode .nav-item.active { color: #ffffff; }
+        body.dark-mode .nav-item.active { color: var(--primary); }
         .nav-item.active .icon { transform: translateY(-2px) scale(1.1); filter: grayscale(0%); opacity: 1; }
 
         .chart-container { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
         canvas { width: 100% !important; max-height: 250px; }
 
         .minijob-bar-container { width: 100%; background-color: var(--border); border-radius: 8px; height: 14px; margin-top: 10px; overflow: hidden; }
-        body.dark-mode .minijob-bar-container { background-color: #27272a; }
+        body.dark-mode .minijob-bar-container { background-color: #3f3f46; }
         .minijob-bar-fill { height: 100%; background-color: var(--success); transition: width 0.4s ease; }
         
         #login-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app-container { display: none; }
+        
+        /* FIX FÜR DRUCK & PDF: Perfekt zentriert auf genau einer DIN-A4-Seite ohne Leerseiten */
         #print-section { display: none; }
         @media print {
-            .app-header, .tab-content, .bottom-nav { display: none !important; }
-            html, body { background-color: white !important; color: black !important; padding: 0 !important; margin: 0 !important; height: 100% !important; }
-            #print-section { display: flex !important; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100vh; box-sizing: border-box; }
-            #print-section > div { width: 100%; }
-            @page { size: A4 portrait; margin: 0mm 15mm; }
+            .app-header, .tab-content, .bottom-nav, #login-screen { display: none !important; }
+            html, body { background-color: white !important; color: black !important; padding: 0 !important; margin: 0 !important; width: 100% !important; height: auto !important; }
+            #print-section { display: block !important; width: 100% !important; margin: 0 auto !important; box-sizing: border-box !important; }
+            @page { size: A4 portrait; margin: 10mm; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
+        
+        .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-preset { background: var(--bg-color); border: 1px solid var(--border); color: var(--text-main); font-size: 13px; padding: 10px; margin: 0; border-radius: 8px; font-weight: normal; }
+        body.dark-mode .btn-preset { background: #27272a; border-color: #52525b; color: #fff; }
     </style>
 </head>
 <body>
@@ -138,14 +140,33 @@
     <div id="app-container">
         <div class="app-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <span>Zeiterfassung</span>
-                <span id="user-badge" style="font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; background: var(--border); color: var(--text-muted);"></span>
+                <span style="color: var(--text-main);">Zeiterfassung</span>
+                <span id="user-badge" style="font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; background: var(--border); color: var(--text-main);"></span>
             </div>
             <button id="btn-logout" onclick="logout()" style="width: auto; padding: 8px 16px; margin: 0; font-size: 12px;" class="btn-danger">Logout</button>
         </div>
 
         <!-- REITER 1: TABELLE -->
-        <div id="tab-uebersicht" class="tab-content active">
+        <div id="tab-erfassen" class="tab-content active">
+            <div class="card">
+                <label for="datum">Datum der Schicht</label>
+                <input type="date" id="datum">
+                
+                <div class="preset-grid">
+                    <button class="btn-preset" onclick="setPreset('07:30', '16:00', 30)">☀️ Frühdienst</button>
+                    <button class="btn-preset" onclick="setPreset('13:30', '22:00', 30)">🌙 Spätdienst</button>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <div style="flex: 1;"><label for="start">Kommen</label><input type="time" id="start"></div>
+                    <div style="flex: 1;"><label for="ende">Gehen</label><input type="time" id="ende"></div>
+                </div>
+                <label for="pause">Pause (in Minuten)</label>
+                <input type="number" id="pause" value="30">
+                <button class="btn-primary" onclick="zeitSpeichern()">Eintrag Speichern</button>
+                <div id="status-msg" style="text-align: center; margin-top: 15px; font-weight: bold; color: var(--success); height: 20px;"></div>
+            </div>
+
             <div class="card" style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                     <div class="month-selector">
@@ -164,7 +185,7 @@
                 
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
                     <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startExcelExport()">📊 Excel</button>
-                    <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF</button>
+                    <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF / Drucken</button>
                 </div>
                 <button class="btn-primary" onclick="sharePDF()" style="margin-top: 12px; padding: 20px;">📧 Monat als E-Mail senden</button>
             </div>
@@ -175,7 +196,7 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSettings()">
                     <h3 style="margin: 0; color: var(--primary);">⚙️ Lohn-Einstellungen</h3>
-                    <span id="settings-arrow">▼</span>
+                    <span id="settings-arrow" style="color: var(--text-main);">▼</span>
                 </div>
                 <div id="salary-settings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
                     <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Die App nutzt das Datum, um den richtigen Basislohn zu wählen. Zuschläge werden in % davon berechnet.</p>
@@ -223,7 +244,7 @@
             </div>
             <div class="card">
                 <div style="display: flex; justify-content: space-between;"><h3 style="margin: 0;">Verlauf</h3><button onclick="clearEmailHistory()" class="btn-danger" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px;">Leeren</button></div>
-                <ul class="history-list" id="email-history-list" style="margin-top: 15px;"></ul>
+                <ul class="history-list" id="email-history-list" style="margin-top: 15px; list-style: none; padding: 0;"></ul>
             </div>
         </div>
 
@@ -259,8 +280,6 @@
 
     let currentUserUID = null; let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
     let monthChartInstance = null; let yearChartInstance = null;
-    
-    // Standardwerte: Zeitabhängiger Lohn und Prozentuale Zuschläge
     let lohnConfig = { baseOld: 17.16, baseNew: 18.90, sunPercent: 27.21, satPercent: 3.73, vblPercent: 1.87, limit: 603, annualLimit: 7236 };
 
     window.onload = function() {
@@ -279,106 +298,63 @@
         }
     });
 
+    function setPreset(kommen, gehen, pause) {
+        document.getElementById('start').value = kommen;
+        document.getElementById('ende').value = gehen;
+        document.getElementById('pause').value = pause;
+    }
+
     function ladeLohnSettings() {
         let saved = JSON.parse(localStorage.getItem('lohn_config_v2'));
         if (saved) lohnConfig = saved;
-
-        document.getElementById('setBaseOld').value = lohnConfig.baseOld;
-        document.getElementById('setBaseNew').value = lohnConfig.baseNew;
-        document.getElementById('setSunPercent').value = lohnConfig.sunPercent;
-        document.getElementById('setSatPercent').value = lohnConfig.satPercent;
-        document.getElementById('setVblPercent').value = lohnConfig.vblPercent;
-        document.getElementById('setMinijobLimit').value = lohnConfig.limit;
+        document.getElementById('setBaseOld').value = lohnConfig.baseOld; document.getElementById('setBaseNew').value = lohnConfig.baseNew;
+        document.getElementById('setSunPercent').value = lohnConfig.sunPercent; document.getElementById('setSatPercent').value = lohnConfig.satPercent;
+        document.getElementById('setVblPercent').value = lohnConfig.vblPercent; document.getElementById('setMinijobLimit').value = lohnConfig.limit;
         document.getElementById('setAnnualLimit').value = lohnConfig.annualLimit;
     }
 
     function lohnSettingsSpeichern() {
-        lohnConfig = {
-            baseOld: parseFloat(document.getElementById('setBaseOld').value) || 17.16,
-            baseNew: parseFloat(document.getElementById('setBaseNew').value) || 18.90,
-            sunPercent: parseFloat(document.getElementById('setSunPercent').value) || 27.21,
-            satPercent: parseFloat(document.getElementById('setSatPercent').value) || 3.73,
-            vblPercent: parseFloat(document.getElementById('setVblPercent').value) || 1.87,
-            limit: parseInt(document.getElementById('setMinijobLimit').value) || 603,
-            annualLimit: parseInt(document.getElementById('setAnnualLimit').value) || 7236
-        };
-        localStorage.setItem('lohn_config_v2', JSON.stringify(lohnConfig));
-        renderAnnualSalary();
+        lohnConfig = { baseOld: parseFloat(document.getElementById('setBaseOld').value) || 17.16, baseNew: parseFloat(document.getElementById('setBaseNew').value) || 18.90, sunPercent: parseFloat(document.getElementById('setSunPercent').value) || 27.21, satPercent: parseFloat(document.getElementById('setSatPercent').value) || 3.73, vblPercent: parseFloat(document.getElementById('setVblPercent').value) || 1.87, limit: parseInt(document.getElementById('setMinijobLimit').value) || 603, annualLimit: parseInt(document.getElementById('setAnnualLimit').value) || 7236 };
+        localStorage.setItem('lohn_config_v2', JSON.stringify(lohnConfig)); renderAnnualSalary();
     }
 
-    function toggleSettings() {
-        let el = document.getElementById('salary-settings'); let arrow = document.getElementById('settings-arrow');
-        if(el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▲'; } else { el.style.display = 'none'; arrow.innerText = '▼'; }
-    }
-
-    function updateHeaderStatus() {
-        const badge = document.getElementById('user-badge'); const btnLogout = document.getElementById('btn-logout');
-        if (currentUserUID) { badge.innerText = "☁️ Cloud aktiv"; badge.style.color = "var(--success)"; btnLogout.innerText = "Logout"; } 
-        else { badge.innerText = "💾 Lokal"; badge.style.color = "var(--text-muted)"; btnLogout.innerText = "Zurück"; }
-    }
-
-    function ladeLokalesProfil() {
-        document.getElementById('name').value = localStorage.getItem('ma_name') || "";
-        document.getElementById('vorname').value = localStorage.getItem('ma_vorname') || "";
-        document.getElementById('personalnummer').value = localStorage.getItem('ma_personalnummer') || "";
-    }
-
-    function ladeEmailVorlage() {
-        document.getElementById('emailSubject').value = localStorage.getItem('email_subject') || "Stundenübersicht {MONAT} {JAHR}";
-        document.getElementById('emailBody').value = localStorage.getItem('email_body') || "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}";
-    }
-
+    function toggleSettings() { let el = document.getElementById('salary-settings'); let arrow = document.getElementById('settings-arrow'); if(el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▲'; } else { el.style.display = 'none'; arrow.innerText = '▼'; } }
+    function updateHeaderStatus() { const badge = document.getElementById('user-badge'); const btnLogout = document.getElementById('btn-logout'); if (currentUserUID) { badge.innerText = "☁️ Cloud aktiv"; badge.style.color = "var(--success)"; btnLogout.innerText = "Logout"; } else { badge.innerText = "💾 Lokal"; badge.style.color = "var(--text-muted)"; btnLogout.innerText = "Zurück"; } }
+    function ladeLokalesProfil() { document.getElementById('name').value = localStorage.getItem('ma_name') || ""; document.getElementById('vorname').value = localStorage.getItem('ma_vorname') || ""; document.getElementById('personalnummer').value = localStorage.getItem('ma_personalnummer') || ""; }
+    function ladeEmailVorlage() { document.getElementById('emailSubject').value = localStorage.getItem('email_subject') || "Stundenübersicht {MONAT} {JAHR}"; document.getElementById('emailBody').value = localStorage.getItem('email_body') || "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}"; }
     function emailVorlageSpeichern() { localStorage.setItem('email_subject', document.getElementById('emailSubject').value); localStorage.setItem('email_body', document.getElementById('emailBody').value); }
-
-    function switchTab(tabName, element) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active');
-        if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary(); if(tabName === 'email') renderEmailHistory();
-    }
-
+    function switchTab(tabName, element) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active'); if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary(); if(tabName === 'email') renderEmailHistory(); }
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode')); renderDashboard(); renderAnnualSalary(); }
     function toggleChart(w) { let el = document.getElementById(w); el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none'; }
     function profilSpeichern() { localStorage.setItem('ma_name', document.getElementById('name').value); localStorage.setItem('ma_vorname', document.getElementById('vorname').value); localStorage.setItem('ma_personalnummer', document.getElementById('personalnummer').value); cloudDatenSpeichern(); }
-    
     function changeMonth(offset) { let p = document.getElementById('monthPicker'); if (!p.value) return; let [j, m] = p.value.split('-'); let d = new Date(parseInt(j), parseInt(m) - 1 + offset, 1); p.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; renderDashboard(); }
     function changeYear(offset) { let p = document.getElementById('yearPicker'); p.value = parseInt(p.value) + offset; renderAnnualSalary(); }
 
     function startLocalMode() { isLocalMode = true; localStorage.setItem('mode_lokal', 'true'); currentUserUID = null; document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block'; updateHeaderStatus(); renderDashboard(); }
-
-    auth.onAuthStateChanged(async (user) => {
-        if (user) { currentUserUID = user.uid; isLocalMode = false; localStorage.removeItem('mode_lokal'); document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block'; updateHeaderStatus(); await cloudDatenLaden(); renderDashboard(); } 
-        else if (isLocalMode) { startLocalMode(); } else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }
-    });
-
+    auth.onAuthStateChanged(async (user) => { if (user) { currentUserUID = user.uid; isLocalMode = false; localStorage.removeItem('mode_lokal'); document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block'; updateHeaderStatus(); await cloudDatenLaden(); renderDashboard(); } else if (isLocalMode) { startLocalMode(); } else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; } });
     function loginWithGoogle() { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => { return auth.signInWithPopup(provider); }).catch((e) => { if (e.code === 'auth/popup-blocked') auth.signInWithRedirect(provider); }); }
     function logout() { isLocalMode = false; localStorage.removeItem('mode_lokal'); auth.signOut(); }
-
-    async function cloudDatenLaden() {
-        if (!currentUserUID) return;
-        try {
-            const doc = await db.collection('users').doc(currentUserUID).get();
-            if (doc.exists) { const d = doc.data(); if (d.arbeitszeiten) localStorage.setItem('meine_arbeitszeiten', d.arbeitszeiten); } else { await cloudDatenSpeichern(); }
-        } catch (e) {} ladeLokalesProfil();
-    }
+    async function cloudDatenLaden() { if (!currentUserUID) return; try { const doc = await db.collection('users').doc(currentUserUID).get(); if (doc.exists) { const d = doc.data(); if (d.arbeitszeiten) localStorage.setItem('meine_arbeitszeiten', d.arbeitszeiten); } else { await cloudDatenSpeichern(); } } catch (e) {} ladeLokalesProfil(); }
     async function cloudDatenSpeichern() { if (!currentUserUID) return; try { await db.collection('users').doc(currentUserUID).set({ arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]", lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch (e) {} }
 
-    function berechneNetto(s, e, p) {
-        if (!s || !e) return 0; const sT = new Date(`1970-01-01T${s}:00`); let eT = new Date(`1970-01-01T${e}:00`); if (eT <= sT) eT.setDate(eT.getDate() + 1);
-        return Math.max(0, Math.round((((eT - sT) / 60000) - p) / 60 * 100) / 100);
-    }
-
-    function deleteCurrentMonth() {
-        const m = document.getElementById('monthPicker').value; if(!m) return;
-        if(confirm(`Monat ${m} komplett löschen?`)) {
-            let d = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; d = d.filter(e => !e.datum.startsWith(m));
-            localStorage.setItem('meine_arbeitszeiten', JSON.stringify(d)); cloudDatenSpeichern(); renderDashboard();
-        }
-    }
+    function berechneNetto(s, e, p) { if (!s || !e) return 0; const sT = new Date(`1970-01-01T${s}:00`); let eT = new Date(`1970-01-01T${e}:00`); if (eT <= sT) eT.setDate(eT.getDate() + 1); return Math.max(0, Math.round((((eT - sT) / 60000) - p) / 60 * 100) / 100); }
+    function deleteCurrentMonth() { const m = document.getElementById('monthPicker').value; if(!m) return; if(confirm(`Monat ${m} komplett löschen?`)) { let d = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; d = d.filter(e => !e.datum.startsWith(m)); localStorage.setItem('meine_arbeitszeiten', JSON.stringify(d)); cloudDatenSpeichern(); renderDashboard(); } }
     window.schichtLoeschen = function(datum) { let d = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; d = d.filter(e => e.datum !== datum); localStorage.setItem('meine_arbeitszeiten', JSON.stringify(d)); cloudDatenSpeichern(); renderDashboard(); };
+    
+    function zeitSpeichern() {
+        const datum = document.getElementById('datum').value; const start = document.getElementById('start').value; const ende = document.getElementById('ende').value; const pause = document.getElementById('pause').value;
+        if(!datum || !start || !ende) { alert("Bitte fülle alle Zeitfelder aus."); return; }
+        const startTime = new Date(`1970-01-01T${start}:00`); const endeTime = new Date(`1970-01-01T${ende}:00`);
+        let nettoMinuten = ((endeTime - startTime) / 60000) - pause; let nettoStundenDezimal = Math.round((nettoMinuten / 60) * 100) / 100;
+        if(nettoStundenDezimal < 0) { alert("Fehler: Endzeit vor Startzeit oder Pause zu lang."); return; }
+        const neuerEintrag = { datum, kommen: start, gehen: ende, pauseMinuten: parseInt(pause), nettoStunden: nettoStundenDezimal };
+        let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; daten = daten.filter(e => e.datum !== datum); daten.push(neuerEintrag);
+        localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
+        const msg = document.getElementById('status-msg'); msg.innerText = `Erfolgreich gespeichert (${nettoStundenDezimal} h)`; setTimeout(() => msg.innerText = "", 3000); cloudDatenSpeichern();
+    }
+    
     window.inlineEdit = function(element, datum, feld) {
-        let wert = element.innerText.trim(); let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        let index = daten.findIndex(e => e.datum === datum); let eintrag = index !== -1 ? daten[index] : { datum: datum, kommen: "", gehen: "", pauseMinuten: 0, nettoStunden: 0 };
+        let wert = element.innerText.trim(); let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; let index = daten.findIndex(e => e.datum === datum); let eintrag = index !== -1 ? daten[index] : { datum: datum, kommen: "", gehen: "", pauseMinuten: 0, nettoStunden: 0 };
         if (feld === 'pauseMinuten') { wert = parseInt(wert); if (isNaN(wert) || wert < 0) wert = (index !== -1 ? eintrag.pauseMinuten : 0); eintrag.pauseMinuten = wert; } 
         else { if (/^\d{1,2}:\d{2}$/.test(wert)) { let t = wert.split(':'); wert = `${t[0].padStart(2, '0')}:${t[1]}`; eintrag[feld] = wert; } else if (wert === "" || wert === "-") { eintrag[feld] = ""; } else { element.innerText = (index !== -1 ? eintrag[feld] : ""); return; } }
         eintrag.nettoStunden = (eintrag.kommen && eintrag.gehen) ? berechneNetto(eintrag.kommen, eintrag.gehen, eintrag.pauseMinuten) : 0;
@@ -386,15 +362,9 @@
         localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten)); cloudDatenSpeichern(); renderDashboard(); 
     };
 
-    // WICHTIG: Die Gehalts-Engine (Datum, %-Satz, VBL)
     function calculateMonthSalary(jahr, monat, daten) {
-        let tageImMonat = new Date(jahr, monat, 0).getDate(); 
-        let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
-        
-        // Entscheidet, welcher Stundenlohn gilt: Ab August 2026 gibt es 18,90€, davor 17,16€
-        let isNewWage = (jahr > 2026) || (jahr === 2026 && monat >= 8);
-        let activeBaseWage = isNewWage ? lohnConfig.baseNew : lohnConfig.baseOld;
-
+        let tageImMonat = new Date(jahr, monat, 0).getDate(); let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
+        let isNewWage = (jahr > 2026) || (jahr === 2026 && monat >= 8); let activeBaseWage = isNewWage ? lohnConfig.baseNew : lohnConfig.baseOld;
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let suchDatum = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
             let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let eintrag = daten.find(e => e.datum === suchDatum);
@@ -404,24 +374,13 @@
                 else if (dayOfWeek === 6 && eintrag.kommen && eintrag.gehen) {
                     let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
                     let startDez = parseInt(sSplit[0]) + (parseInt(sSplit[1]) / 60); let endDez = parseInt(eSplit[0]) + (parseInt(eSplit[1]) / 60);
-                    if (endDez <= startDez) endDez += 24;
-                    let overlapStart = Math.max(startDez, 13.0); let overlapEnd = Math.min(endDez, 21.0);
+                    if (endDez <= startDez) endDez += 24; let overlapStart = Math.max(startDez, 13.0); let overlapEnd = Math.min(endDez, 21.0);
                     if (overlapEnd > overlapStart) samstagBonusStunden += Math.min((overlapEnd - overlapStart), eintrag.nettoStunden);
                 }
             }
         }
-        
-        // Berechnung mit %-Aufschlägen (z.B. 18.90 * 27.21%)
-        let basisLohn = gesamtDezimal * activeBaseWage; 
-        let sonntagLohn = sonntagStunden * activeBaseWage * (lohnConfig.sunPercent / 100); 
-        let samstagLohn = samstagBonusStunden * activeBaseWage * (lohnConfig.satPercent / 100); 
-        let gesamtGehalt = basisLohn + sonntagLohn + samstagLohn;
-
-        // VBL Abzug (Wird berechnet aus Basis + Samstag. Sonntagszuschläge sind steuerfrei)
-        let vblBase = basisLohn + samstagLohn;
-        let vblAbzug = vblBase * (lohnConfig.vblPercent / 100);
-        let erwartetesNetto = gesamtGehalt - vblAbzug;
-
+        let basisLohn = gesamtDezimal * activeBaseWage; let sonntagLohn = sonntagStunden * activeBaseWage * (lohnConfig.sunPercent / 100); let samstagLohn = samstagBonusStunden * activeBaseWage * (lohnConfig.satPercent / 100); 
+        let gesamtGehalt = basisLohn + sonntagLohn + samstagLohn; let vblBase = basisLohn + samstagLohn; let vblAbzug = vblBase * (lohnConfig.vblPercent / 100); let erwartetesNetto = gesamtGehalt - vblAbzug;
         return { activeBaseWage, gesamtDezimal, sonntagStunden, samstagBonusStunden, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt, vblAbzug, erwartetesNetto };
     }
 
@@ -432,12 +391,10 @@
         const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
         let gesamtDezimal = 0;
         let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
-
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
             let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let rowClass = (dayOfWeek === 0 || dayOfWeek === 6) ? "weekend" : "";
             let eintrag = daten.find(e => e.datum === suchDatum);
-
             if(eintrag) {
                 gesamtDezimal += eintrag.nettoStunden;
                 tableHTML += `<tr class="${rowClass}"><td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td><td style="color: var(--primary); font-weight: 800;">${eintrag.nettoStunden}</td><td style="cursor: pointer;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td></tr>`;
@@ -449,15 +406,11 @@
         container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
 
         const ctx = document.getElementById('monthChartCanvas').getContext('2d'); if(monthChartInstance) monthChartInstance.destroy();
-        const isDark = document.body.classList.contains('dark-mode'); const textColor = isDark ? '#a1a1aa' : '#64748b'; const lineColor = isDark ? '#ffffff' : '#000000';
+        const isDark = document.body.classList.contains('dark-mode'); const textColor = isDark ? '#cbd5e1' : '#64748b'; const lineColor = isDark ? '#60a5fa' : '#000000';
         let annualHoursData = []; const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
         for(let m=1; m<=12; m++) { let s = calculateMonthSalary(jahr, m, daten); annualHoursData.push(s.gesamtDezimal); }
 
-        monthChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { labels: monthNames, datasets: [{ label: 'Stundenverlauf', data: annualHoursData, borderColor: lineColor, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
-        });
+        monthChartInstance = new Chart(ctx, { type: 'line', data: { labels: monthNames, datasets: [{ label: 'Stundenverlauf', data: annualHoursData, borderColor: lineColor, backgroundColor: isDark ? 'rgba(96,165,250,0.1)' : 'rgba(0,0,0,0.05)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } } });
     }
 
     function renderAnnualSalary() {
@@ -466,275 +419,109 @@
         let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0; let jahresGesamtNetto = 0; let chartLabels = []; let chartData = [];
 
         for (let m = 1; m <= 12; m++) {
-            let stats = calculateMonthSalary(jahr, m, daten);
-            chartLabels.push(monthNames[m-1].substring(0,3)); chartData.push(stats.erwartetesNetto);
-
+            let stats = calculateMonthSalary(jahr, m, daten); chartLabels.push(monthNames[m-1].substring(0,3)); chartData.push(stats.erwartetesNetto);
             if (stats.gesamtDezimal > 0) {
                 jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal; jahresGesamtNetto += stats.erwartetesNetto;
-                
-                let currentLimit = lohnConfig.limit || 603;
-                // Tracker nutzt jetzt Netto, da dies das Auszahlungsrelevante ist
-                let progress = Math.min(100, (stats.erwartetesNetto / currentLimit) * 100);
-                let remaining = Math.max(0, currentLimit - stats.erwartetesNetto);
-                let hoursLeft = Math.floor(remaining / stats.activeBaseWage);
-                let progressColor = progress >= 100 ? "var(--danger)" : "var(--success)";
-
-                htmlStr += `<div class="card" style="margin-bottom: 16px; padding: 18px;">
-                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; font-size: 12px; font-weight: normal; color: var(--text-muted); background: transparent;">Lohn: ${stats.activeBaseWage.toFixed(2)}€/h</span></div>
-                        
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntag (${lohnConfig.sunPercent}%):</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstag (${lohnConfig.satPercent}%):</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
-                        
-                        <div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; font-size: 14px;"><span>Bruttogehalt:</span> <strong>${stats.gesamtGehalt.toFixed(2)} €</strong></div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--danger);"><span>VBL Abzug (${lohnConfig.vblPercent}%):</span> <strong>- ${stats.vblAbzug.toFixed(2)} €</strong></div>
-                        
-                        <div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: 800; font-size: 16px; color: var(--success);"><span>Erwartetes Netto:</span> <span>${stats.erwartetesNetto.toFixed(2)} €</span></div>
-                        
-                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
-                            <div style="font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase;">Minijob Tracker (Max ${currentLimit}€ Netto)</div>
-                            <div class="minijob-bar-container"><div class="minijob-bar-fill" style="width: ${progress}%; background-color: ${progressColor};"></div></div>
-                            <div class="minijob-text"><span>Verdient: ${stats.erwartetesNetto.toFixed(2)}€</span> <span>Übrig: ${remaining.toFixed(2)}€ (ca. ${hoursLeft}h)</span></div>
-                        </div>
-                    </div>`;
+                let currentLimit = lohnConfig.limit || 603; let progress = Math.min(100, (stats.erwartetesNetto / currentLimit) * 100); let remaining = Math.max(0, currentLimit - stats.erwartetesNetto); let hoursLeft = Math.floor(remaining / stats.activeBaseWage); let progressColor = progress >= 100 ? "var(--danger)" : "var(--success)";
+                htmlStr += `<div class="card" style="margin-bottom: 16px; padding: 18px;"><div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; font-size: 12px; font-weight: normal; color: var(--text-muted); background: transparent;">Lohn: ${stats.activeBaseWage.toFixed(2)}€/h</span></div><div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div><div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntag (${lohnConfig.sunPercent}%):</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div><div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstag (${lohnConfig.satPercent}%):</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div><div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; font-size: 14px;"><span>Bruttogehalt:</span> <strong>${stats.gesamtGehalt.toFixed(2)} €</strong></div><div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--danger);"><span>VBL Abzug (${lohnConfig.vblPercent}%):</span> <strong>- ${stats.vblAbzug.toFixed(2)} €</strong></div><div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: 800; font-size: 16px; color: var(--success);"><span>Erwartetes Netto:</span> <span>${stats.erwartetesNetto.toFixed(2)} €</span></div><div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);"><div style="font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase;">Minijob Tracker (Max ${currentLimit}€ Netto)</div><div class="minijob-bar-container"><div class="minijob-bar-fill" style="width: ${progress}%; background-color: ${progressColor};"></div></div><div class="minijob-text" style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 8px;"><span>Verdient: ${stats.erwartetesNetto.toFixed(2)}€</span> <span>Übrig: ${remaining.toFixed(2)}€ (ca. ${hoursLeft}h)</span></div></div></div>`;
             }
         }
         
-        let currentAnnualLimit = lohnConfig.annualLimit || 7236;
-        let progressAnnual = Math.min(100, (jahresGesamtNetto / currentAnnualLimit) * 100);
-        let remainingAnnual = Math.max(0, currentAnnualLimit - jahresGesamtNetto);
-        let hoursLeftAnnual = Math.floor(remainingAnnual / 18.90);
-        let progressColorAnnual = progressAnnual >= 100 ? "var(--danger)" : "var(--primary)";
-        
-        let trackerHtml = `
-            <div class="card" style="margin-bottom: 24px; border: 2px solid var(--border); padding: 20px;">
-                <div style="font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Jahres-Limit Tracker (Max ${currentAnnualLimit}€)</div>
-                <div class="minijob-bar-container" style="height: 16px; margin-top: 12px; background-color: var(--border);">
-                    <div class="minijob-bar-fill" style="width: ${progressAnnual}%; background-color: ${progressColorAnnual}; border-radius: 8px;"></div>
-                </div>
-                <div class="minijob-text" style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 12px;">
-                    <span>Verdient: ${jahresGesamtNetto.toFixed(2)}€</span> 
-                    <span style="color: ${progressColorAnnual};">Übrig: ${remainingAnnual.toFixed(2)}€ (ca. ${hoursLeftAnnual}h)</span>
-                </div>
-            </div>`;
+        let currentAnnualLimit = lohnConfig.annualLimit || 7236; let progressAnnual = Math.min(100, (jahresGesamtNetto / currentAnnualLimit) * 100); let remainingAnnual = Math.max(0, currentAnnualLimit - jahresGesamtNetto); let hoursLeftAnnual = Math.floor(remainingAnnual / 18.90); let progressColorAnnual = progressAnnual >= 100 ? "var(--danger)" : "var(--primary)";
+        let trackerHtml = `<div class="card" style="margin-bottom: 24px; border: 2px solid var(--border); padding: 20px;"><div style="font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Jahres-Limit Tracker (Max ${currentAnnualLimit}€)</div><div class="minijob-bar-container" style="height: 16px; margin-top: 12px; background-color: var(--border);"><div class="minijob-bar-fill" style="width: ${progressAnnual}%; background-color: ${progressColorAnnual}; border-radius: 8px;"></div></div><div class="minijob-text" style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 12px;"><span>Verdient: ${jahresGesamtNetto.toFixed(2)}€</span> <span style="color: ${progressColorAnnual};">Übrig: ${remainingAnnual.toFixed(2)}€ (ca. ${hoursLeftAnnual}h)</span></div></div>`;
         containerTracker.innerHTML = trackerHtml;
-
-        if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
-        containerAnnual.innerHTML = htmlStr;
+        if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } containerAnnual.innerHTML = htmlStr;
 
         const ctx = document.getElementById('yearChartCanvas').getContext('2d'); if(yearChartInstance) yearChartInstance.destroy();
-        const isDark = document.body.classList.contains('dark-mode'); const textColor = isDark ? '#a1a1aa' : '#64748b'; const lineColor = '#10b981';
-
-        yearChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { labels: chartLabels, datasets: [{ label: 'Erwartetes Netto (€)', data: chartData, borderColor: lineColor, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
-        });
+        const isDark = document.body.classList.contains('dark-mode'); const textColor = isDark ? '#cbd5e1' : '#64748b'; const lineColor = '#10b981';
+        yearChartInstance = new Chart(ctx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: 'Erwartetes Netto (€)', data: chartData, borderColor: lineColor, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } } });
     }
 
     async function exportLohnabgleich() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        if (daten.length === 0) { alert("Keine Daten zum Export."); return; }
-
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; if (daten.length === 0) { alert("Keine Daten zum Export."); return; }
         const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet(`Gehaltsabgleich`, { views: [{ showGridLines: true }] });
-        sheet.columns = [
-            { header: 'Jahr-Monat', key: 'monat', width: 12 }, { header: 'Stundenlohn', key: 'lohn', width: 12 },
-            { header: 'Gesamtstunden', key: 'gesamt', width: 15 }, { header: 'Sonntagsstunden', key: 'sonntag', width: 15 },
-            { header: 'Samstagsstunden', key: 'samstag', width: 15 }, { header: 'Brutto (€)', key: 'brutto', width: 15 },
-            { header: 'VBL Abzug (€)', key: 'vbl', width: 15 }, { header: 'Netto (€)', key: 'netto', width: 15 }
-        ];
-
+        sheet.columns = [ { header: 'Jahr-Monat', key: 'monat', width: 12 }, { header: 'Stundenlohn', key: 'lohn', width: 12 }, { header: 'Gesamtstunden', key: 'gesamt', width: 15 }, { header: 'Sonntagsstunden', key: 'sonntag', width: 15 }, { header: 'Samstagsstunden', key: 'samstag', width: 15 }, { header: 'Brutto (€)', key: 'brutto', width: 15 }, { header: 'VBL Abzug (€)', key: 'vbl', width: 15 }, { header: 'Netto (€)', key: 'netto', width: 15 } ];
         sheet.getRow(1).font = { bold: true }; sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
-
-        let monateSet = new Set(); daten.forEach(e => monateSet.add(e.datum.substring(0, 7)));
-        let monateArray = Array.from(monateSet).sort();
-
-        monateArray.forEach(mStr => {
-            let [j, m] = mStr.split('-'); let stats = calculateMonthSalary(parseInt(j), parseInt(m), daten);
-            sheet.addRow({
-                monat: mStr, lohn: stats.activeBaseWage, gesamt: Math.round(stats.gesamtDezimal * 100) / 100, sonntag: Math.round(stats.sonntagStunden * 100) / 100,
-                samstag: Math.round(stats.samstagBonusStunden * 100) / 100, brutto: Math.round(stats.gesamtGehalt * 100) / 100, vbl: Math.round(stats.vblAbzug * 100) / 100, netto: Math.round(stats.erwartetesNetto * 100) / 100
-            });
-        });
+        let monateSet = new Set(); daten.forEach(e => monateSet.add(e.datum.substring(0, 7))); let monateArray = Array.from(monateSet).sort();
+        monateArray.forEach(mStr => { let [j, m] = mStr.split('-'); let stats = calculateMonthSalary(parseInt(j), parseInt(m), daten); sheet.addRow({ monat: mStr, lohn: stats.activeBaseWage, gesamt: Math.round(stats.gesamtDezimal * 100) / 100, sonntag: Math.round(stats.sonntagStunden * 100) / 100, samstag: Math.round(stats.samstagBonusStunden * 100) / 100, brutto: Math.round(stats.gesamtGehalt * 100) / 100, vbl: Math.round(stats.vblAbzug * 100) / 100, netto: Math.round(stats.erwartetesNetto * 100) / 100 }); });
         const buffer = await workbook.xlsx.writeBuffer(); saveAs(new Blob([buffer]), `Gehaltsabgleich_Radiologie.xlsx`);
     }
 
-    async function startExcelExport() {
-        const gm = document.getElementById('monthPicker').value; if(!gm) return;
-        const [jStr, mStr] = gm.split('-'); await exportiereExcelExaktBild(parseInt(jStr), parseInt(mStr));
-    }
-
+    async function startExcelExport() { const gm = document.getElementById('monthPicker').value; if(!gm) return; const [jStr, mStr] = gm.split('-'); await exportiereExcelExaktBild(parseInt(jStr), parseInt(mStr)); }
     async function exportiereExcelExaktBild(jahr, monat) {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        const pName = localStorage.getItem('ma_name') || ""; const pVorname = localStorage.getItem('ma_vorname') || ""; const pNummer = localStorage.getItem('ma_personalnummer') || "";
-        const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet(`Stundenübersichtstabelle`, { views: [{ showGridLines: false }] });
-        sheet.columns = [{ key: 'A', width: 12 }, { key: 'B', width: 6 }, { key: 'C', width: 12 }, { key: 'D', width: 6 }, { key: 'E', width: 12 }, { key: 'F', width: 10 }, { key: 'G', width: 18 }, { key: 'H', width: 16 }];
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const pName = localStorage.getItem('ma_name') || ""; const pVorname = localStorage.getItem('ma_vorname') || ""; const pNummer = localStorage.getItem('ma_personalnummer') || "";
+        const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet(`Stundenübersichtstabelle`, { views: [{ showGridLines: false }] }); sheet.columns = [{ key: 'A', width: 12 }, { key: 'B', width: 6 }, { key: 'C', width: 12 }, { key: 'D', width: 6 }, { key: 'E', width: 12 }, { key: 'F', width: 10 }, { key: 'G', width: 18 }, { key: 'H', width: 16 }];
         const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-
-        sheet.getCell('A1').value = 'Name:'; sheet.getCell('B1').value = `${pVorname} ${pName}`; sheet.getCell('B1').font = { bold: true, underline: true };
-        sheet.getCell('A2').value = 'Personalnummer:'; sheet.getCell('B2').value = pNummer; sheet.getCell('B2').font = { bold: true, underline: true }; sheet.addRow([]);
-        sheet.mergeCells('A4:H4'); let titleCell = sheet.getCell('A4'); titleCell.value = 'Stundenübersichtstabelle'; titleCell.font = { bold: true, size: 16 }; titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        for(let i=1; i<=8; i++) sheet.getRow(4).getCell(i).border = borderAll;
-        
-        let headerRow = sheet.addRow(['', '', '', '', '', 'Pause', 'Geleistete Stunden', 'Stunden in Zahl']); headerRow.font = { size: 11 }; headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-        for(let i=1; i<=8; i++) headerRow.getCell(i).border = borderAll;
-
+        sheet.getCell('A1').value = 'Name:'; sheet.getCell('B1').value = `${pVorname} ${pName}`; sheet.getCell('B1').font = { bold: true, underline: true }; sheet.getCell('A2').value = 'Personalnummer:'; sheet.getCell('B2').value = pNummer; sheet.getCell('B2').font = { bold: true, underline: true }; sheet.addRow([]); sheet.mergeCells('A4:H4'); let titleCell = sheet.getCell('A4'); titleCell.value = 'Stundenübersichtstabelle'; titleCell.font = { bold: true, size: 16 }; titleCell.alignment = { horizontal: 'center', vertical: 'middle' }; for(let i=1; i<=8; i++) sheet.getRow(4).getCell(i).border = borderAll;
+        let headerRow = sheet.addRow(['', '', '', '', '', 'Pause', 'Geleistete Stunden', 'Stunden in Zahl']); headerRow.font = { size: 11 }; headerRow.alignment = { horizontal: 'center', vertical: 'middle' }; for(let i=1; i<=8; i++) headerRow.getCell(i).border = borderAll;
         const tageImMonat = new Date(jahr, monat, 0).getDate(); let summeMinuten = 0; let summeDezimal = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
-            let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2);
-            let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`; let eintrag = daten.find(e => e.datum === suchDatum);
-            let row = sheet.addRow([anzeigeDatum, '', '', '', '', '', '0:00', 0]); row.alignment = { horizontal: 'center', vertical: 'middle' };
-            for(let i=1; i<=8; i++) row.getCell(i).border = borderAll; row.getCell(8).numFmt = '0.00';
-
+            let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2); let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`; let eintrag = daten.find(e => e.datum === suchDatum);
+            let row = sheet.addRow([anzeigeDatum, '', '', '', '', '', '0:00', 0]); row.alignment = { horizontal: 'center', vertical: 'middle' }; for(let i=1; i<=8; i++) row.getCell(i).border = borderAll; row.getCell(8).numFmt = '0.00';
             if(eintrag) {
-                let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
-                let startM = parseInt(sSplit[0]) * 60 + parseInt(sSplit[1]); let endM = parseInt(eSplit[0]) * 60 + parseInt(eSplit[1]);
-                let nettoM = (endM - startM) - eintrag.pauseMinuten; if(nettoM < 0) nettoM = 0;
-                summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden;
-                let std = Math.floor(nettoM / 60); let min = nettoM % 60; const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } };
-                
-                row.getCell(3).value = eintrag.kommen; row.getCell(3).fill = greenFill; row.getCell(3).font = { bold: true };
-                row.getCell(5).value = eintrag.gehen; row.getCell(5).fill = greenFill; row.getCell(5).font = { bold: true };
-                if (eintrag.pauseMinuten > 0) {
-                    let pauseStd = Math.floor(eintrag.pauseMinuten / 60); let pauseMin = eintrag.pauseMinuten % 60;
-                    row.getCell(6).value = `${String(pauseStd).padStart(2, '0')}:${String(pauseMin).padStart(2, '0')}`;
-                    row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } }; row.getCell(6).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-                }
-                row.getCell(7).value = `${std}:${String(min).padStart(2, '0')}`; row.getCell(7).fill = greenFill; row.getCell(7).font = { bold: true };
-                row.getCell(8).value = eintrag.nettoStunden; row.getCell(8).fill = greenFill; row.getCell(8).font = { bold: true };
+                let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":"); let startM = parseInt(sSplit[0]) * 60 + parseInt(sSplit[1]); let endM = parseInt(eSplit[0]) * 60 + parseInt(eSplit[1]); let nettoM = (endM - startM) - eintrag.pauseMinuten; if(nettoM < 0) nettoM = 0; summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden; let std = Math.floor(nettoM / 60); let min = nettoM % 60; const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } };
+                row.getCell(3).value = eintrag.kommen; row.getCell(3).fill = greenFill; row.getCell(3).font = { bold: true }; row.getCell(5).value = eintrag.gehen; row.getCell(5).fill = greenFill; row.getCell(5).font = { bold: true };
+                if (eintrag.pauseMinuten > 0) { let pauseStd = Math.floor(eintrag.pauseMinuten / 60); let pauseMin = eintrag.pauseMinuten % 60; row.getCell(6).value = `${String(pauseStd).padStart(2, '0')}:${String(pauseMin).padStart(2, '0')}`; row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } }; row.getCell(6).font = { bold: true, color: { argb: 'FFFFFFFF' } }; }
+                row.getCell(7).value = `${std}:${String(min).padStart(2, '0')}`; row.getCell(7).fill = greenFill; row.getCell(7).font = { bold: true }; row.getCell(8).value = eintrag.nettoStunden; row.getCell(8).fill = greenFill; row.getCell(8).font = { bold: true };
             }
         }
-        let endRow = sheet.lastRow.number;
-        sheet.mergeCells(`B6:B${endRow}`); sheet.getCell('B6').value = 'Von'; sheet.getCell('B6').alignment = { horizontal: 'center', vertical: 'middle' };
-        sheet.mergeCells(`D6:D${endRow}`); sheet.getCell('D6').value = 'Bis'; sheet.getCell('D6').alignment = { horizontal: 'center', vertical: 'middle' };
-        let blackRow = sheet.addRow(['', '', '', '', '', '', '', '']);
-        for(let i=1; i<=8; i++) { blackRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }; blackRow.getCell(i).border = borderAll; }
-
-        let gesStd = Math.floor(summeMinuten / 60); let gesMin = summeMinuten % 60;
-        let gesamtRow = sheet.addRow(['Gesamt', '', '', '', '', '', `${gesStd}:${String(gesMin).padStart(2, '0')}`, Math.round(summeDezimal * 100) / 100]);
-        sheet.mergeCells(`A${gesamtRow.number}:F${gesamtRow.number}`); sheet.getCell(`A${gesamtRow.number}`).alignment = { horizontal: 'center', vertical: 'middle' };
-        for(let i=1; i<=8; i++) gesamtRow.getCell(i).border = borderAll;
-        gesamtRow.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } }; gesamtRow.getCell(7).font = { bold: true };
-        gesamtRow.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } }; gesamtRow.getCell(8).font = { bold: true }; gesamtRow.getCell(8).numFmt = '0.00';
-        sheet.addRow([]); sheet.addRow([]);
-        let lineRow = sheet.addRow(['', '', '', '', '', '', '', '']);
-        for(let i=1; i<=3; i++) lineRow.getCell(i).border = { bottom: { style: 'thin' } };
-        for(let i=5; i<=8; i++) lineRow.getCell(i).border = { bottom: { style: 'thin' } };
-        let textRow = sheet.addRow(['Datum und Ort', '', '', '', 'Unterschrift', '', '', '']); textRow.font = { bold: true };
-        sheet.mergeCells(`A${textRow.number}:C${textRow.number}`); sheet.mergeCells(`E${textRow.number}:H${textRow.number}`);
+        let endRow = sheet.lastRow.number; sheet.mergeCells(`B6:B${endRow}`); sheet.getCell('B6').value = 'Von'; sheet.getCell('B6').alignment = { horizontal: 'center', vertical: 'middle' }; sheet.mergeCells(`D6:D${endRow}`); sheet.getCell('D6').value = 'Bis'; sheet.getCell('D6').alignment = { horizontal: 'center', vertical: 'middle' }; let blackRow = sheet.addRow(['', '', '', '', '', '', '', '']); for(let i=1; i<=8; i++) { blackRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }; blackRow.getCell(i).border = borderAll; }
+        let gesStd = Math.floor(summeMinuten / 60); let gesMin = summeMinuten % 60; let gesamtRow = sheet.addRow(['Gesamt', '', '', '', '', '', `${gesStd}:${String(gesMin).padStart(2, '0')}`, Math.round(summeDezimal * 100) / 100]); sheet.mergeCells(`A${gesamtRow.number}:F${gesamtRow.number}`); sheet.getCell(`A${gesamtRow.number}`).alignment = { horizontal: 'center', vertical: 'middle' }; for(let i=1; i<=8; i++) gesamtRow.getCell(i).border = borderAll; gesamtRow.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } }; gesamtRow.getCell(7).font = { bold: true }; gesamtRow.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } }; gesamtRow.getCell(8).font = { bold: true }; gesamtRow.getCell(8).numFmt = '0.00';
+        sheet.addRow([]); sheet.addRow([]); let lineRow = sheet.addRow(['', '', '', '', '', '', '', '']); for(let i=1; i<=3; i++) lineRow.getCell(i).border = { bottom: { style: 'thin' } }; for(let i=5; i<=8; i++) lineRow.getCell(i).border = { bottom: { style: 'thin' } }; let textRow = sheet.addRow(['Datum und Ort', '', '', '', 'Unterschrift', '', '', '']); textRow.font = { bold: true }; sheet.mergeCells(`A${textRow.number}:C${textRow.number}`); sheet.mergeCells(`E${textRow.number}:H${textRow.number}`);
         const buffer = await workbook.xlsx.writeBuffer(); saveAs(new Blob([buffer]), `Stundenuebersicht_${jahr}_${String(monat).padStart(2, '0')}.xlsx`);
     }
 
+    // PDF Export über native Druckfunktion (wird sauber zentriert auf einer Seite ausgegeben)
     function erstellePdfHtmlString(jahr, monat) {
-        const pName = localStorage.getItem('ma_name') || ""; const pVorname = localStorage.getItem('ma_vorname') || ""; const pNummer = localStorage.getItem('ma_personalnummer') || "";
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const tageImMonat = new Date(jahr, monat, 0).getDate();
-        let htmlStr = `<div><div style="font-family: Arial, sans-serif; color: black; background: white; padding: 0;">
-                    <div style="font-size: 13px; margin-bottom: 10px;"><div style="margin-bottom: 5px;">Name: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><u>${pVorname} ${pName}</u></b></div><div>Personalnummer: &nbsp;&nbsp;<b><u>${pNummer}</u></b></div></div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; table-layout: fixed;">
-                        <tr><td colspan="8" style="border: 1px solid black; font-size: 16px; font-weight: bold; padding: 4px;">Stundenübersichtstabelle</td></tr>
-                        <tr><td style="border: 1px solid black; width: 12%; padding: 2px;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 14%;">Pause</td><td style="border: 1px solid black; width: 20%;">Geleistete Stunden</td><td style="border: 1px solid black; width: 18%;">Stunden in Zahl</td></tr>`;
+        const pName = localStorage.getItem('ma_name') || ""; const pVorname = localStorage.getItem('ma_vorname') || ""; const pNummer = localStorage.getItem('ma_personalnummer') || ""; const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const tageImMonat = new Date(jahr, monat, 0).getDate();
+        let htmlStr = `<div style="width: 100%; max-width: 190mm; margin: 0 auto; box-sizing: border-box;"><div style="font-family: Arial, sans-serif; color: black; background: white; padding: 10mm;"><div style="font-size: 13px; margin-bottom: 10px;"><div style="margin-bottom: 5px;">Name: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><u>${pVorname} ${pName}</u></b></div><div>Personalnummer: &nbsp;&nbsp;<b><u>${pNummer}</u></b></div></div><table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; table-layout: fixed;"><tr><td colspan="8" style="border: 1px solid black; font-size: 16px; font-weight: bold; padding: 4px;">Stundenübersichtstabelle</td></tr><tr><td style="border: 1px solid black; width: 12%; padding: 2px;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 14%;">Pause</td><td style="border: 1px solid black; width: 20%;">Geleistete Stunden</td><td style="border: 1px solid black; width: 18%;">Stunden in Zahl</td></tr>`;
         let summeMinuten = 0; let summeDezimal = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
-            let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2);
-            let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`; let eintrag = daten.find(e => e.datum === suchDatum);
-            let rowspanVon = tag === 1 ? `<td rowspan="${tageImMonat}" style="border: 1px solid black; vertical-align: middle;">Von</td>` : '';
-            let rowspanBis = tag === 1 ? `<td rowspan="${tageImMonat}" style="border: 1px solid black; vertical-align: middle;">Bis</td>` : '';
+            let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2); let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`; let eintrag = daten.find(e => e.datum === suchDatum);
+            let rowspanVon = tag === 1 ? `<td rowspan="${tageImMonat}" style="border: 1px solid black; vertical-align: middle;">Von</td>` : ''; let rowspanBis = tag === 1 ? `<td rowspan="${tageImMonat}" style="border: 1px solid black; vertical-align: middle;">Bis</td>` : '';
             if (eintrag) {
-                let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
-                let startM = parseInt(sSplit[0]) * 60 + parseInt(sSplit[1]); let endM = parseInt(eSplit[0]) * 60 + parseInt(eSplit[1]);
-                let nettoM = (endM - startM) - eintrag.pauseMinuten; if(nettoM < 0) nettoM = 0;
-                summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden; let std = Math.floor(nettoM / 60); let min = nettoM % 60;
-                let arbeitszeitHHMM = `${std}:${String(min).padStart(2, '0')}`; let pauseHHMM = ""; let pauseStyle = "";
-                if (eintrag.pauseMinuten > 0) {
-                    let pStd = Math.floor(eintrag.pauseMinuten / 60); let pMin = eintrag.pauseMinuten % 60;
-                    pauseHHMM = `${String(pStd).padStart(2, '0')}:${String(pMin).padStart(2, '0')}`; pauseStyle = "background-color: red !important; color: white !important; font-weight: bold;";
-                }
-                htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon}
-                    <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.kommen}</td> ${rowspanBis}
-                    <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.gehen}</td>
-                    <td style="border: 1px solid black; ${pauseStyle}">${pauseHHMM}</td>
-                    <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${arbeitszeitHHMM}</td>
-                    <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.nettoStunden.toFixed(2).replace('.', ',')}</td></tr>`;
+                let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":"); let startM = parseInt(sSplit[0]) * 60 + parseInt(sSplit[1]); let endM = parseInt(eSplit[0]) * 60 + parseInt(eSplit[1]); let nettoM = (endM - startM) - eintrag.pauseMinuten; if(nettoM < 0) nettoM = 0;
+                summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden; let std = Math.floor(nettoM / 60); let min = nettoM % 60; let arbeitszeitHHMM = `${std}:${String(min).padStart(2, '0')}`; let pauseHHMM = ""; let pauseStyle = "";
+                if (eintrag.pauseMinuten > 0) { let pStd = Math.floor(eintrag.pauseMinuten / 60); let pMin = eintrag.pauseMinuten % 60; pauseHHMM = `${String(pStd).padStart(2, '0')}:${String(pMin).padStart(2, '0')}`; pauseStyle = "background-color: red !important; color: white !important; font-weight: bold;"; }
+                htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon} <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.kommen}</td> ${rowspanBis} <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.gehen}</td> <td style="border: 1px solid black; ${pauseStyle}">${pauseHHMM}</td> <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${arbeitszeitHHMM}</td> <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.nettoStunden.toFixed(2).replace('.', ',')}</td></tr>`;
             } else { htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon} <td style="border: 1px solid black;"></td> ${rowspanBis} <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;">0:00</td> <td style="border: 1px solid black;">0,00</td></tr>`; }
         }
         let gesStd = Math.floor(summeMinuten / 60); let gesMin = summeMinuten % 60;
-        htmlStr += `<tr><td colspan="8" style="background-color: black !important; height: 8px; border: 1px solid black;"></td></tr>
-                    <tr><td colspan="6" style="border: 1px solid black; padding: 4px;">Gesamt</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${gesStd}:${String(gesMin).padStart(2, '0')}</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${summeDezimal.toFixed(2).replace('.', ',')}</td></tr></table>
-                <div style="margin-top: 20px; display: flex; justify-content: space-between; page-break-inside: avoid;">
-                    <div style="width: 40%;"><div style="border-bottom: 1px solid black; margin-bottom: 5px; height: 20px;"></div><div style="font-weight: bold; font-size: 13px;">Datum und Ort</div></div>
-                    <div style="width: 45%;"><div style="border-bottom: 1px solid black; margin-bottom: 5px; height: 20px;"></div><div style="font-weight: bold; font-size: 13px;">Unterschrift</div></div>
-                </div></div></div>`;
-        return htmlStr;
+        htmlStr += `<tr><td colspan="8" style="background-color: black !important; height: 8px; border: 1px solid black;"></td></tr><tr><td colspan="6" style="border: 1px solid black; padding: 4px;">Gesamt</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${gesStd}:${String(gesMin).padStart(2, '0')}</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${summeDezimal.toFixed(2).replace('.', ',')}</td></tr></table><div style="margin-top: 20px; display: flex; justify-content: space-between; page-break-inside: avoid;"><div style="width: 40%;"><div style="border-bottom: 1px solid black; margin-bottom: 5px; height: 20px;"></div><div style="font-weight: bold; font-size: 13px;">Datum und Ort</div></div><div style="width: 45%;"><div style="border-bottom: 1px solid black; margin-bottom: 5px; height: 20px;"></div><div style="font-weight: bold; font-size: 13px;">Unterschrift</div></div></div></div></div>`; return htmlStr;
     }
 
-    function startPDFExport() { const m = document.getElementById('monthPicker').value; if(!m) return; document.getElementById('print-section').innerHTML = erstellePdfHtmlString(parseInt(m.split('-')[0]), parseInt(m.split('-')[1])); setTimeout(() => { window.print(); }, 300); }
+    function startPDFExport() {
+        const m = document.getElementById('monthPicker').value; if(!m) return;
+        const [jahr, monat] = m.split('-');
+        document.getElementById('print-section').innerHTML = erstellePdfHtmlString(parseInt(jahr), parseInt(monat));
+        setTimeout(() => { window.print(); }, 300);
+    }
 
-    function logEmailHistory(monthName, year) { let h = JSON.parse(localStorage.getItem('email_history')) || []; const n = new Date(); h.unshift({ datumGesendet: `${String(n.getDate()).padStart(2, '0')}.${String(n.getMonth()+1).padStart(2, '0')}.${n.getFullYear()} um ${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')} Uhr`, zielMonat: `${monthName} ${year}` }); if (h.length > 20) h.pop(); localStorage.setItem('email_history', JSON.stringify(h)); renderEmailHistory(); }
-    function renderEmailHistory() { const h = JSON.parse(localStorage.getItem('email_history')) || []; const l = document.getElementById('email-history-list'); if (!l) return; if (h.length === 0) { l.innerHTML = `<li class="history-item" style="color: var(--text-muted); justify-content: center;">Noch keine E-Mails versendet.</li>`; return; } l.innerHTML = h.map(i => `<li class="history-item"><span><strong>Anhang:</strong> Stundenübersicht ${i.zielMonat}</span><span class="history-date">Gesendet: ${i.datumGesendet}</span></li>`).join(''); }
+    function logEmailHistory(mName, j) { let h = JSON.parse(localStorage.getItem('email_history')) || []; const n = new Date(); h.unshift({ datumGesendet: `${String(n.getDate()).padStart(2, '0')}.${String(n.getMonth()+1).padStart(2, '0')}.${n.getFullYear()} um ${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')} Uhr`, zielMonat: `${mName} ${j}` }); if (h.length > 20) h.pop(); localStorage.setItem('email_history', JSON.stringify(h)); renderEmailHistory(); }
+    function renderEmailHistory() { const h = JSON.parse(localStorage.getItem('email_history')) || []; const l = document.getElementById('email-history-list'); if (!l) return; if (h.length === 0) { l.innerHTML = `<li class="history-item" style="color: var(--text-muted); justify-content: center;">Noch keine E-Mails versendet.</li>`; return; } l.innerHTML = h.map(i => `<li class="history-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);"><span><strong>Anhang:</strong> ${i.zielMonat}</span><span style="font-size: 12px; color: var(--text-muted);">${i.datumGesendet}</span></li>`).join(''); }
     function clearEmailHistory() { if(confirm("Möchtest du den gesamten E-Mail Verlauf leeren?")) { localStorage.removeItem('email_history'); renderEmailHistory(); } }
 
-   async function sharePDF() {
-        const mVal = document.getElementById('monthPicker').value; 
-        if(!mVal) return; 
+    async function sharePDF() {
+        const mVal = document.getElementById('monthPicker').value; if(!mVal) return;
+        const [j, m] = mVal.split('-'); const jahr = parseInt(j); const monat = parseInt(m);
+        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        const monatName = monthNames[monat - 1]; const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
         
-        const [j, m] = mVal.split('-'); 
-        const jahr = parseInt(j); 
-        const monat = parseInt(m);
-        
-        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]; 
-        const monatName = monthNames[monat - 1]; 
-        const pVorname = localStorage.getItem('ma_vorname') || ""; 
-        const pName = localStorage.getItem('ma_name') || "";
-        
-        // Platzhalter in der E-Mail-Vorlage ersetzen
-        let cSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; 
-        let cBody = document.getElementById('emailBody').value || "";
-        cSubj = cSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname); 
+        let cSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let cBody = document.getElementById('emailBody').value || "";
+        cSubj = cSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
         cBody = cBody.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
 
-        // Unsichtbares Element für die PDF-Erstellung vorbereiten
-        const element = document.createElement('div'); 
-        element.style.position = 'absolute'; 
-        element.style.left = '-9999px'; 
-        element.style.top = '-9999px'; 
-        element.style.width = '800px'; 
-        element.style.padding = '40px'; 
-        element.style.boxSizing = 'border-box'; 
-        element.innerHTML = erstellePdfHtmlString(jahr, monat); 
-        document.body.appendChild(element);
+        const element = document.createElement('div'); element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
+        element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
 
-        const opt = { 
-            margin: 0, 
-            filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, 
-            image: { type: 'jpeg', quality: 1.0 }, 
-            html2canvas: { scale: 2 }, 
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        };
-
+        const opt = { margin: 0, filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         try {
-            // PDF als Blob generieren und direkt als Download starten
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-            const filename = `Stundenuebersicht_${monatName}_${jahr}.pdf`;
-            
-            // Datei auf dem Gerät speichern
-            saveAs(pdfBlob, filename);
-
-            // Kurzer Hinweis für den Nutzer
-            alert(`📥 Das PDF "${filename}" wurde erfolgreich heruntergeladen!\n\nDein E-Mail-Programm öffnet sich jetzt. Bitte füge die heruntergeladene Datei dort einfach kurz als Anhang hinzu.`);
-
-            // E-Mail-Programm mit Betreff und Text öffnen
-            const mailtoLink = `mailto:?subject=${encodeURIComponent(cSubj)}&body=${encodeURIComponent(cBody)}`;
-            window.location.href = mailtoLink;
-
-            // In den Verlauf eintragen
+            saveAs(pdfBlob, opt.filename);
+            alert(`📥 Das PDF wurde heruntergeladen!\n\nDein E-Mail-Programm öffnet sich jetzt. Bitte füge die heruntergeladene Datei dort als Anhang hinzu.`);
+            window.location.href = `mailto:?subject=${encodeURIComponent(cSubj)}&body=${encodeURIComponent(cBody)}`;
             logEmailHistory(monatName, jahr);
-
-        } catch (err) { 
-            console.error(err); 
-            alert("Fehler beim Generieren des PDFs."); 
-        } finally { 
-            document.body.removeChild(element); 
-        }
+        } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } finally { document.body.removeChild(element); }
     }
 </script>
 </body>
