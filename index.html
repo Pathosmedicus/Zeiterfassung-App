@@ -30,19 +30,10 @@
         }
 
         body.dark-mode {
-            --bg-color: #000000; 
-            --card-bg: #18181b; 
-            --text-main: #ffffff; 
-            --text-muted: #cbd5e1;
-            --primary: #60a5fa; 
-            --primary-hover: #3b82f6; 
-            --border: #3f3f46;
-            --nav-bg: rgba(9, 9, 11, 0.85); 
-            --table-header-bg: #27272a; 
-            --table-header-text: #f8fafc;
-            --table-row-even: #1f1f22; 
-            --table-weekend-bg: #3f1515; 
-            --table-border: #3f3f46;
+            --bg-color: #000000; --card-bg: #18181b; --text-main: #ffffff; --text-muted: #cbd5e1;
+            --primary: #60a5fa; --primary-hover: #3b82f6; --border: #3f3f46;
+            --nav-bg: rgba(9, 9, 11, 0.85); --table-header-bg: #27272a; --table-header-text: #f8fafc;
+            --table-row-even: #1f1f22; --table-weekend-bg: #3f1515; --table-border: #3f3f46;
         }
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
@@ -111,7 +102,6 @@
         #login-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app-container { display: none; }
         
-        /* FIX FÜR DRUCK & PDF: Perfekt zentriert auf genau einer DIN-A4-Seite ohne Leerseiten */
         #print-section { display: none; }
         @media print {
             .app-header, .tab-content, .bottom-nav, #login-screen { display: none !important; }
@@ -135,6 +125,7 @@
         <button onclick="startLocalMode()" style="width: 100%; max-width: 320px; margin-top: 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 14px; padding: 16px; border-radius: 16px; cursor: pointer;">Ohne Anmeldung fortfahren</button>
     </div>
 
+    <!-- Container für Drucken & PDF-Generierung -->
     <div id="print-section"></div>
 
     <div id="app-container">
@@ -471,7 +462,6 @@
         const buffer = await workbook.xlsx.writeBuffer(); saveAs(new Blob([buffer]), `Stundenuebersicht_${jahr}_${String(monat).padStart(2, '0')}.xlsx`);
     }
 
-    // PDF Export über native Druckfunktion (wird sauber zentriert auf einer Seite ausgegeben)
     function erstellePdfHtmlString(jahr, monat) {
         const pName = localStorage.getItem('ma_name') || ""; const pVorname = localStorage.getItem('ma_vorname') || ""; const pNummer = localStorage.getItem('ma_personalnummer') || ""; const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const tageImMonat = new Date(jahr, monat, 0).getDate();
         let htmlStr = `<div style="width: 100%; max-width: 190mm; margin: 0 auto; box-sizing: border-box;"><div style="font-family: Arial, sans-serif; color: black; background: white; padding: 10mm;"><div style="font-size: 13px; margin-bottom: 10px;"><div style="margin-bottom: 5px;">Name: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><u>${pVorname} ${pName}</u></b></div><div>Personalnummer: &nbsp;&nbsp;<b><u>${pNummer}</u></b></div></div><table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; table-layout: fixed;"><tr><td colspan="8" style="border: 1px solid black; font-size: 16px; font-weight: bold; padding: 4px;">Stundenübersichtstabelle</td></tr><tr><td style="border: 1px solid black; width: 12%; padding: 2px;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 14%;">Pause</td><td style="border: 1px solid black; width: 20%;">Geleistete Stunden</td><td style="border: 1px solid black; width: 18%;">Stunden in Zahl</td></tr>`;
@@ -511,17 +501,31 @@
         cSubj = cSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
         cBody = cBody.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
 
-        const element = document.createElement('div'); element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
-        element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
+        const printSection = document.getElementById('print-section');
+        printSection.innerHTML = erstellePdfHtmlString(jahr, monat);
+        printSection.style.display = 'block';
 
-        const opt = { margin: 0, filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        const opt = { 
+            margin: 0, 
+            filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, 
+            image: { type: 'jpeg', quality: 1.0 }, 
+            html2canvas: { scale: 2, useCORS: true }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+
         try {
-            const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+            const pdfBlob = await html2pdf().from(printSection).set(opt).output('blob');
             saveAs(pdfBlob, opt.filename);
             alert(`📥 Das PDF wurde heruntergeladen!\n\nDein E-Mail-Programm öffnet sich jetzt. Bitte füge die heruntergeladene Datei dort als Anhang hinzu.`);
             window.location.href = `mailto:?subject=${encodeURIComponent(cSubj)}&body=${encodeURIComponent(cBody)}`;
             logEmailHistory(monatName, jahr);
-        } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } finally { document.body.removeChild(element); }
+        } catch (err) { 
+            console.error(err); 
+            alert("Fehler beim Generieren des PDFs."); 
+        } finally { 
+            printSection.style.display = 'none'; 
+            printSection.innerHTML = '';
+        }
     }
 </script>
 </body>
