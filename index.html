@@ -24,108 +24,85 @@
         :root {
             --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #000000; --text-muted: #64748b;
             --primary: #000000; --primary-hover: #333333; --success: #10b981; --danger: #ef4444;
-            --info: #111827; --border: #e2e8f0; --radius: 16px; --nav-bg: rgba(255, 255, 255, 0.85);
+            --border: #e2e8f0; --radius: 16px; --nav-bg: rgba(255, 255, 255, 0.85);
             --table-header-bg: #f1f5f9; --table-header-text: #475569; --table-row-even: #f8fafc;
-            --table-weekend-bg: #fef2f2; --table-border: #f1f5f9; --warning: #f59e0b;
+            --table-weekend-bg: #fef2f2; --table-border: #f1f5f9;
         }
 
-        /* === VERBESSERTE KONTRASTE IM DUNKELMODUS === */
+        /* VERBESSERTE KONTRASTE IM DUNKELMODUS */
         body.dark-mode {
             --bg-color: #000000; 
-            --card-bg: #09090b; 
+            --card-bg: #121212; 
             --text-main: #f8fafc; 
             --text-muted: #a1a1aa;
             --primary: #ffffff; 
             --primary-hover: #cccccc; 
-            --info: #f8fafc; 
             --border: #27272a;
             --nav-bg: rgba(0, 0, 0, 0.85); 
             --table-header-bg: #18181b; 
             --table-header-text: #e2e8f0;
             --table-row-even: #0f0f11; 
-            --table-weekend-bg: #3f1515; 
+            --table-weekend-bg: #2a1111; 
             --table-border: #27272a;
         }
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
-        .app-header { padding: 20px 24px; font-size: 22px; font-weight: 800; background-color: var(--nav-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center;}
-        .tab-content { display: none; padding: 20px; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .app-header { padding: 20px 24px; font-size: 22px; font-weight: 800; background-color: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center;}
+        .tab-content { display: none; padding: 20px; animation: fadeUp 0.4s forwards; }
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid var(--border); }
+        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
         
-        label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
-        input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; }
-        input:focus, textarea:focus { border: 1px solid var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1); }
+        label { font-weight: 600; font-size: 12px; text-transform: uppercase; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
         
-        /* Eingabefelder im Dunkelmodus besser sichtbar machen */
-        body.dark-mode input[type="text"], body.dark-mode input[type="date"], body.dark-mode input[type="time"], body.dark-mode input[type="number"], body.dark-mode input[type="file"], body.dark-mode textarea {
-            background-color: #18181b; 
-            color: #f8fafc; 
+        /* EINGABEFELDER KONTRAST */
+        input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { 
+            width: 100%; padding: 14px 16px; border: 1px solid var(--border); background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; 
+        }
+        body.dark-mode input, body.dark-mode textarea {
+            background-color: #1a1a1e; 
+            color: #ffffff; 
             border-color: #3f3f46;
         }
+        input:focus, textarea:focus { border: 1px solid var(--primary); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1); }
         body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15); border-color: var(--primary); }
-        
         textarea { resize: vertical; min-height: 120px; }
         
         button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: var(--bg-color); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        body.dark-mode button { color: var(--bg-color); }
+        body.dark-mode button { color: #000000; }
         button:active { transform: scale(0.97); }
         
         .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
-        body.dark-mode .btn-primary { color: #000000; font-weight: 800; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        
-        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
-        body.dark-mode .btn-outline { color: var(--primary); }
+        body.dark-mode .btn-primary { background-color: #ffffff; }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        body.dark-mode .btn-outline { color: #ffffff; border-color: #ffffff; background-color: transparent; }
         .btn-outline:hover { background-color: var(--primary); color: var(--bg-color); }
-        body.dark-mode .btn-outline:hover { color: #000000; }
-        
         .btn-danger { background-color: transparent; border: 2px solid var(--danger); color: var(--danger); }
-        body.dark-mode .btn-danger { color: var(--danger); }
-        .btn-danger:hover { background-color: var(--danger); color: white; }
-        .btn-google { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
         .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 6px; border-radius: 14px; flex: 1; border: 1px solid var(--border); }
-        body.dark-mode .month-selector { background-color: #18181b; border-color: #3f3f46; }
+        body.dark-mode .month-selector { background-color: #1a1a1e; border-color: #3f3f46; }
         .month-selector input { font-size: 16px; font-weight: 800; border: none; background: transparent; padding: 0; color: var(--text-main); width: auto; text-align: center; outline: none; }
-        .btn-nav { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; width: 44px; height: 44px; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0; }
+        .btn-nav { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; width: 44px; height: 44px; font-size: 18px; margin: 0; }
         body.dark-mode .btn-nav { background-color: #27272a; border-color: #3f3f46; color: #ffffff; }
-        .btn-nav:hover { background-color: var(--bg-color); }
-        body.dark-mode .btn-nav:hover { background-color: #3f3f46; }
-        .total-hours-badge { background-color: var(--primary); color: var(--card-bg); padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; margin-left: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
-        body.dark-mode .total-hours-badge { color: #000000; }
         
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 20px; background: var(--card-bg); }
         .excel-table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 14px; text-align: center; }
-        .excel-table th { background-color: var(--table-header-bg); color: var(--table-header-text); padding: 14px 10px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 2;}
+        .excel-table th { background-color: var(--table-header-bg); color: var(--table-header-text); padding: 14px 10px; font-weight: 600; text-transform: uppercase; font-size: 12px; border-bottom: 2px solid var(--border); position: sticky; top: 0;}
         .excel-table td { padding: 12px 10px; border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border); }
-        .excel-table td:last-child { border-right: none; }
         .excel-table tr:nth-child(even) { background-color: var(--table-row-even); }
-        .excel-table tr:hover { background-color: rgba(0, 0, 0, 0.05); }
-        body.dark-mode .excel-table tr:hover { background-color: rgba(255, 255, 255, 0.05); }
         .excel-table tr.weekend { background-color: var(--table-weekend-bg); }
-        .excel-table td.empty-cell { color: var(--text-muted); font-style: italic; }
         .excel-table tr.sum-row { font-weight: 800; background-color: var(--table-header-bg); border-top: 2px solid var(--border); }
         
-        .editable-cell { cursor: pointer; color: var(--primary); font-weight: 600; min-width: 50px; border-radius: 6px; transition: background 0.2s; border-bottom: 1px dashed var(--primary); }
-        .editable-cell:hover { background: rgba(0, 0, 0, 0.05); }
-        body.dark-mode .editable-cell:hover { background: rgba(255, 255, 255, 0.1); }
-        .editable-cell:focus { outline: none; background-color: rgba(0, 0, 0, 0.05); box-shadow: inset 0 0 0 2px var(--primary); }
-        body.dark-mode .editable-cell:focus { background-color: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 2px var(--primary); }
-        .editable-cell:empty:before { content: "-"; color: var(--text-muted); font-weight: normal; border-bottom: none;}
+        .editable-cell { cursor: pointer; color: var(--primary); font-weight: 600; min-width: 50px; border-radius: 6px; border-bottom: 1px dashed var(--primary); }
+        .editable-cell:empty:before { content: "-"; color: var(--text-muted); border-bottom: none;}
         
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 12px 0 24px 0; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.02); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--nav-bg); backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 12px 0 24px 0; border-top: 1px solid var(--border); z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; flex: 1; transition: color 0.2s; }
-        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; transition: transform 0.2s; filter: grayscale(100%); opacity: 0.7;}
+        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; filter: grayscale(100%); opacity: 0.7;}
         .nav-item.active { color: var(--primary); }
+        body.dark-mode .nav-item.active { color: #ffffff; }
         .nav-item.active .icon { transform: translateY(-2px) scale(1.1); filter: grayscale(0%); opacity: 1; }
-        
-        .history-list { list-style: none; padding: 0; margin: 0; }
-        .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        .history-item:last-child { border-bottom: none; }
-        .history-date { color: var(--text-muted); font-size: 12px; }
 
         .chart-container { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
         canvas { width: 100% !important; max-height: 250px; }
@@ -133,8 +110,7 @@
         .minijob-bar-container { width: 100%; background-color: var(--border); border-radius: 8px; height: 14px; margin-top: 10px; overflow: hidden; }
         body.dark-mode .minijob-bar-container { background-color: #27272a; }
         .minijob-bar-fill { height: 100%; background-color: var(--success); transition: width 0.4s ease; }
-        .minijob-text { font-size: 13px; margin-top: 8px; color: var(--text-muted); display: flex; justify-content: space-between; }
-
+        
         #login-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app-container { display: none; }
         #print-section { display: none; }
@@ -152,8 +128,8 @@
 
     <div id="login-screen">
         <h1 style="color: var(--primary); text-align: center; margin-bottom: 8px;">Zeiterfassung</h1>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px; margin-top: 0;">Deine Daten sicher und synchron.</p>
-        <button class="btn-google" onclick="loginWithGoogle()" style="width: 100%; max-width: 320px; padding: 18px; border-radius: 16px;">Mit Google anmelden</button>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px;">Deine Daten sicher und synchron.</p>
+        <button class="btn-primary" onclick="loginWithGoogle()" style="width: 100%; max-width: 320px; padding: 18px; border-radius: 16px;">Mit Google anmelden</button>
         <button onclick="startLocalMode()" style="width: 100%; max-width: 320px; margin-top: 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 14px; padding: 16px; border-radius: 16px; cursor: pointer;">Ohne Anmeldung fortfahren</button>
     </div>
 
@@ -163,12 +139,9 @@
         <div class="app-header">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span>Zeiterfassung</span>
-                <span id="user-badge" style="font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; background: var(--border); color: var(--text-muted);"></span>
+                <span id="user-badge" style="font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; background: var(--border); color: var(--text-muted);"></span>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button id="btn-cloud-connect" onclick="loginWithGoogle()" style="display: none; width: auto; padding: 8px 16px; margin: 0; font-size: 12px; border-radius: 20px;" class="btn-primary">Cloud</button>
-                <button id="btn-logout" onclick="logout()" style="width: auto; padding: 8px 16px; margin: 0; font-size: 12px; border-radius: 20px;" class="btn-danger">Logout</button>
-            </div>
+            <button id="btn-logout" onclick="logout()" style="width: auto; padding: 8px 16px; margin: 0; font-size: 12px;" class="btn-danger">Logout</button>
         </div>
 
         <!-- REITER 1: TABELLE -->
@@ -180,25 +153,20 @@
                         <input type="month" id="monthPicker" onchange="renderDashboard()">
                         <button class="btn-nav" onclick="changeMonth(1)">&#9654;</button>
                     </div>
-                    <button onclick="deleteCurrentMonth()" style="width: 44px; height: 44px; padding: 0; margin: 0; border-radius: 14px; background-color: rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 18px;" title="Monat löschen">🗑️</button>
-                    <div class="total-hours-badge" id="totalMonthHours" style="margin: 0;">0 h</div>
+                    <button onclick="deleteCurrentMonth()" style="width: 44px; height: 44px; padding: 0; margin: 0; border-radius: 14px; background-color: rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 18px;">🗑️</button>
                 </div>
                 
-                <p style="font-size: 12px; text-align: center; color: var(--text-muted); margin-top: 16px;">Nutze die <b>Pfeiltasten</b> (←/→) auf der Tastatur zum schnellen Wechseln.</p>
-                
+                <p style="font-size: 12px; text-align: center; color: var(--text-muted); margin-top: 16px;">Nutze die <b>Pfeiltasten</b> (←/→) zum schnellen Wechseln.</p>
                 <div id="month-table-container"></div>
                 
                 <button class="btn-outline" onclick="toggleChart('month-chart-wrapper')" style="margin-top: 15px;">📊 Jahresstunden-Diagramm (Linie)</button>
-                <div id="month-chart-wrapper" class="chart-container">
-                    <canvas id="monthChartCanvas"></canvas>
-                </div>
+                <div id="month-chart-wrapper" class="chart-container"><canvas id="monthChartCanvas"></canvas></div>
                 
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
                     <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startExcelExport()">📊 Excel</button>
                     <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF</button>
                 </div>
-
-                <button class="btn-primary" onclick="sharePDF()" style="margin-top: 12px; padding: 20px; font-size: 16px;">📧 Diesen Monat als E-Mail senden</button>
+                <button class="btn-primary" onclick="sharePDF()" style="margin-top: 12px; padding: 20px;">📧 Monat als E-Mail senden</button>
             </div>
         </div>
 
@@ -210,11 +178,15 @@
                     <span id="settings-arrow">▼</span>
                 </div>
                 <div id="salary-settings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Passe die Werte an deine Abrechnungen an. Die App rechnet sofort alles neu.</p>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Die App nutzt das Datum, um den richtigen Basislohn zu wählen. Zuschläge werden in % davon berechnet.</p>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <div style="flex: 1;"><label>Basis (€/h)</label><input type="number" id="setBaseWage" step="0.01" onchange="lohnSettingsSpeichern()"></div>
-                        <div style="flex: 1;"><label>Sonntag (€/h)</label><input type="number" id="setSunBonus" step="0.01" onchange="lohnSettingsSpeichern()"></div>
-                        <div style="flex: 1;"><label>Samstag (€/h)</label><input type="number" id="setSatBonus" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Lohn bis Juli '26</label><input type="number" id="setBaseOld" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Lohn ab Aug '26</label><input type="number" id="setBaseNew" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 1;"><label>Sonntag (%)</label><input type="number" id="setSunPercent" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Samstag (%)</label><input type="number" id="setSatPercent" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>VBL Abzug (%)</label><input type="number" id="setVblPercent" step="0.01" onchange="lohnSettingsSpeichern()"></div>
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;"><label>Limit Monat (€)</label><input type="number" id="setMinijobLimit" step="1" onchange="lohnSettingsSpeichern()"></div>
@@ -225,7 +197,7 @@
 
             <div class="card">
                 <h3 style="margin-top: 0; color: var(--primary); text-align: center; font-weight: 800;">Jahres-Abrechnung</h3>
-                <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 24px;">
+                <div style="display: flex; justify-content: center; margin-bottom: 24px;">
                     <div class="month-selector" style="max-width: 220px;">
                         <button class="btn-nav" onclick="changeYear(-1)">&#9664;</button>
                         <input type="number" id="yearPicker" onchange="renderAnnualSalary()" style="width: 80px;" min="2000" max="2100">
@@ -234,40 +206,27 @@
                 </div>
 
                 <div id="annual-tracker-container"></div>
-
                 <button class="btn-outline" onclick="toggleChart('year-chart-wrapper')" style="margin-bottom: 20px;">📈 Gehalts-Diagramm (Linie)</button>
-                <div id="year-chart-wrapper" class="chart-container" style="margin-top: 0; margin-bottom: 20px; border-top: none; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-                    <canvas id="yearChartCanvas"></canvas>
-                </div>
+                <div id="year-chart-wrapper" class="chart-container" style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 20px;"><canvas id="yearChartCanvas"></canvas></div>
 
                 <div id="annual-salary-container"></div>
-
-                <button class="btn-primary" onclick="exportLohnabgleich()" style="margin-top: 24px;">📥 Daten für Gehaltsabgleich (Excel) exportieren</button>
+                <button class="btn-primary" onclick="exportLohnabgleich()" style="margin-top: 24px;">📥 Daten für Gehaltsabgleich (Excel)</button>
             </div>
         </div>
 
-        <!-- REITER 3: E-MAIL -->
+        <!-- REITER 3 & 4 (E-Mail, Profil) -->
         <div id="tab-email" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0;">Text-Vorlage</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Platzhalter: {MONAT}, {JAHR}, {NAME}, {VORNAME}</p>
-                <label>Betreff</label>
-                <input type="text" id="emailSubject" onchange="emailVorlageSpeichern()" placeholder="Stundenübersicht {MONAT} {JAHR}">
-                <label>Text</label>
-                <textarea id="emailBody" onchange="emailVorlageSpeichern()" placeholder="Sehr geehrte Damen und Herren,..."></textarea>
+                <label>Betreff</label><input type="text" id="emailSubject" onchange="emailVorlageSpeichern()" placeholder="Stundenübersicht {MONAT} {JAHR}">
+                <label>Text</label><textarea id="emailBody" onchange="emailVorlageSpeichern()"></textarea>
             </div>
-
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0;">Verlauf</h3>
-                    <button onclick="clearEmailHistory()" class="btn-danger" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px; border-radius: 8px;">Leeren</button>
-                </div>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Protokoll der generierten E-Mail Anhänge.</p>
-                <ul class="history-list" id="email-history-list"></ul>
+                <div style="display: flex; justify-content: space-between;"><h3 style="margin: 0;">Verlauf</h3><button onclick="clearEmailHistory()" class="btn-danger" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px;">Leeren</button></div>
+                <ul class="history-list" id="email-history-list" style="margin-top: 15px;"></ul>
             </div>
         </div>
 
-        <!-- REITER 4: PROFIL -->
         <div id="tab-profil" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0;">Persönliche Daten</h3>
@@ -275,14 +234,11 @@
                 <label>Vorname</label><input type="text" id="vorname" onchange="profilSpeichern()">
                 <label>Personalnummer</label><input type="text" id="personalnummer" onchange="profilSpeichern()">
             </div>
-            
             <div class="card">
                 <h3 style="margin-top: 0;">Daten Import</h3>
-                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest PDFs mathematisch und fehlerfrei aus.</p>
                 <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 14px;">
                 <button class="btn-primary" onclick="startMultiImport()">Dateien scannen & Importieren</button>
             </div>
-
             <div class="card">
                 <h3 style="margin-top: 0;">Einstellungen</h3>
                 <button class="btn-outline" onclick="toggleDarkMode()">Dunkelmodus umschalten 🌙</button>
@@ -298,25 +254,24 @@
     </div>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw", authDomain: "zeiterfassung-app-56bfa.firebaseapp.com", projectId: "zeiterfassung-app-56bfa", storageBucket: "zeiterfassung-app-56bfa.firebasestorage.app", messagingSenderId: "48863732219", appId: "1:48863732219:web:7202f1e35ffd4600e76b5e", measurementId: "G-SYG92HFJ33" };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); const db = firebase.firestore(); const provider = new firebase.auth.GoogleAuthProvider();
+    const firebaseConfig = { apiKey: "AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw", authDomain: "zeiterfassung-app-56bfa.firebaseapp.com", projectId: "zeiterfassung-app-56bfa", storageBucket: "zeiterfassung-app-56bfa.firebasestorage.app", messagingSenderId: "48863732219", appId: "1:48863732219:web:7202f1e35ffd4600e76b5e" };
+    firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const db = firebase.firestore(); const provider = new firebase.auth.GoogleAuthProvider();
 
     let currentUserUID = null; let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
     let monthChartInstance = null; let yearChartInstance = null;
-    let lohnConfig = { base: 18.90, sun: 4.67, sat: 0.64, limit: 603, annualLimit: 7236 };
+    
+    // Standardwerte: Zeitabhängiger Lohn und Prozentuale Zuschläge
+    let lohnConfig = { baseOld: 17.16, baseNew: 18.90, sunPercent: 27.21, satPercent: 3.73, vblPercent: 1.87, limit: 603, annualLimit: 7236 };
 
     window.onload = function() {
         let heute = new Date(); document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('yearPicker').value = heute.getFullYear();
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         if(localStorage.getItem('dark_mode') === 'true') document.body.classList.add('dark-mode');
-        
         ladeLokalesProfil(); ladeEmailVorlage(); ladeLohnSettings(); renderEmailHistory();
     };
 
     document.addEventListener('keydown', function(e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         if (document.getElementById('tab-uebersicht').classList.contains('active')) {
             if (e.key === 'ArrowLeft') changeMonth(-1); if (e.key === 'ArrowRight') changeMonth(1);
         } else if (document.getElementById('tab-gehalt').classList.contains('active')) {
@@ -325,63 +280,52 @@
     });
 
     function ladeLohnSettings() {
-        let saved = JSON.parse(localStorage.getItem('lohn_config'));
+        let saved = JSON.parse(localStorage.getItem('lohn_config_v2'));
         if (saved) lohnConfig = saved;
-        
-        // Automatische Korrekturen für Alt-Nutzer auf die korrekten Werte
-        if (!lohnConfig.limit) lohnConfig.limit = 603;
-        if (!lohnConfig.annualLimit) lohnConfig.annualLimit = 7236;
-        if (lohnConfig.base === 17.16) lohnConfig.base = 18.90;
-        if (lohnConfig.sat === 0.853) lohnConfig.sat = 0.64;
 
-        document.getElementById('setBaseWage').value = lohnConfig.base;
-        document.getElementById('setSunBonus').value = lohnConfig.sun;
-        document.getElementById('setSatBonus').value = lohnConfig.sat;
+        document.getElementById('setBaseOld').value = lohnConfig.baseOld;
+        document.getElementById('setBaseNew').value = lohnConfig.baseNew;
+        document.getElementById('setSunPercent').value = lohnConfig.sunPercent;
+        document.getElementById('setSatPercent').value = lohnConfig.satPercent;
+        document.getElementById('setVblPercent').value = lohnConfig.vblPercent;
         document.getElementById('setMinijobLimit').value = lohnConfig.limit;
         document.getElementById('setAnnualLimit').value = lohnConfig.annualLimit;
     }
 
     function lohnSettingsSpeichern() {
-        let base = parseFloat(document.getElementById('setBaseWage').value) || 0;
-        let sun = parseFloat(document.getElementById('setSunBonus').value) || 0;
-        let sat = parseFloat(document.getElementById('setSatBonus').value) || 0;
-        let limit = parseInt(document.getElementById('setMinijobLimit').value) || 603;
-        let annualLimit = parseInt(document.getElementById('setAnnualLimit').value) || 7236;
-        
-        lohnConfig = { base: base, sun: sun, sat: sat, limit: limit, annualLimit: annualLimit };
-        localStorage.setItem('lohn_config', JSON.stringify(lohnConfig));
+        lohnConfig = {
+            baseOld: parseFloat(document.getElementById('setBaseOld').value) || 17.16,
+            baseNew: parseFloat(document.getElementById('setBaseNew').value) || 18.90,
+            sunPercent: parseFloat(document.getElementById('setSunPercent').value) || 27.21,
+            satPercent: parseFloat(document.getElementById('setSatPercent').value) || 3.73,
+            vblPercent: parseFloat(document.getElementById('setVblPercent').value) || 1.87,
+            limit: parseInt(document.getElementById('setMinijobLimit').value) || 603,
+            annualLimit: parseInt(document.getElementById('setAnnualLimit').value) || 7236
+        };
+        localStorage.setItem('lohn_config_v2', JSON.stringify(lohnConfig));
         renderAnnualSalary();
     }
 
     function toggleSettings() {
-        let el = document.getElementById('salary-settings');
-        let arrow = document.getElementById('settings-arrow');
-        if(el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▲'; } 
-        else { el.style.display = 'none'; arrow.innerText = '▼'; }
+        let el = document.getElementById('salary-settings'); let arrow = document.getElementById('settings-arrow');
+        if(el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▲'; } else { el.style.display = 'none'; arrow.innerText = '▼'; }
     }
 
     function updateHeaderStatus() {
-        const badge = document.getElementById('user-badge'); const btnConnect = document.getElementById('btn-cloud-connect'); const btnLogout = document.getElementById('btn-logout');
-        if (currentUserUID) {
-            if (badge) { badge.innerText = "☁️ Cloud aktiv"; badge.style.color = "var(--success)"; badge.style.background = "rgba(16, 185, 129, 0.1)"; }
-            if (btnConnect) btnConnect.style.display = "none";
-            if (btnLogout) { btnLogout.style.display = "inline-block"; btnLogout.innerText = "Logout"; }
-        } else {
-            if (badge) { badge.innerText = "💾 Lokal"; badge.style.color = "var(--text-muted)"; badge.style.background = "var(--border)"; }
-            if (btnConnect) btnConnect.style.display = "inline-block";
-            if (btnLogout) { btnLogout.style.display = "inline-block"; btnLogout.innerText = "Zurück"; }
-        }
+        const badge = document.getElementById('user-badge'); const btnLogout = document.getElementById('btn-logout');
+        if (currentUserUID) { badge.innerText = "☁️ Cloud aktiv"; badge.style.color = "var(--success)"; btnLogout.innerText = "Logout"; } 
+        else { badge.innerText = "💾 Lokal"; badge.style.color = "var(--text-muted)"; btnLogout.innerText = "Zurück"; }
     }
 
     function ladeLokalesProfil() {
-        const n = localStorage.getItem('ma_name'); const v = localStorage.getItem('ma_vorname'); const p = localStorage.getItem('ma_personalnummer');
-        if (n) document.getElementById('name').value = n; if (v) document.getElementById('vorname').value = v; if (p) document.getElementById('personalnummer').value = p;
+        document.getElementById('name').value = localStorage.getItem('ma_name') || "";
+        document.getElementById('vorname').value = localStorage.getItem('ma_vorname') || "";
+        document.getElementById('personalnummer').value = localStorage.getItem('ma_personalnummer') || "";
     }
 
     function ladeEmailVorlage() {
-        const subj = localStorage.getItem('email_subject'); const body = localStorage.getItem('email_body');
-        if (subj) document.getElementById('emailSubject').value = subj; else document.getElementById('emailSubject').value = "Stundenübersicht {MONAT} {JAHR}";
-        if (body) document.getElementById('emailBody').value = body; else document.getElementById('emailBody').value = "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}";
+        document.getElementById('emailSubject').value = localStorage.getItem('email_subject') || "Stundenübersicht {MONAT} {JAHR}";
+        document.getElementById('emailBody').value = localStorage.getItem('email_body') || "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}";
     }
 
     function emailVorlageSpeichern() { localStorage.setItem('email_subject', document.getElementById('emailSubject').value); localStorage.setItem('email_body', document.getElementById('emailBody').value); }
@@ -390,194 +334,67 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active');
-        if(tabName === 'uebersicht') renderDashboard(); 
-        if(tabName === 'gehalt') renderAnnualSalary();
-        if(tabName === 'email') renderEmailHistory();
+        if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary(); if(tabName === 'email') renderEmailHistory();
     }
 
-    function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
-        renderDashboard(); renderAnnualSalary();
-    }
+    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode')); renderDashboard(); renderAnnualSalary(); }
+    function toggleChart(w) { let el = document.getElementById(w); el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none'; }
+    function profilSpeichern() { localStorage.setItem('ma_name', document.getElementById('name').value); localStorage.setItem('ma_vorname', document.getElementById('vorname').value); localStorage.setItem('ma_personalnummer', document.getElementById('personalnummer').value); cloudDatenSpeichern(); }
+    
+    function changeMonth(offset) { let p = document.getElementById('monthPicker'); if (!p.value) return; let [j, m] = p.value.split('-'); let d = new Date(parseInt(j), parseInt(m) - 1 + offset, 1); p.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; renderDashboard(); }
+    function changeYear(offset) { let p = document.getElementById('yearPicker'); p.value = parseInt(p.value) + offset; renderAnnualSalary(); }
 
-    function toggleChart(wrapperId) {
-        const wrapper = document.getElementById(wrapperId);
-        wrapper.style.display = (wrapper.style.display === 'none' || wrapper.style.display === '') ? 'block' : 'none';
-    }
-
-    function profilSpeichern() {
-        localStorage.setItem('ma_name', document.getElementById('name').value); localStorage.setItem('ma_vorname', document.getElementById('vorname').value);
-        localStorage.setItem('ma_personalnummer', document.getElementById('personalnummer').value); cloudDatenSpeichern();
-    }
-
-    function changeMonth(offset) {
-        let picker = document.getElementById('monthPicker'); if (!picker.value) return;
-        let [jahr, monat] = picker.value.split('-'); let date = new Date(parseInt(jahr), parseInt(monat) - 1 + offset, 1);
-        picker.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; renderDashboard();
-    }
-
-    function changeYear(offset) {
-        let picker = document.getElementById('yearPicker'); let newYear = parseInt(picker.value) + offset;
-        picker.value = newYear; renderAnnualSalary();
-    }
-
-    function startLocalMode() {
-        isLocalMode = true; localStorage.setItem('mode_lokal', 'true'); currentUserUID = null;
-        document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block';
-        updateHeaderStatus(); ladeLokalesProfil(); renderDashboard();
-    }
+    function startLocalMode() { isLocalMode = true; localStorage.setItem('mode_lokal', 'true'); currentUserUID = null; document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block'; updateHeaderStatus(); renderDashboard(); }
 
     auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            currentUserUID = user.uid; isLocalMode = false; localStorage.removeItem('mode_lokal');
-            document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block';
-            updateHeaderStatus(); await cloudDatenLaden(); renderDashboard();
-        } else if (isLocalMode) { startLocalMode(); } 
-        else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }
+        if (user) { currentUserUID = user.uid; isLocalMode = false; localStorage.removeItem('mode_lokal'); document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block'; updateHeaderStatus(); await cloudDatenLaden(); renderDashboard(); } 
+        else if (isLocalMode) { startLocalMode(); } else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }
     });
 
-    function loginWithGoogle() {
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => { return auth.signInWithPopup(provider); }).catch((error) => {
-            if (error.code === 'auth/popup-blocked') { auth.signInWithRedirect(provider); } else { console.error("Login Fehler:", error); alert("Login Fehler: " + error.message); }
-        });
-    }
-    auth.getRedirectResult().catch((error) => { if (error.code !== 'auth/popup-closed-by-user') { alert("Redirect Login Fehler: " + error.message); } });
-    function logout() { isLocalMode = false; localStorage.removeItem('mode_lokal'); auth.signOut().finally(() => { currentUserUID = null; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }); }
+    function loginWithGoogle() { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => { return auth.signInWithPopup(provider); }).catch((e) => { if (e.code === 'auth/popup-blocked') auth.signInWithRedirect(provider); }); }
+    function logout() { isLocalMode = false; localStorage.removeItem('mode_lokal'); auth.signOut(); }
 
     async function cloudDatenLaden() {
         if (!currentUserUID) return;
         try {
             const doc = await db.collection('users').doc(currentUserUID).get();
-            if (doc.exists) {
-                const data = doc.data();
-                if (data.arbeitszeiten) localStorage.setItem('meine_arbeitszeiten', data.arbeitszeiten);
-                if (data.ma_name) localStorage.setItem('ma_name', data.ma_name); if (data.ma_vorname) localStorage.setItem('ma_vorname', data.ma_vorname); if (data.ma_personalnummer) localStorage.setItem('ma_personalnummer', data.ma_personalnummer);
-            } else { await cloudDatenSpeichern(); }
+            if (doc.exists) { const d = doc.data(); if (d.arbeitszeiten) localStorage.setItem('meine_arbeitszeiten', d.arbeitszeiten); } else { await cloudDatenSpeichern(); }
         } catch (e) {} ladeLokalesProfil();
     }
+    async function cloudDatenSpeichern() { if (!currentUserUID) return; try { await db.collection('users').doc(currentUserUID).set({ arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]", lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch (e) {} }
 
-    async function cloudDatenSpeichern() {
-        if (!currentUserUID) return;
-        try { await db.collection('users').doc(currentUserUID).set({ arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]", ma_name: localStorage.getItem('ma_name') || "", ma_vorname: localStorage.getItem('ma_vorname') || "", ma_personalnummer: localStorage.getItem('ma_personalnummer') || "", lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch (e) {}
-    }
-
-    function berechneNetto(startStr, endStr, pauseMins) {
-        if (!startStr || !endStr) return 0;
-        const startTime = new Date(`1970-01-01T${startStr}:00`); let endeTime = new Date(`1970-01-01T${endStr}:00`);
-        if (endeTime <= startTime) endeTime.setDate(endeTime.getDate() + 1);
-        let nettoMinuten = ((endeTime - startTime) / 60000) - pauseMins;
-        return Math.max(0, Math.round((nettoMinuten / 60) * 100) / 100);
+    function berechneNetto(s, e, p) {
+        if (!s || !e) return 0; const sT = new Date(`1970-01-01T${s}:00`); let eT = new Date(`1970-01-01T${e}:00`); if (eT <= sT) eT.setDate(eT.getDate() + 1);
+        return Math.max(0, Math.round((((eT - sT) / 60000) - p) / 60 * 100) / 100);
     }
 
     function deleteCurrentMonth() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
-        if(confirm(`Möchtest du wirklich alle Schichten für den Monat ${gewaehlterMonat} löschen?`)) {
-            let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-            daten = daten.filter(e => !e.datum.startsWith(gewaehlterMonat));
-            localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
-            cloudDatenSpeichern(); renderDashboard();
+        const m = document.getElementById('monthPicker').value; if(!m) return;
+        if(confirm(`Monat ${m} komplett löschen?`)) {
+            let d = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; d = d.filter(e => !e.datum.startsWith(m));
+            localStorage.setItem('meine_arbeitszeiten', JSON.stringify(d)); cloudDatenSpeichern(); renderDashboard();
         }
     }
-
-    window.schichtLoeschen = function(datum) {
-        if(confirm("Möchtest du diese Schicht wirklich löschen?")) {
-            let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-            daten = daten.filter(e => e.datum !== datum);
-            localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
-            cloudDatenSpeichern(); renderDashboard(); 
-        }
-    };
-
+    window.schichtLoeschen = function(datum) { let d = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; d = d.filter(e => e.datum !== datum); localStorage.setItem('meine_arbeitszeiten', JSON.stringify(d)); cloudDatenSpeichern(); renderDashboard(); };
     window.inlineEdit = function(element, datum, feld) {
         let wert = element.innerText.trim(); let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
         let index = daten.findIndex(e => e.datum === datum); let eintrag = index !== -1 ? daten[index] : { datum: datum, kommen: "", gehen: "", pauseMinuten: 0, nettoStunden: 0 };
-        
-        if (feld === 'pauseMinuten') {
-            wert = parseInt(wert); if (isNaN(wert) || wert < 0) wert = (index !== -1 ? eintrag.pauseMinuten : 0); 
-            eintrag.pauseMinuten = wert;
-        } else {
-            if (/^\d{1,2}:\d{2}$/.test(wert)) { let teile = wert.split(':'); wert = `${teile[0].padStart(2, '0')}:${teile[1]}`; eintrag[feld] = wert; } else if (wert === "" || wert === "-") { eintrag[feld] = ""; } else { element.innerText = (index !== -1 ? eintrag[feld] : ""); return; }
-        }
-        if (eintrag.kommen && eintrag.gehen) { eintrag.nettoStunden = berechneNetto(eintrag.kommen, eintrag.gehen, eintrag.pauseMinuten); } else { eintrag.nettoStunden = 0; }
+        if (feld === 'pauseMinuten') { wert = parseInt(wert); if (isNaN(wert) || wert < 0) wert = (index !== -1 ? eintrag.pauseMinuten : 0); eintrag.pauseMinuten = wert; } 
+        else { if (/^\d{1,2}:\d{2}$/.test(wert)) { let t = wert.split(':'); wert = `${t[0].padStart(2, '0')}:${t[1]}`; eintrag[feld] = wert; } else if (wert === "" || wert === "-") { eintrag[feld] = ""; } else { element.innerText = (index !== -1 ? eintrag[feld] : ""); return; } }
+        eintrag.nettoStunden = (eintrag.kommen && eintrag.gehen) ? berechneNetto(eintrag.kommen, eintrag.gehen, eintrag.pauseMinuten) : 0;
         if (eintrag.kommen === "" && eintrag.gehen === "") { if (index !== -1) daten.splice(index, 1); } else { if (index !== -1) daten[index] = eintrag; else daten.push(eintrag); }
         localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten)); cloudDatenSpeichern(); renderDashboard(); 
     };
 
-    function findeSchichtWerte(validTimes) {
-        let startStr = validTimes[0].padStart(5, '0'); let endStr = validTimes[1].padStart(5, '0');
-        let sParts = startStr.split(':'); let eParts = endStr.split(':');
-        let startMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]); let endMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
-        let diffMins = endMins - startMins; if (diffMins < 0) diffMins += 1440; 
-        let pauseMins = 0;
-        if (validTimes.length >= 3) { let pParts = validTimes[2].split(':'); let thirdTimeMins = parseInt(pParts[0]) * 60 + parseInt(pParts[1]); if (thirdTimeMins > 0 && thirdTimeMins < diffMins) { pauseMins = thirdTimeMins; } }
-        return { start: startStr, end: endStr, pause: pauseMins, diff: diffMins };
-    }
-
-    function werteGanzenTextAus(fullText, gespeicherteDaten) {
-        let importCount = 0; let lastDate = null; let regex = /(\d{2})\.(\d{2})\.(\d{2,4})([\s\S]*?)(?=\d{2}\.\d{2}\.\d{2,4}|$)/g;
-        let matches = [...fullText.matchAll(regex)];
-        matches.forEach(match => {
-            let tag = match[1]; let monat = match[2]; let jahr = match[3]; if (jahr.length === 2) jahr = "20" + jahr;
-            let datumStr = `${jahr}-${monat}-${tag}`; let dataBlock = match[4]; let timeMatches = dataBlock.match(/\b\d{1,2}:\d{2}\b/g);
-            if (timeMatches) {
-                let validTimes = timeMatches.filter(t => t !== "0:00" && t !== "00:00");
-                if (validTimes.length >= 2) {
-                    let schicht = findeSchichtWerte(validTimes); let nettoMinuten = schicht.diff - schicht.pause;
-                    let nettoStundenDezimal = Math.round((nettoMinuten / 60) * 100) / 100;
-                    if (nettoStundenDezimal > 0) {
-                        let idx = gespeicherteDaten.findIndex(e => e.datum === datumStr); if (idx > -1) gespeicherteDaten.splice(idx, 1); 
-                        gespeicherteDaten.push({ datum: datumStr, kommen: schicht.start, gehen: schicht.end, pauseMinuten: schicht.pause, nettoStunden: nettoStundenDezimal }); importCount++; lastDate = datumStr;
-                    }
-                }
-            }
-        });
-        return { count: importCount, lastDate: lastDate, daten: gespeicherteDaten };
-    }
-
-    async function startMultiImport() {
-        const fileInput = document.getElementById('importFile'); const files = Array.from(fileInput.files);
-        if(files.length === 0) { alert("Bitte wähle mindestens eine Datei aus."); return; }
-        let totalImported = 0; let letzesDatumFuerAnsicht = null;
-
-        for (let i = 0; i < files.length; i++) {
-            let file = files[i];
-            try {
-                let result;
-                if (file.name.toLowerCase().endsWith('.pdf')) {
-                    const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument(arrayBuffer).promise; let fullTextStr = "";
-                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                        const page = await pdf.getPage(pageNum); const textContent = await page.getTextContent();
-                        const items = textContent.items.sort((a, b) => { const yDiff = b.transform[5] - a.transform[5]; if (Math.abs(yDiff) > 15) return yDiff; return a.transform[4] - b.transform[4]; });
-                        items.forEach(item => { fullTextStr += item.str + " "; });
-                    }
-                    result = werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []);
-                } else {
-                    result = await new Promise((resolve, reject) => {
-                        const reader = new FileReader(); reader.onload = function(e) {
-                            try {
-                                const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array', raw: false, dateNF: 'dd.mm.yyyy'}); let fullTextStr = "";
-                                workbook.SheetNames.forEach(sheetName => { const sheet = workbook.Sheets[sheetName]; const json = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: false, defval: ""}); json.forEach(row => { if (Array.isArray(row)) fullTextStr += row.filter(cell => cell !== "").join(" ") + " | "; }); });
-                                resolve(werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []));
-                            } catch (err) { reject(err); }
-                        }; reader.onerror = reject; reader.readAsArrayBuffer(file);
-                    });
-                }
-                totalImported += result.count; if (result.lastDate) letzesDatumFuerAnsicht = result.lastDate; localStorage.setItem('meine_arbeitszeiten', JSON.stringify(result.daten));
-            } catch (err) { console.error("Fehler bei Datei " + file.name, err); }
-        }
-
-        if (totalImported > 0) {
-            cloudDatenSpeichern(); alert(`✅ Import erfolgreich!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen.`);
-            if (letzesDatumFuerAnsicht) {
-                let importMonat = letzesDatumFuerAnsicht.substring(0, 7); document.getElementById('monthPicker').value = importMonat;
-                switchTab('uebersicht', document.getElementById('nav-uebersicht')); renderDashboard();
-            }
-        } else { alert("Scan abgeschlossen, aber keine neuen Zeiten gefunden."); }
-        fileInput.value = ""; 
-    }
-
+    // WICHTIG: Die Gehalts-Engine (Datum, %-Satz, VBL)
     function calculateMonthSalary(jahr, monat, daten) {
-        let tageImMonat = new Date(jahr, monat, 0).getDate(); let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
+        let tageImMonat = new Date(jahr, monat, 0).getDate(); 
+        let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
+        
+        // Entscheidet, welcher Stundenlohn gilt: Ab August 2026 gibt es 18,90€, davor 17,16€
+        let isNewWage = (jahr > 2026) || (jahr === 2026 && monat >= 8);
+        let activeBaseWage = isNewWage ? lohnConfig.baseNew : lohnConfig.baseOld;
+
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let suchDatum = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
             let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let eintrag = daten.find(e => e.datum === suchDatum);
@@ -593,113 +410,100 @@
                 }
             }
         }
-        let basisLohn = gesamtDezimal * lohnConfig.base; let sonntagLohn = sonntagStunden * lohnConfig.sun; let samstagLohn = samstagBonusStunden * lohnConfig.sat;
-        return { gesamtDezimal, sonntagStunden, samstagBonusStunden, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt: basisLohn + sonntagLohn + samstagLohn };
+        
+        // Berechnung mit %-Aufschlägen (z.B. 18.90 * 27.21%)
+        let basisLohn = gesamtDezimal * activeBaseWage; 
+        let sonntagLohn = sonntagStunden * activeBaseWage * (lohnConfig.sunPercent / 100); 
+        let samstagLohn = samstagBonusStunden * activeBaseWage * (lohnConfig.satPercent / 100); 
+        let gesamtGehalt = basisLohn + sonntagLohn + samstagLohn;
+
+        // VBL Abzug (Wird berechnet aus Basis + Samstag. Sonntagszuschläge sind steuerfrei)
+        let vblBase = basisLohn + samstagLohn;
+        let vblAbzug = vblBase * (lohnConfig.vblPercent / 100);
+        let erwartetesNetto = gesamtGehalt - vblAbzug;
+
+        return { activeBaseWage, gesamtDezimal, sonntagStunden, samstagBonusStunden, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt, vblAbzug, erwartetesNetto };
     }
 
-    // === TABELLE & CHART ZEICHNEN ===
     function renderDashboard() {
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
         const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
-
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
         const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-        
         let gesamtDezimal = 0;
         let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
 
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let rowClass = (dayOfWeek === 0 || dayOfWeek === 6) ? "weekend" : "";
             let eintrag = daten.find(e => e.datum === suchDatum);
 
             if(eintrag) {
                 gesamtDezimal += eintrag.nettoStunden;
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
-                    <td style="color: var(--primary); font-weight: 800;">${eintrag.nettoStunden}</td>
-                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
-                </tr>`;
+                tableHTML += `<tr class="${rowClass}"><td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td><td style="color: var(--primary); font-weight: 800;">${eintrag.nettoStunden}</td><td style="cursor: pointer;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td></tr>`;
             } else {
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
-                    <td class="empty-cell">0</td><td></td>
-                </tr>`;
+                tableHTML += `<tr class="${rowClass}"><td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td><td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td><td class="empty-cell">0</td><td></td></tr>`;
             }
         }
         tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
         container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
 
-        const ctx = document.getElementById('monthChartCanvas').getContext('2d');
-        if(monthChartInstance) monthChartInstance.destroy();
-        const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#a1a1aa' : '#64748b';
-        const lineColor = isDark ? '#ffffff' : '#000000';
-        
-        let annualHoursData = [];
-        const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-        for(let m=1; m<=12; m++) {
-            let s = calculateMonthSalary(jahr, m, daten);
-            annualHoursData.push(s.gesamtDezimal);
-        }
+        const ctx = document.getElementById('monthChartCanvas').getContext('2d'); if(monthChartInstance) monthChartInstance.destroy();
+        const isDark = document.body.classList.contains('dark-mode'); const textColor = isDark ? '#a1a1aa' : '#64748b'; const lineColor = isDark ? '#ffffff' : '#000000';
+        let annualHoursData = []; const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+        for(let m=1; m<=12; m++) { let s = calculateMonthSalary(jahr, m, daten); annualHoursData.push(s.gesamtDezimal); }
 
         monthChartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels: monthNames, datasets: [{ label: 'Stundenverlauf', data: annualHoursData, borderColor: lineColor, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
+            data: { labels: monthNames, datasets: [{ label: 'Stundenverlauf', data: annualHoursData, borderColor: lineColor, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
         });
     }
 
     function renderAnnualSalary() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; 
-        const containerAnnual = document.getElementById('annual-salary-container');
-        const containerTracker = document.getElementById('annual-tracker-container');
-        const jahr = parseInt(document.getElementById('yearPicker').value); 
-        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        
-        let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
-        let chartLabels = []; let chartData = [];
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const containerAnnual = document.getElementById('annual-salary-container'); const containerTracker = document.getElementById('annual-tracker-container');
+        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0; let jahresGesamtNetto = 0; let chartLabels = []; let chartData = [];
 
         for (let m = 1; m <= 12; m++) {
             let stats = calculateMonthSalary(jahr, m, daten);
-            chartLabels.push(monthNames[m-1].substring(0,3)); chartData.push(stats.gesamtGehalt);
+            chartLabels.push(monthNames[m-1].substring(0,3)); chartData.push(stats.erwartetesNetto);
 
             if (stats.gesamtDezimal > 0) {
-                jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
+                jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal; jahresGesamtNetto += stats.erwartetesNetto;
                 
                 let currentLimit = lohnConfig.limit || 603;
-                let progress = Math.min(100, (stats.gesamtGehalt / currentLimit) * 100);
-                let remaining = Math.max(0, currentLimit - stats.gesamtGehalt);
-                let hoursLeft = Math.floor(remaining / (lohnConfig.base || 18.90));
+                // Tracker nutzt jetzt Netto, da dies das Auszahlungsrelevante ist
+                let progress = Math.min(100, (stats.erwartetesNetto / currentLimit) * 100);
+                let remaining = Math.max(0, currentLimit - stats.erwartetesNetto);
+                let hoursLeft = Math.floor(remaining / stats.activeBaseWage);
                 let progressColor = progress >= 100 ? "var(--danger)" : "var(--success)";
 
                 htmlStr += `<div class="card" style="margin-bottom: 16px; padding: 18px;">
-                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--text-main); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
+                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; font-size: 12px; font-weight: normal; color: var(--text-muted); background: transparent;">Lohn: ${stats.activeBaseWage.toFixed(2)}€/h</span></div>
+                        
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
-                        <div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: 800; font-size: 16px; color: var(--success);"><span>Bruttogehalt:</span> <span>${stats.gesamtGehalt.toFixed(2)} €</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntag (${lohnConfig.sunPercent}%):</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstag (${lohnConfig.satPercent}%):</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
+                        
+                        <div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; font-size: 14px;"><span>Bruttogehalt:</span> <strong>${stats.gesamtGehalt.toFixed(2)} €</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--danger);"><span>VBL Abzug (${lohnConfig.vblPercent}%):</span> <strong>- ${stats.vblAbzug.toFixed(2)} €</strong></div>
+                        
+                        <div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: 800; font-size: 16px; color: var(--success);"><span>Erwartetes Netto:</span> <span>${stats.erwartetesNetto.toFixed(2)} €</span></div>
                         
                         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
-                            <div style="font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase;">Minijob Tracker (Max ${currentLimit}€)</div>
+                            <div style="font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase;">Minijob Tracker (Max ${currentLimit}€ Netto)</div>
                             <div class="minijob-bar-container"><div class="minijob-bar-fill" style="width: ${progress}%; background-color: ${progressColor};"></div></div>
-                            <div class="minijob-text"><span>Verdient: ${stats.gesamtGehalt.toFixed(2)}€</span> <span>Übrig: ${remaining.toFixed(2)}€ (ca. ${hoursLeft}h)</span></div>
+                            <div class="minijob-text"><span>Verdient: ${stats.erwartetesNetto.toFixed(2)}€</span> <span>Übrig: ${remaining.toFixed(2)}€ (ca. ${hoursLeft}h)</span></div>
                         </div>
                     </div>`;
             }
         }
         
-        // Jahres-Limit Tracker HTML
         let currentAnnualLimit = lohnConfig.annualLimit || 7236;
-        let progressAnnual = Math.min(100, (jahresGesamtGehalt / currentAnnualLimit) * 100);
-        let remainingAnnual = Math.max(0, currentAnnualLimit - jahresGesamtGehalt);
-        let hoursLeftAnnual = Math.floor(remainingAnnual / (lohnConfig.base || 18.90));
+        let progressAnnual = Math.min(100, (jahresGesamtNetto / currentAnnualLimit) * 100);
+        let remainingAnnual = Math.max(0, currentAnnualLimit - jahresGesamtNetto);
+        let hoursLeftAnnual = Math.floor(remainingAnnual / 18.90);
         let progressColorAnnual = progressAnnual >= 100 ? "var(--danger)" : "var(--primary)";
         
         let trackerHtml = `
@@ -709,74 +513,55 @@
                     <div class="minijob-bar-fill" style="width: ${progressAnnual}%; background-color: ${progressColorAnnual}; border-radius: 8px;"></div>
                 </div>
                 <div class="minijob-text" style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 12px;">
-                    <span>Verdient: ${jahresGesamtGehalt.toFixed(2)}€</span> 
+                    <span>Verdient: ${jahresGesamtNetto.toFixed(2)}€</span> 
                     <span style="color: ${progressColorAnnual};">Übrig: ${remainingAnnual.toFixed(2)}€ (ca. ${hoursLeftAnnual}h)</span>
                 </div>
-            </div>
-        `;
-        
+            </div>`;
         containerTracker.innerHTML = trackerHtml;
 
         if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
         containerAnnual.innerHTML = htmlStr;
 
-        const ctx = document.getElementById('yearChartCanvas').getContext('2d');
-        if(yearChartInstance) yearChartInstance.destroy();
-        const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#a1a1aa' : '#64748b';
-        const lineColor = '#10b981';
+        const ctx = document.getElementById('yearChartCanvas').getContext('2d'); if(yearChartInstance) yearChartInstance.destroy();
+        const isDark = document.body.classList.contains('dark-mode'); const textColor = isDark ? '#a1a1aa' : '#64748b'; const lineColor = '#10b981';
 
         yearChartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels: chartLabels, datasets: [{ label: 'Bruttogehalt (€)', data: chartData, borderColor: lineColor, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
+            data: { labels: chartLabels, datasets: [{ label: 'Erwartetes Netto (€)', data: chartData, borderColor: lineColor, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
         });
     }
 
-    // === EXPORT FÜR GEHALTSABGLEICH ===
     async function exportLohnabgleich() {
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        if (daten.length === 0) { alert("Keine Daten zum Exportieren vorhanden."); return; }
+        if (daten.length === 0) { alert("Keine Daten zum Export."); return; }
 
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet(`Gehaltsabgleich`, { views: [{ showGridLines: true }] });
-        
+        const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet(`Gehaltsabgleich`, { views: [{ showGridLines: true }] });
         sheet.columns = [
-            { header: 'Jahr-Monat', key: 'monat', width: 15 },
-            { header: 'Gesamtstunden', key: 'gesamt', width: 18 },
-            { header: 'Sonntagsstunden', key: 'sonntag', width: 18 },
-            { header: 'Samstagsstunden (13-21)', key: 'samstag', width: 22 },
-            { header: 'Errechnetes Gehalt (€)', key: 'gehalt', width: 22 }
+            { header: 'Jahr-Monat', key: 'monat', width: 12 }, { header: 'Stundenlohn', key: 'lohn', width: 12 },
+            { header: 'Gesamtstunden', key: 'gesamt', width: 15 }, { header: 'Sonntagsstunden', key: 'sonntag', width: 15 },
+            { header: 'Samstagsstunden', key: 'samstag', width: 15 }, { header: 'Brutto (€)', key: 'brutto', width: 15 },
+            { header: 'VBL Abzug (€)', key: 'vbl', width: 15 }, { header: 'Netto (€)', key: 'netto', width: 15 }
         ];
 
-        sheet.getRow(1).font = { bold: true };
-        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+        sheet.getRow(1).font = { bold: true }; sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
 
-        let monateSet = new Set();
-        daten.forEach(e => monateSet.add(e.datum.substring(0, 7)));
+        let monateSet = new Set(); daten.forEach(e => monateSet.add(e.datum.substring(0, 7)));
         let monateArray = Array.from(monateSet).sort();
 
-        monateArray.forEach(monatStr => {
-            let [jahr, monat] = monatStr.split('-');
-            let stats = calculateMonthSalary(parseInt(jahr), parseInt(monat), daten);
-            
+        monateArray.forEach(mStr => {
+            let [j, m] = mStr.split('-'); let stats = calculateMonthSalary(parseInt(j), parseInt(m), daten);
             sheet.addRow({
-                monat: monatStr,
-                gesamt: Math.round(stats.gesamtDezimal * 100) / 100,
-                sonntag: Math.round(stats.sonntagStunden * 100) / 100,
-                samstag: Math.round(stats.samstagBonusStunden * 100) / 100,
-                gehalt: Math.round(stats.gesamtGehalt * 100) / 100
+                monat: mStr, lohn: stats.activeBaseWage, gesamt: Math.round(stats.gesamtDezimal * 100) / 100, sonntag: Math.round(stats.sonntagStunden * 100) / 100,
+                samstag: Math.round(stats.samstagBonusStunden * 100) / 100, brutto: Math.round(stats.gesamtGehalt * 100) / 100, vbl: Math.round(stats.vblAbzug * 100) / 100, netto: Math.round(stats.erwartetesNetto * 100) / 100
             });
         });
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Gehaltsabgleich_Radiologie.xlsx`);
+        const buffer = await workbook.xlsx.writeBuffer(); saveAs(new Blob([buffer]), `Gehaltsabgleich_Radiologie.xlsx`);
     }
 
-    // === PDF & EXCEL EXPORT (Monatliche Tabelle) ===
     async function startExcelExport() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); await exportiereExcelExaktBild(parseInt(jahrStr), parseInt(monatStr));
+        const gm = document.getElementById('monthPicker').value; if(!gm) return;
+        const [jStr, mStr] = gm.split('-'); await exportiereExcelExaktBild(parseInt(jStr), parseInt(mStr));
     }
 
     async function exportiereExcelExaktBild(jahr, monat) {
@@ -791,17 +576,14 @@
         sheet.mergeCells('A4:H4'); let titleCell = sheet.getCell('A4'); titleCell.value = 'Stundenübersichtstabelle'; titleCell.font = { bold: true, size: 16 }; titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
         for(let i=1; i<=8; i++) sheet.getRow(4).getCell(i).border = borderAll;
         
-        let headerRow = sheet.addRow(['', '', '', '', '', 'Pause', 'Geleistete Stunden', 'Stunden in Zahl']);
-        headerRow.font = { size: 11 }; headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+        let headerRow = sheet.addRow(['', '', '', '', '', 'Pause', 'Geleistete Stunden', 'Stunden in Zahl']); headerRow.font = { size: 11 }; headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
         for(let i=1; i<=8; i++) headerRow.getCell(i).border = borderAll;
 
         const tageImMonat = new Date(jahr, monat, 0).getDate(); let summeMinuten = 0; let summeDezimal = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2);
-            let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`;
-            let eintrag = daten.find(e => e.datum === suchDatum);
-            let row = sheet.addRow([anzeigeDatum, '', '', '', '', '', '0:00', 0]);
-            row.alignment = { horizontal: 'center', vertical: 'middle' };
+            let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`; let eintrag = daten.find(e => e.datum === suchDatum);
+            let row = sheet.addRow([anzeigeDatum, '', '', '', '', '', '0:00', 0]); row.alignment = { horizontal: 'center', vertical: 'middle' };
             for(let i=1; i<=8; i++) row.getCell(i).border = borderAll; row.getCell(8).numFmt = '0.00';
 
             if(eintrag) {
@@ -809,8 +591,7 @@
                 let startM = parseInt(sSplit[0]) * 60 + parseInt(sSplit[1]); let endM = parseInt(eSplit[0]) * 60 + parseInt(eSplit[1]);
                 let nettoM = (endM - startM) - eintrag.pauseMinuten; if(nettoM < 0) nettoM = 0;
                 summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden;
-                let std = Math.floor(nettoM / 60); let min = nettoM % 60;
-                const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } };
+                let std = Math.floor(nettoM / 60); let min = nettoM % 60; const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } };
                 
                 row.getCell(3).value = eintrag.kommen; row.getCell(3).fill = greenFill; row.getCell(3).font = { bold: true };
                 row.getCell(5).value = eintrag.gehen; row.getCell(5).fill = greenFill; row.getCell(5).font = { bold: true };
@@ -855,18 +636,15 @@
         let summeMinuten = 0; let summeDezimal = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2);
-            let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`;
-            let eintrag = daten.find(e => e.datum === suchDatum);
+            let anzeigeDatum = `${tagStr}.${monatStr}.${jahrKurz}`; let suchDatum = `${jahr}-${monatStr}-${tagStr}`; let eintrag = daten.find(e => e.datum === suchDatum);
             let rowspanVon = tag === 1 ? `<td rowspan="${tageImMonat}" style="border: 1px solid black; vertical-align: middle;">Von</td>` : '';
             let rowspanBis = tag === 1 ? `<td rowspan="${tageImMonat}" style="border: 1px solid black; vertical-align: middle;">Bis</td>` : '';
             if (eintrag) {
                 let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
                 let startM = parseInt(sSplit[0]) * 60 + parseInt(sSplit[1]); let endM = parseInt(eSplit[0]) * 60 + parseInt(eSplit[1]);
                 let nettoM = (endM - startM) - eintrag.pauseMinuten; if(nettoM < 0) nettoM = 0;
-                summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden;
-                let std = Math.floor(nettoM / 60); let min = nettoM % 60;
-                let arbeitszeitHHMM = `${std}:${String(min).padStart(2, '0')}`;
-                let pauseHHMM = ""; let pauseStyle = "";
+                summeMinuten += nettoM; summeDezimal += eintrag.nettoStunden; let std = Math.floor(nettoM / 60); let min = nettoM % 60;
+                let arbeitszeitHHMM = `${std}:${String(min).padStart(2, '0')}`; let pauseHHMM = ""; let pauseStyle = "";
                 if (eintrag.pauseMinuten > 0) {
                     let pStd = Math.floor(eintrag.pauseMinuten / 60); let pMin = eintrag.pauseMinuten % 60;
                     pauseHHMM = `${String(pStd).padStart(2, '0')}:${String(pMin).padStart(2, '0')}`; pauseStyle = "background-color: red !important; color: white !important; font-weight: bold;";
@@ -877,9 +655,7 @@
                     <td style="border: 1px solid black; ${pauseStyle}">${pauseHHMM}</td>
                     <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${arbeitszeitHHMM}</td>
                     <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.nettoStunden.toFixed(2).replace('.', ',')}</td></tr>`;
-            } else {
-                htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon} <td style="border: 1px solid black;"></td> ${rowspanBis} <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;">0:00</td> <td style="border: 1px solid black;">0,00</td></tr>`;
-            }
+            } else { htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon} <td style="border: 1px solid black;"></td> ${rowspanBis} <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;">0:00</td> <td style="border: 1px solid black;">0,00</td></tr>`; }
         }
         let gesStd = Math.floor(summeMinuten / 60); let gesMin = summeMinuten % 60;
         htmlStr += `<tr><td colspan="8" style="background-color: black !important; height: 8px; border: 1px solid black;"></td></tr>
@@ -891,88 +667,32 @@
         return htmlStr;
     }
 
-    function startPDFExport() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-');
-        document.getElementById('print-section').innerHTML = erstellePdfHtmlString(parseInt(jahrStr), parseInt(monatStr));
-        setTimeout(() => { window.print(); }, 300);
-    }
+    function startPDFExport() { const m = document.getElementById('monthPicker').value; if(!m) return; document.getElementById('print-section').innerHTML = erstellePdfHtmlString(parseInt(m.split('-')[0]), parseInt(m.split('-')[1])); setTimeout(() => { window.print(); }, 300); }
 
-    function logEmailHistory(monthName, year) {
-        let history = JSON.parse(localStorage.getItem('email_history')) || [];
-        const now = new Date();
-        const datumText = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth()+1).padStart(2, '0')}.${now.getFullYear()} um ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} Uhr`;
-        
-        history.unshift({ datumGesendet: datumText, zielMonat: `${monthName} ${year}` });
-        if (history.length > 20) history.pop();
-        
-        localStorage.setItem('email_history', JSON.stringify(history));
-        renderEmailHistory();
-    }
-
-    function renderEmailHistory() {
-        const history = JSON.parse(localStorage.getItem('email_history')) || [];
-        const list = document.getElementById('email-history-list');
-        if (!list) return;
-
-        if (history.length === 0) {
-            list.innerHTML = `<li class="history-item" style="color: var(--text-muted); justify-content: center;">Noch keine E-Mails versendet.</li>`;
-            return;
-        }
-
-        list.innerHTML = history.map(item => `
-            <li class="history-item">
-                <span><strong>Anhang:</strong> Stundenübersicht ${item.zielMonat}</span>
-                <span class="history-date">Gesendet: ${item.datumGesendet}</span>
-            </li>
-        `).join('');
-    }
-
-    function clearEmailHistory() {
-        if(confirm("Möchtest du den gesamten E-Mail Verlauf leeren?")) {
-            localStorage.removeItem('email_history');
-            renderEmailHistory();
-        }
-    }
+    function logEmailHistory(monthName, year) { let h = JSON.parse(localStorage.getItem('email_history')) || []; const n = new Date(); h.unshift({ datumGesendet: `${String(n.getDate()).padStart(2, '0')}.${String(n.getMonth()+1).padStart(2, '0')}.${n.getFullYear()} um ${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')} Uhr`, zielMonat: `${monthName} ${year}` }); if (h.length > 20) h.pop(); localStorage.setItem('email_history', JSON.stringify(h)); renderEmailHistory(); }
+    function renderEmailHistory() { const h = JSON.parse(localStorage.getItem('email_history')) || []; const l = document.getElementById('email-history-list'); if (!l) return; if (h.length === 0) { l.innerHTML = `<li class="history-item" style="color: var(--text-muted); justify-content: center;">Noch keine E-Mails versendet.</li>`; return; } l.innerHTML = h.map(i => `<li class="history-item"><span><strong>Anhang:</strong> Stundenübersicht ${i.zielMonat}</span><span class="history-date">Gesendet: ${i.datumGesendet}</span></li>`).join(''); }
+    function clearEmailHistory() { if(confirm("Möchtest du den gesamten E-Mail Verlauf leeren?")) { localStorage.removeItem('email_history'); renderEmailHistory(); } }
 
     async function sharePDF() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
-        
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
+        const mVal = document.getElementById('monthPicker').value; if(!mVal) return;
+        const [j, m] = mVal.split('-'); const jahr = parseInt(j); const monat = parseInt(m);
         const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
         const monatName = monthNames[monat - 1]; const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
         
-        let customSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let customBody = document.getElementById('emailBody').value || "";
-        customSubj = customSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
-        customBody = customBody.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
+        let cSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let cBody = document.getElementById('emailBody').value || "";
+        cSubj = cSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
+        cBody = cBody.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
 
         const element = document.createElement('div'); element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
         element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
 
         const opt = { margin: 0, filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-
         try {
-            const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-            const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ title: customSubj, text: customBody, files: [file] });
-                logEmailHistory(monatName, jahr);
-            } else {
-                alert("Am PC blockieren Webbrowser das automatische Anhängen von Dateien an E-Mails.\n\nDas PDF wird nun heruntergeladen. Danach öffnet sich dein E-Mail-Programm. Bitte ziehe die heruntergeladene Datei manuell in den Anhang!");
-                saveAs(pdfBlob, opt.filename);
-                const mailtoLink = `mailto:?subject=${encodeURIComponent(customSubj)}&body=${encodeURIComponent(customBody)}`;
-                window.location.href = mailtoLink;
-                logEmailHistory(monatName, jahr);
-            }
-        } catch (err) { 
-            console.error(err); 
-            alert("Fehler beim Vorbereiten der Email."); 
-        } finally { 
-            document.body.removeChild(element); 
-        }
+            const pdfBlob = await html2pdf().from(element).set(opt).output('blob'); const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: cSubj, text: cBody, files: [file] }); logEmailHistory(monatName, jahr); } 
+            else { alert("Am PC wird das PDF heruntergeladen. Ziehe es dann manuell in den Anhang!"); saveAs(pdfBlob, opt.filename); window.location.href = `mailto:?subject=${encodeURIComponent(cSubj)}&body=${encodeURIComponent(cBody)}`; logEmailHistory(monatName, jahr); }
+        } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } finally { document.body.removeChild(element); }
     }
 </script>
-
 </body>
 </html>
