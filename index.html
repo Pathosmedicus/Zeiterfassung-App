@@ -122,7 +122,6 @@
             </div>
         </div>
 
-        <!-- REITER 1: TABELLE (Direktes Editieren) -->
         <div id="tab-uebersicht" class="tab-content active">
             <div class="card" style="padding: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
@@ -131,13 +130,11 @@
                         <input type="month" id="monthPicker" onchange="renderDashboard()">
                         <button class="btn-nav" onclick="changeMonth(1)">&#9654;</button>
                     </div>
-                    <!-- BUTTON: Monat löschen -->
                     <button onclick="deleteCurrentMonth()" style="width: 40px; height: 40px; padding: 0; margin: 0; border-radius: 8px; background-color: var(--danger); display: flex; justify-content: center; align-items: center;" title="Diesen Monat löschen">🗑️</button>
                     <div class="total-hours-badge" id="totalMonthHours" style="margin-left: 0;">0 h</div>
                 </div>
                 
                 <p style="font-size: 11px; text-align: center; color: var(--text-muted); margin-top: 10px;">Tippe direkt in eine leere Zelle, um eine neue Zeit einzutragen!</p>
-
                 <div id="month-table-container"></div>
                 
                 <button class="btn-success" onclick="startExcelExport()">Als farbige Excel Exportieren</button>
@@ -146,7 +143,6 @@
             </div>
         </div>
 
-        <!-- REITER 2: GEHALT (12 Monate Übersicht) -->
         <div id="tab-gehalt" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0; color: var(--primary); text-align: center;">Jahres-Gehaltsabrechnung</h3>
@@ -157,14 +153,10 @@
                         <button class="btn-nav" onclick="changeYear(1)">&#9654;</button>
                     </div>
                 </div>
-                
-                <div id="annual-salary-container">
-                    <!-- Wird durch JavaScript befüllt -->
-                </div>
+                <div id="annual-salary-container"></div>
             </div>
         </div>
 
-        <!-- REITER 3: PROFIL -->
         <div id="tab-profil" class="tab-content">
             <div class="card">
                 <label>Nachname</label><input type="text" id="name" onchange="profilSpeichern()">
@@ -181,10 +173,10 @@
                 <textarea id="emailBody" onchange="emailVorlageSpeichern()" placeholder="Sehr geehrte Damen und Herren,..."></textarea>
             </div>
 
-            <!-- DOKUMENTE IMPORTIEREN MIT NEUER MATHE-ENGINE -->
+            <!-- NEUER SCHLAUER IMPORT -->
             <div class="card">
                 <label>Dokumente (PDF/Excel) Importieren</label>
-                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest PDFs nun mathematisch und absolut fehlerfrei aus.</p>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest deine PDFs jetzt strikt nach deiner Almatar-Logik (Kommen -> Gehen -> Pause) aus.</p>
                 <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 10px;">
                 <button class="btn-success" style="background-color: #059669;" onclick="startMultiImport()">Dateien scannen & Importieren</button>
             </div>
@@ -222,23 +214,18 @@
     let currentUserUID = null;
     let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
 
-    // === BASIS FUNKTIONEN ===
     window.onload = function() {
         let heute = new Date();
         document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('yearPicker').value = heute.getFullYear();
-        
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        
         if(localStorage.getItem('dark_mode') === 'true') document.body.classList.add('dark-mode');
         ladeLokalesProfil();
         ladeEmailVorlage();
     };
 
     function updateHeaderStatus() {
-        const badge = document.getElementById('user-badge');
-        const btnConnect = document.getElementById('btn-cloud-connect');
-        const btnLogout = document.getElementById('btn-logout');
+        const badge = document.getElementById('user-badge'); const btnConnect = document.getElementById('btn-cloud-connect'); const btnLogout = document.getElementById('btn-logout');
         if (currentUserUID) {
             if (badge) { badge.innerText = "☁️ Synchronisiert"; badge.style.color = "var(--success)"; }
             if (btnConnect) btnConnect.style.display = "none";
@@ -252,20 +239,13 @@
 
     function ladeLokalesProfil() {
         const n = localStorage.getItem('ma_name'); const v = localStorage.getItem('ma_vorname'); const p = localStorage.getItem('ma_personalnummer');
-        if (n) document.getElementById('name').value = n;
-        if (v) document.getElementById('vorname').value = v;
-        if (p) document.getElementById('personalnummer').value = p;
+        if (n) document.getElementById('name').value = n; if (v) document.getElementById('vorname').value = v; if (p) document.getElementById('personalnummer').value = p;
     }
 
     function ladeEmailVorlage() {
-        const subj = localStorage.getItem('email_subject');
-        const body = localStorage.getItem('email_body');
-        
-        if (subj) document.getElementById('emailSubject').value = subj;
-        else document.getElementById('emailSubject').value = "Stundenübersicht {MONAT} {JAHR}";
-        
-        if (body) document.getElementById('emailBody').value = body;
-        else document.getElementById('emailBody').value = "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}";
+        const subj = localStorage.getItem('email_subject'); const body = localStorage.getItem('email_body');
+        if (subj) document.getElementById('emailSubject').value = subj; else document.getElementById('emailSubject').value = "Stundenübersicht {MONAT} {JAHR}";
+        if (body) document.getElementById('emailBody').value = body; else document.getElementById('emailBody').value = "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}";
     }
 
     function emailVorlageSpeichern() {
@@ -276,38 +256,28 @@
     function switchTab(tabName, element) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabName).classList.add('active');
-        element.classList.add('active');
-        if(tabName === 'uebersicht') renderDashboard();
-        if(tabName === 'gehalt') renderAnnualSalary();
+        document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active');
+        if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary();
     }
 
     function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
+        document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
     }
 
     function profilSpeichern() {
-        localStorage.setItem('ma_name', document.getElementById('name').value);
-        localStorage.setItem('ma_vorname', document.getElementById('vorname').value);
-        localStorage.setItem('ma_personalnummer', document.getElementById('personalnummer').value);
-        cloudDatenSpeichern();
+        localStorage.setItem('ma_name', document.getElementById('name').value); localStorage.setItem('ma_vorname', document.getElementById('vorname').value);
+        localStorage.setItem('ma_personalnummer', document.getElementById('personalnummer').value); cloudDatenSpeichern();
     }
 
     function changeMonth(offset) {
-        let picker = document.getElementById('monthPicker');
-        if (!picker.value) return;
-        let [jahr, monat] = picker.value.split('-');
-        let date = new Date(parseInt(jahr), parseInt(monat) - 1 + offset, 1);
-        picker.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        renderDashboard();
+        let picker = document.getElementById('monthPicker'); if (!picker.value) return;
+        let [jahr, monat] = picker.value.split('-'); let date = new Date(parseInt(jahr), parseInt(monat) - 1 + offset, 1);
+        picker.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; renderDashboard();
     }
 
     function changeYear(offset) {
-        let picker = document.getElementById('yearPicker');
-        let newYear = parseInt(picker.value) + offset;
-        picker.value = newYear;
-        renderAnnualSalary();
+        let picker = document.getElementById('yearPicker'); let newYear = parseInt(picker.value) + offset;
+        picker.value = newYear; renderAnnualSalary();
     }
 
     // === AUTHENTIFIZIERUNG ===
@@ -326,18 +296,9 @@
         else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }
     });
 
-    function loginWithGoogle() {
-        auth.signInWithRedirect(provider);
-    }
-
-    auth.getRedirectResult().catch((error) => {
-        alert("Login Fehler: " + error.message);
-    });
-
-    function logout() {
-        isLocalMode = false; localStorage.removeItem('mode_lokal');
-        auth.signOut().finally(() => { currentUserUID = null; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; });
-    }
+    function loginWithGoogle() { auth.signInWithRedirect(provider); }
+    auth.getRedirectResult().catch((error) => { alert("Login Fehler: " + error.message); });
+    function logout() { isLocalMode = false; localStorage.removeItem('mode_lokal'); auth.signOut().finally(() => { currentUserUID = null; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }); }
 
     async function cloudDatenLaden() {
         if (!currentUserUID) return;
@@ -346,9 +307,7 @@
             if (doc.exists) {
                 const data = doc.data();
                 if (data.arbeitszeiten) localStorage.setItem('meine_arbeitszeiten', data.arbeitszeiten);
-                if (data.ma_name) localStorage.setItem('ma_name', data.ma_name);
-                if (data.ma_vorname) localStorage.setItem('ma_vorname', data.ma_vorname);
-                if (data.ma_personalnummer) localStorage.setItem('ma_personalnummer', data.ma_personalnummer);
+                if (data.ma_name) localStorage.setItem('ma_name', data.ma_name); if (data.ma_vorname) localStorage.setItem('ma_vorname', data.ma_vorname); if (data.ma_personalnummer) localStorage.setItem('ma_personalnummer', data.ma_personalnummer);
             } else { await cloudDatenSpeichern(); }
         } catch (e) {} ladeLokalesProfil();
     }
@@ -357,35 +316,30 @@
         if (!currentUserUID) return;
         try {
             await db.collection('users').doc(currentUserUID).set({
-                arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]",
-                ma_name: localStorage.getItem('ma_name') || "",
-                ma_vorname: localStorage.getItem('ma_vorname') || "",
-                ma_personalnummer: localStorage.getItem('ma_personalnummer') || "",
+                arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]", ma_name: localStorage.getItem('ma_name') || "",
+                ma_vorname: localStorage.getItem('ma_vorname') || "", ma_personalnummer: localStorage.getItem('ma_personalnummer') || "",
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         } catch (e) {}
     }
 
 
-    // === BERECHNUNG, ANZEIGE & INLINE EDITING ===
+    // === BERECHNUNG & INLINE EDITING ===
     function berechneNetto(startStr, endStr, pauseMins) {
         if (!startStr || !endStr) return 0;
-        const startTime = new Date(`1970-01-01T${startStr}:00`);
-        let endeTime = new Date(`1970-01-01T${endStr}:00`);
+        const startTime = new Date(`1970-01-01T${startStr}:00`); let endeTime = new Date(`1970-01-01T${endStr}:00`);
         if (endeTime <= startTime) endeTime.setDate(endeTime.getDate() + 1);
         let nettoMinuten = ((endeTime - startTime) / 60000) - pauseMins;
         return Math.max(0, Math.round((nettoMinuten / 60) * 100) / 100);
     }
 
     function deleteCurrentMonth() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value;
-        if(!gewaehlterMonat) return;
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
         if(confirm(`Möchtest du wirklich alle Schichten für den Monat ${gewaehlterMonat} löschen?`)) {
             let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
             daten = daten.filter(e => !e.datum.startsWith(gewaehlterMonat));
             localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
-            cloudDatenSpeichern();
-            renderDashboard();
+            cloudDatenSpeichern(); renderDashboard();
         }
     }
 
@@ -394,251 +348,61 @@
             let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
             daten = daten.filter(e => e.datum !== datum);
             localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
-            cloudDatenSpeichern(); 
-            renderDashboard(); 
+            cloudDatenSpeichern(); renderDashboard(); 
         }
     };
 
     window.inlineEdit = function(element, datum, feld) {
-        let wert = element.innerText.trim();
-        let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        let index = daten.findIndex(e => e.datum === datum);
-        
-        let eintrag = index !== -1 ? daten[index] : { datum: datum, kommen: "", gehen: "", pauseMinuten: 0, nettoStunden: 0 };
+        let wert = element.innerText.trim(); let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
+        let index = daten.findIndex(e => e.datum === datum); let eintrag = index !== -1 ? daten[index] : { datum: datum, kommen: "", gehen: "", pauseMinuten: 0, nettoStunden: 0 };
         
         if (feld === 'pauseMinuten') {
-            wert = parseInt(wert);
-            if (isNaN(wert) || wert < 0) wert = (index !== -1 ? eintrag.pauseMinuten : 0); 
+            wert = parseInt(wert); if (isNaN(wert) || wert < 0) wert = (index !== -1 ? eintrag.pauseMinuten : 0); 
             eintrag.pauseMinuten = wert;
         } else {
             if (/^\d{1,2}:\d{2}$/.test(wert)) {
-                let teile = wert.split(':');
-                wert = `${teile[0].padStart(2, '0')}:${teile[1]}`;
-                eintrag[feld] = wert;
-            } else if (wert === "" || wert === "-") {
-                eintrag[feld] = "";
-            } else {
-                element.innerText = (index !== -1 ? eintrag[feld] : "");
-                return;
-            }
+                let teile = wert.split(':'); wert = `${teile[0].padStart(2, '0')}:${teile[1]}`; eintrag[feld] = wert;
+            } else if (wert === "" || wert === "-") { eintrag[feld] = ""; } 
+            else { element.innerText = (index !== -1 ? eintrag[feld] : ""); return; }
         }
 
-        if (eintrag.kommen && eintrag.gehen) {
-            eintrag.nettoStunden = berechneNetto(eintrag.kommen, eintrag.gehen, eintrag.pauseMinuten);
-        } else {
-            eintrag.nettoStunden = 0;
-        }
-
-        if (eintrag.kommen === "" && eintrag.gehen === "") {
-            if (index !== -1) daten.splice(index, 1);
-        } else {
-            if (index !== -1) daten[index] = eintrag;
-            else daten.push(eintrag);
-        }
+        if (eintrag.kommen && eintrag.gehen) { eintrag.nettoStunden = berechneNetto(eintrag.kommen, eintrag.gehen, eintrag.pauseMinuten); } else { eintrag.nettoStunden = 0; }
+        if (eintrag.kommen === "" && eintrag.gehen === "") { if (index !== -1) daten.splice(index, 1); } 
+        else { if (index !== -1) daten[index] = eintrag; else daten.push(eintrag); }
         
-        localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
-        cloudDatenSpeichern();
-        renderDashboard(); 
+        localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten)); cloudDatenSpeichern(); renderDashboard(); 
     };
 
-    function calculateMonthSalary(jahr, monat, daten) {
-        let tageImMonat = new Date(jahr, monat, 0).getDate();
-        let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
+    // === DIE NEUE "ALMATAR-LOGIK" FÜR DEN IMPORT ===
+    function findeSchichtWerte(validTimes) {
+        // 1. Zahl: Kommen
+        let startStr = validTimes[0].padStart(5, '0');
+        // 2. Zahl: Gehen
+        let endStr = validTimes[1].padStart(5, '0');
         
-        for (let tag = 1; tag <= tageImMonat; tag++) {
-            let suchDatum = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay();
-            let eintrag = daten.find(e => e.datum === suchDatum);
+        // Mathematik vorbereiten
+        let sParts = startStr.split(':'); let eParts = endStr.split(':');
+        let startMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]);
+        let endMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
+        
+        let diffMins = endMins - startMins;
+        if (diffMins < 0) diffMins += 1440; // Falls über Mitternacht gearbeitet wurde
+        
+        let pauseMins = 0;
+        
+        // 3. Zahl: Pause 
+        // WICHTIG: Wenn das PDF-Feld für die Pause komplett leer war, rückt die Geleistete Zeit an Position 3.
+        // Deshalb der schlaue Check: Wir nehmen die 3. Zahl nur als Pause, wenn sie logischerweise KLEINER ist als die gesamte Bruttozeit.
+        if (validTimes.length >= 3) {
+            let pParts = validTimes[2].split(':');
+            let thirdTimeMins = parseInt(pParts[0]) * 60 + parseInt(pParts[1]);
             
-            if(eintrag) {
-                gesamtDezimal += eintrag.nettoStunden;
-                if (dayOfWeek === 0) sonntagStunden += eintrag.nettoStunden;
-                else if (dayOfWeek === 6 && eintrag.kommen && eintrag.gehen) {
-                    let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
-                    let startDez = parseInt(sSplit[0]) + (parseInt(sSplit[1]) / 60);
-                    let endDez = parseInt(eSplit[0]) + (parseInt(eSplit[1]) / 60);
-                    if (endDez <= startDez) endDez += 24;
-                    let overlapStart = Math.max(startDez, 13.0);
-                    let overlapEnd = Math.min(endDez, 21.0);
-                    if (overlapEnd > overlapStart) samstagBonusStunden += Math.min((overlapEnd - overlapStart), eintrag.nettoStunden);
-                }
+            if (thirdTimeMins > 0 && thirdTimeMins < diffMins) {
+                pauseMins = thirdTimeMins;
             }
         }
         
-        let basisLohn = gesamtDezimal * 17.16;
-        let sonntagLohn = sonntagStunden * 4.67;
-        let samstagLohn = samstagBonusStunden * 0.853;
-        let gesamtGehalt = basisLohn + sonntagLohn + samstagLohn;
-        
-        return { gesamtDezimal, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt };
-    }
-
-    function renderDashboard() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        const container = document.getElementById('month-table-container');
-        const gewaehlterMonat = document.getElementById('monthPicker').value; 
-        if(!gewaehlterMonat) return;
-
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-');
-        const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
-        const tageImMonat = new Date(jahr, monat, 0).getDate();
-        const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-        
-        let gesamtDezimal = 0;
-
-        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause(m)</th><th>Stunden</th><th></th></tr></thead><tbody>`;
-
-        for (let tag = 1; tag <= tageImMonat; tag++) {
-            let tagStr = String(tag).padStart(2, '0');
-            let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay();
-            let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-            let rowClass = isWeekend ? "weekend" : "";
-            let eintrag = daten.find(e => e.datum === suchDatum);
-
-            if(eintrag) {
-                gesamtDezimal += eintrag.nettoStunden;
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td>
-                    <td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
-                    <td style="color: var(--primary); font-weight: bold;">${eintrag.nettoStunden}</td>
-                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
-                </tr>`;
-            } else {
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td>
-                    <td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
-                    <td class="empty-cell">0</td>
-                    <td></td>
-                </tr>`;
-            }
-        }
-
-        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
-        container.innerHTML = tableHTML;
-        document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
-    }
-
-    function renderAnnualSalary() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        const container = document.getElementById('annual-salary-container');
-        const jahr = parseInt(document.getElementById('yearPicker').value);
-        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        
-        let htmlStr = "";
-        let jahresGesamtGehalt = 0;
-        let jahresGesamtStunden = 0;
-
-        for (let m = 1; m <= 12; m++) {
-            let stats = calculateMonthSalary(jahr, m, daten);
-            if (stats.gesamtDezimal > 0) {
-                jahresGesamtGehalt += stats.gesamtGehalt;
-                jahresGesamtStunden += stats.gesamtDezimal;
-                
-                htmlStr += `
-                    <div class="salary-card">
-                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary);">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
-                        <div class="salary-row"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
-                        <div class="salary-row"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
-                        <div class="salary-row"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
-                        <div class="salary-total"><span>Bruttogehalt:</span> <span>${stats.gesamtGehalt.toFixed(2)} €</span></div>
-                    </div>
-                `;
-            }
-        }
-        
-        if (htmlStr === "") {
-            htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`;
-        } else {
-            htmlStr += `
-                <div class="annual-summary">
-                    Jahres-Summe ${jahr}: <br>
-                    <span style="font-size: 24px;">${jahresGesamtGehalt.toFixed(2)} €</span><br>
-                    <span style="font-size: 14px; font-weight: normal;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span>
-                </div>
-            `;
-        }
-        
-        container.innerHTML = htmlStr;
-    }
-
-    // === INTELLIGENTE MATHEMATISCHE PDF & EXCEL ENGINE ===
-    function findeSchichtWerte(timeStrings) {
-        // Wandelt alle gefundenen Text-Uhrzeiten in reine Minuten um
-        let mins = timeStrings.map(t => { 
-            let p = t.split(':'); 
-            return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); 
-        });
-
-        let bestMatch = null;
-        let bestPause = 9999;
-
-        // Erstellt alle möglichen Kombinationen aus den gefundenen Zeiten
-        const getPerms = (arr, size) => {
-            let res = [];
-            const p = (cur, rem) => {
-                if (cur.length === size) { res.push(cur); return; }
-                for (let i = 0; i < rem.length; i++) {
-                    p(cur.concat(rem[i]), rem.slice(0, i).concat(rem.slice(i + 1)));
-                }
-            };
-            p([], arr);
-            return res;
-        };
-
-        // MATHEMATISCHER TEST: (Ende - Start) - Pause = Netto
-        if (mins.length >= 4) {
-            let perms = getPerms(mins, 4);
-            for (let p of perms) {
-                let start = p[0], end = p[1], pause = p[2], net = p[3];
-                let diff = end - start;
-                if (diff < 0) diff += 1440; // Nachtschicht-Korrektur
-                if (diff - pause === net && pause <= 240) { // Pause in der Regel nicht über 4 Stunden
-                    if (pause < bestPause) {
-                        bestPause = pause;
-                        bestMatch = { start, end, pause, net };
-                    }
-                }
-            }
-        }
-
-        if (bestMatch) return formatMatch(bestMatch);
-
-        // TEST OHNE PAUSE: (Ende - Start) = Netto
-        if (mins.length >= 3) {
-            let perms = getPerms(mins, 3);
-            for (let p of perms) {
-                let start = p[0], end = p[1], net = p[2];
-                let diff = end - start;
-                if (diff < 0) diff += 1440;
-                if (diff === net) {
-                    return formatMatch({ start, end, pause: 0, net });
-                }
-            }
-        }
-
-        // INTELLIGENTER FALLBACK: Falls die Netto-Zeit im PDF fehlt
-        // Da die Pause i.d.R. sehr kurz ist, ist sie die kleinste Zahl.
-        let minsSorted = [...mins].sort((a,b) => a-b);
-        if (minsSorted.length >= 3) {
-            return formatMatch({ start: minsSorted[1], end: minsSorted[2], pause: minsSorted[0] });
-        } else if (minsSorted.length === 2) {
-            return formatMatch({ start: minsSorted[0], end: minsSorted[1], pause: 0 });
-        }
-
-        return null;
-
-        function formatMatch(m) {
-            let sStr = `${String(Math.floor(m.start / 60)).padStart(2, '0')}:${String(m.start % 60).padStart(2, '0')}`;
-            let eStr = `${String(Math.floor(m.end / 60)).padStart(2, '0')}:${String(m.end % 60).padStart(2, '0')}`;
-            return { start: sStr, end: eStr, pause: m.pause };
-        }
+        return { start: startStr, end: endStr, pause: pauseMins, diff: diffMins };
     }
 
     function werteGanzenTextAus(fullText, gespeicherteDaten) {
@@ -653,18 +417,32 @@
             
             let dataBlock = match[4]; 
             let timeMatches = dataBlock.match(/\b\d{1,2}:\d{2}\b/g);
+            
             if (timeMatches) {
-                timeMatches = timeMatches.filter(t => t !== "0:00" && t !== "00:00");
-                if (timeMatches.length >= 2) {
-                    let schicht = findeSchichtWerte(timeMatches);
-                    if (schicht) {
-                        let nettoStunden = berechneNetto(schicht.start, schicht.end, schicht.pause);
-                        if (nettoStunden > 0) {
-                            let idx = gespeicherteDaten.findIndex(e => e.datum === datumStr);
-                            if (idx > -1) gespeicherteDaten.splice(idx, 1);
-                            gespeicherteDaten.push({ datum: datumStr, kommen: schicht.start, gehen: schicht.end, pauseMinuten: schicht.pause, nettoStunden: nettoStunden });
-                            importCount++; lastDate = datumStr;
-                        }
+                let validTimes = timeMatches.filter(t => t !== "0:00" && t !== "00:00");
+                
+                if (validTimes.length >= 2) {
+                    // Startet die neue Logik
+                    let schicht = findeSchichtWerte(validTimes);
+                    
+                    // Deine genaue Formel: Geleistete Zeit = (Gehen - Kommen) - Pause
+                    let nettoMinuten = schicht.diff - schicht.pause;
+                    let nettoStundenDezimal = Math.round((nettoMinuten / 60) * 100) / 100;
+                    
+                    if (nettoStundenDezimal > 0) {
+                        let idx = gespeicherteDaten.findIndex(e => e.datum === datumStr);
+                        if (idx > -1) gespeicherteDaten.splice(idx, 1); // Überschreibt alte Einträge am selben Tag
+                        
+                        gespeicherteDaten.push({ 
+                            datum: datumStr, 
+                            kommen: schicht.start, 
+                            gehen: schicht.end, 
+                            pauseMinuten: schicht.pause, 
+                            nettoStunden: nettoStundenDezimal 
+                        });
+                        
+                        importCount++; 
+                        lastDate = datumStr;
                     }
                 }
             }
@@ -687,7 +465,15 @@
                     let fullTextStr = "";
                     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                         const page = await pdf.getPage(pageNum); const textContent = await page.getTextContent();
-                        const items = textContent.items.sort((a, b) => { const yDiff = b.transform[5] - a.transform[5]; if (Math.abs(yDiff) > 5) return yDiff; return a.transform[4] - b.transform[4]; });
+                        
+                        // WICHTIGE ÄNDERUNG: Die Toleranz für PDF-Zeilen wurde von 5 auf 15 Pixel erhöht.
+                        // Das zwingt den Reader dazu, die PDF strikt von links nach rechts (Kommen -> Gehen -> Pause) auszulesen!
+                        const items = textContent.items.sort((a, b) => { 
+                            const yDiff = b.transform[5] - a.transform[5]; 
+                            if (Math.abs(yDiff) > 15) return yDiff; 
+                            return a.transform[4] - b.transform[4]; 
+                        });
+                        
                         items.forEach(item => { fullTextStr += item.str + " "; });
                     }
                     result = werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []);
@@ -717,22 +503,120 @@
 
         if (totalImported > 0) {
             cloudDatenSpeichern();
-            alert(`✅ Import erfolgreich!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen und in der Cloud gespeichert.`);
+            alert(`✅ Import erfolgreich!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen und gespeichert.`);
             if (letzesDatumFuerAnsicht) {
                 let importMonat = letzesDatumFuerAnsicht.substring(0, 7);
                 document.getElementById('monthPicker').value = importMonat;
                 switchTab('uebersicht', document.getElementById('nav-uebersicht'));
+                renderDashboard();
             }
-        } else { alert("Scan abgeschlossen, aber keine auswertbaren Daten gefunden."); }
+        } else { alert("Scan abgeschlossen, aber keine neuen Zeiten gefunden."); }
         fileInput.value = ""; 
     }
 
-    // === EXPORT & EMAIL ===
-    async function startExcelExport() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value;
+    // === TABELLE ZEICHNEN ===
+    function calculateMonthSalary(jahr, monat, daten) {
+        let tageImMonat = new Date(jahr, monat, 0).getDate();
+        let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
+        
+        for (let tag = 1; tag <= tageImMonat; tag++) {
+            let suchDatum = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay();
+            let eintrag = daten.find(e => e.datum === suchDatum);
+            
+            if(eintrag) {
+                gesamtDezimal += eintrag.nettoStunden;
+                if (dayOfWeek === 0) sonntagStunden += eintrag.nettoStunden;
+                else if (dayOfWeek === 6 && eintrag.kommen && eintrag.gehen) {
+                    let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
+                    let startDez = parseInt(sSplit[0]) + (parseInt(sSplit[1]) / 60);
+                    let endDez = parseInt(eSplit[0]) + (parseInt(eSplit[1]) / 60);
+                    if (endDez <= startDez) endDez += 24;
+                    let overlapStart = Math.max(startDez, 13.0); let overlapEnd = Math.min(endDez, 21.0);
+                    if (overlapEnd > overlapStart) samstagBonusStunden += Math.min((overlapEnd - overlapStart), eintrag.nettoStunden);
+                }
+            }
+        }
+        let basisLohn = gesamtDezimal * 17.16; let sonntagLohn = sonntagStunden * 4.67; let samstagLohn = samstagBonusStunden * 0.853;
+        return { gesamtDezimal, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt: basisLohn + sonntagLohn + samstagLohn };
+    }
+
+    function renderDashboard() {
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
+        const container = document.getElementById('month-table-container');
+        const gewaehlterMonat = document.getElementById('monthPicker').value; 
         if(!gewaehlterMonat) return;
+
         const [jahrStr, monatStr] = gewaehlterMonat.split('-');
-        await exportiereExcelExaktBild(parseInt(jahrStr), parseInt(monatStr));
+        const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
+        const tageImMonat = new Date(jahr, monat, 0).getDate();
+        const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+        
+        let gesamtDezimal = 0;
+        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause(m)</th><th>Stunden</th><th></th></tr></thead><tbody>`;
+
+        for (let tag = 1; tag <= tageImMonat; tag++) {
+            let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay();
+            let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
+            let eintrag = daten.find(e => e.datum === suchDatum);
+
+            if(eintrag) {
+                gesamtDezimal += eintrag.nettoStunden;
+                tableHTML += `<tr class="${rowClass}">
+                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
+                    <td style="color: var(--primary); font-weight: bold;">${eintrag.nettoStunden}</td>
+                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
+                </tr>`;
+            } else {
+                tableHTML += `<tr class="${rowClass}">
+                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
+                    <td class="empty-cell">0</td><td></td>
+                </tr>`;
+            }
+        }
+
+        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
+        container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
+    }
+
+    function renderAnnualSalary() {
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
+        const container = document.getElementById('annual-salary-container');
+        const jahr = parseInt(document.getElementById('yearPicker').value);
+        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        
+        let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
+
+        for (let m = 1; m <= 12; m++) {
+            let stats = calculateMonthSalary(jahr, m, daten);
+            if (stats.gesamtDezimal > 0) {
+                jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
+                htmlStr += `<div class="salary-card">
+                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary);">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
+                        <div class="salary-row"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
+                        <div class="salary-row"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
+                        <div class="salary-row"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
+                        <div class="salary-total"><span>Bruttogehalt:</span> <span>${stats.gesamtGehalt.toFixed(2)} €</span></div>
+                    </div>`;
+            }
+        }
+        
+        if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
+        else { htmlStr += `<div class="annual-summary">Jahres-Summe ${jahr}: <br><span style="font-size: 24px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
+        container.innerHTML = htmlStr;
+    }
+
+    // === PDF & EXCEL EXPORT (Bleibt unverändert) ===
+    async function startExcelExport() {
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
+        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); await exportiereExcelExaktBild(parseInt(jahrStr), parseInt(monatStr));
     }
 
     async function exportiereExcelExaktBild(jahr, monat) {
@@ -803,21 +687,11 @@
     function erstellePdfHtmlString(jahr, monat) {
         const pName = localStorage.getItem('ma_name') || ""; const pVorname = localStorage.getItem('ma_vorname') || ""; const pNummer = localStorage.getItem('ma_personalnummer') || "";
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const tageImMonat = new Date(jahr, monat, 0).getDate();
-        let htmlStr = `
-            <div><div style="font-family: Arial, sans-serif; color: black; background: white; padding: 0;">
-                    <div style="font-size: 13px; margin-bottom: 10px;">
-                        <div style="margin-bottom: 5px;">Name: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><u>${pVorname} ${pName}</u></b></div>
-                        <div>Personalnummer: &nbsp;&nbsp;<b><u>${pNummer}</u></b></div>
-                    </div>
+        let htmlStr = `<div><div style="font-family: Arial, sans-serif; color: black; background: white; padding: 0;">
+                    <div style="font-size: 13px; margin-bottom: 10px;"><div style="margin-bottom: 5px;">Name: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><u>${pVorname} ${pName}</u></b></div><div>Personalnummer: &nbsp;&nbsp;<b><u>${pNummer}</u></b></div></div>
                     <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; table-layout: fixed;">
                         <tr><td colspan="8" style="border: 1px solid black; font-size: 16px; font-weight: bold; padding: 4px;">Stundenübersichtstabelle</td></tr>
-                        <tr>
-                            <td style="border: 1px solid black; width: 12%; padding: 2px;"></td><td style="border: 1px solid black; width: 6%;"></td>
-                            <td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 6%;"></td>
-                            <td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 14%;">Pause</td>
-                            <td style="border: 1px solid black; width: 20%;">Geleistete Stunden</td><td style="border: 1px solid black; width: 18%;">Stunden in Zahl</td>
-                        </tr>
-        `;
+                        <tr><td style="border: 1px solid black; width: 12%; padding: 2px;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 6%;"></td><td style="border: 1px solid black; width: 12%;"></td><td style="border: 1px solid black; width: 14%;">Pause</td><td style="border: 1px solid black; width: 20%;">Geleistete Stunden</td><td style="border: 1px solid black; width: 18%;">Stunden in Zahl</td></tr>`;
         let summeMinuten = 0; let summeDezimal = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0'); let monatStr = String(monat).padStart(2, '0'); let jahrKurz = String(jahr).slice(-2);
@@ -837,23 +711,19 @@
                     let pStd = Math.floor(eintrag.pauseMinuten / 60); let pMin = eintrag.pauseMinuten % 60;
                     pauseHHMM = `${String(pStd).padStart(2, '0')}:${String(pMin).padStart(2, '0')}`; pauseStyle = "background-color: red !important; color: white !important; font-weight: bold;";
                 }
-                htmlStr += `<tr>
-                    <td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon}
+                htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon}
                     <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.kommen}</td> ${rowspanBis}
                     <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.gehen}</td>
                     <td style="border: 1px solid black; ${pauseStyle}">${pauseHHMM}</td>
                     <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${arbeitszeitHHMM}</td>
-                    <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.nettoStunden.toFixed(2).replace('.', ',')}</td>
-                </tr>`;
+                    <td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${eintrag.nettoStunden.toFixed(2).replace('.', ',')}</td></tr>`;
             } else {
                 htmlStr += `<tr><td style="border: 1px solid black; padding: 2px;">${anzeigeDatum}</td> ${rowspanVon} <td style="border: 1px solid black;"></td> ${rowspanBis} <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;"></td> <td style="border: 1px solid black;">0:00</td> <td style="border: 1px solid black;">0,00</td></tr>`;
             }
         }
         let gesStd = Math.floor(summeMinuten / 60); let gesMin = summeMinuten % 60;
-        htmlStr += `
-                    <tr><td colspan="8" style="background-color: black !important; height: 8px; border: 1px solid black;"></td></tr>
-                    <tr><td colspan="6" style="border: 1px solid black; padding: 4px;">Gesamt</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${gesStd}:${String(gesMin).padStart(2, '0')}</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${summeDezimal.toFixed(2).replace('.', ',')}</td></tr>
-                </table>
+        htmlStr += `<tr><td colspan="8" style="background-color: black !important; height: 8px; border: 1px solid black;"></td></tr>
+                    <tr><td colspan="6" style="border: 1px solid black; padding: 4px;">Gesamt</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${gesStd}:${String(gesMin).padStart(2, '0')}</td><td style="border: 1px solid black; background-color: #92D050 !important; font-weight: bold;">${summeDezimal.toFixed(2).replace('.', ',')}</td></tr></table>
                 <div style="margin-top: 20px; display: flex; justify-content: space-between; page-break-inside: avoid;">
                     <div style="width: 40%;"><div style="border-bottom: 1px solid black; margin-bottom: 5px; height: 20px;"></div><div style="font-weight: bold; font-size: 13px;">Datum und Ort</div></div>
                     <div style="width: 45%;"><div style="border-bottom: 1px solid black; margin-bottom: 5px; height: 20px;"></div><div style="font-weight: bold; font-size: 13px;">Unterschrift</div></div>
@@ -862,8 +732,7 @@
     }
 
     function startPDFExport() {
-        const gewaehlterMonat = document.getElementById('monthPicker').value;
-        if(!gewaehlterMonat) return;
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
         const [jahrStr, monatStr] = gewaehlterMonat.split('-');
         document.getElementById('print-section').innerHTML = erstellePdfHtmlString(parseInt(jahrStr), parseInt(monatStr));
         setTimeout(() => { window.print(); }, 300);
@@ -871,33 +740,23 @@
 
     async function sharePDF() {
         if (!navigator.canShare) { alert("Senden per E-Mail am PC nicht möglich. Lade das PDF manuell herunter."); return; }
-        const gewaehlterMonat = document.getElementById('monthPicker').value;
-        if(!gewaehlterMonat) return;
-        
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
         const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        const monatName = monthNames[monat - 1];
-        const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
+        const monatName = monthNames[monat - 1]; const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
         
-        let customSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}";
-        let customBody = document.getElementById('emailBody').value || "";
-        
+        let customSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let customBody = document.getElementById('emailBody').value || "";
         customSubj = customSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
         customBody = customBody.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
 
-        const element = document.createElement('div');
-        element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
+        const element = document.createElement('div'); element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
         element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
 
         const opt = { margin: 0, filename: 'temp.pdf', image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-
         try {
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-            const fileName = `Stundenuebersicht_${monatName}_${jahr}.pdf`;
-            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
-            const dataToShare = { title: customSubj, text: customBody, files: [file] };
-            await navigator.share(dataToShare);
+            const file = new File([pdfBlob], `Stundenuebersicht_${monatName}_${jahr}.pdf`, { type: 'application/pdf' });
+            await navigator.share({ title: customSubj, text: customBody, files: [file] });
         } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } 
         finally { document.body.removeChild(element); }
     }
