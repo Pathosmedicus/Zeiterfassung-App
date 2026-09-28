@@ -19,50 +19,25 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        /* === MODERNES SCHWARZ-WEISS UI DESIGN === */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #000000;
-            --text-muted: #64748b;
-            --primary: #000000; 
-            --primary-hover: #333333;
-            --success: #10b981;
-            --danger: #ef4444;
-            --info: #111827; 
-            --border: #e2e8f0;
-            --radius: 16px;
-            --nav-bg: rgba(255, 255, 255, 0.85);
-            --table-header-bg: #f1f5f9;
-            --table-header-text: #475569;
-            --table-row-even: #f8fafc;
-            --table-weekend-bg: #fef2f2;
-            --table-border: #f1f5f9;
+            --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #000000; --text-muted: #64748b;
+            --primary: #000000; --primary-hover: #333333; --success: #10b981; --danger: #ef4444;
+            --info: #111827; --border: #e2e8f0; --radius: 16px; --nav-bg: rgba(255, 255, 255, 0.85);
+            --table-header-bg: #f1f5f9; --table-header-text: #475569; --table-row-even: #f8fafc;
+            --table-weekend-bg: #fef2f2; --table-border: #f1f5f9; --warning: #f59e0b;
         }
 
         body.dark-mode {
-            --bg-color: #000000;
-            --card-bg: #111111;
-            --text-main: #f8fafc;
-            --text-muted: #a1a1aa;
-            --primary: #ffffff; 
-            --primary-hover: #cccccc;
-            --info: #f8fafc;
-            --border: #27272a;
-            --nav-bg: rgba(0, 0, 0, 0.85);
-            --table-header-bg: #000000;
-            --table-header-text: #d4d4d8;
-            --table-row-even: #09090b;
-            --table-weekend-bg: #451a1a;
-            --table-border: #27272a;
+            --bg-color: #000000; --card-bg: #111111; --text-main: #f8fafc; --text-muted: #a1a1aa;
+            --primary: #ffffff; --primary-hover: #cccccc; --info: #f8fafc; --border: #27272a;
+            --nav-bg: rgba(0, 0, 0, 0.85); --table-header-bg: #000000; --table-header-text: #d4d4d8;
+            --table-row-even: #09090b; --table-weekend-bg: #451a1a; --table-border: #27272a;
         }
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
-        
         .app-header { padding: 20px 24px; font-size: 22px; font-weight: 800; background-color: var(--nav-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center;}
-        
         .tab-content { display: none; padding: 20px; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -82,15 +57,12 @@
         
         .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
         .btn-primary:hover { background-color: var(--primary-hover); }
-        
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
         body.dark-mode .btn-outline { color: var(--primary); }
         .btn-outline:hover { background-color: var(--primary); color: var(--bg-color); }
-
         .btn-danger { background-color: transparent; border: 2px solid var(--danger); color: var(--danger); }
         body.dark-mode .btn-danger { color: var(--danger); }
         .btn-danger:hover { background-color: var(--danger); color: white; }
-
         .btn-google { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
         .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 6px; border-radius: 14px; flex: 1; border: 1px solid var(--border); }
@@ -132,9 +104,13 @@
         .chart-container { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
         canvas { width: 100% !important; max-height: 250px; }
 
+        /* Minijob Tracker */
+        .minijob-bar-container { width: 100%; background-color: var(--border); border-radius: 8px; height: 12px; margin-top: 10px; overflow: hidden; }
+        .minijob-bar-fill { height: 100%; background-color: var(--success); transition: width 0.4s ease; }
+        .minijob-text { font-size: 13px; margin-top: 8px; color: var(--text-muted); display: flex; justify-content: space-between; }
+
         #login-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app-container { display: none; }
-
         #print-section { display: none; }
         @media print {
             .app-header, .tab-content, .bottom-nav { display: none !important; }
@@ -169,6 +145,7 @@
             </div>
         </div>
 
+        <!-- REITER 1: TABELLE -->
         <div id="tab-uebersicht" class="tab-content active">
             <div class="card" style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
@@ -185,7 +162,7 @@
                 
                 <div id="month-table-container"></div>
                 
-                <button class="btn-outline" onclick="toggleChart('month-chart-wrapper')" style="margin-top: 15px;">📊 Stunden-Diagramm ein-/ausblenden</button>
+                <button class="btn-outline" onclick="toggleChart('month-chart-wrapper')" style="margin-top: 15px;">📊 Jahresstunden-Diagramm (Linie)</button>
                 <div id="month-chart-wrapper" class="chart-container">
                     <canvas id="monthChartCanvas"></canvas>
                 </div>
@@ -199,7 +176,24 @@
             </div>
         </div>
 
+        <!-- REITER 2: GEHALT -->
         <div id="tab-gehalt" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSettings()">
+                    <h3 style="margin: 0; color: var(--primary);">⚙️ Lohn-Einstellungen</h3>
+                    <span id="settings-arrow">▼</span>
+                </div>
+                <div id="salary-settings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Passe die Werte an deine Abrechnungen an. Die App rechnet sofort alles neu.</p>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;"><label>Basis (€/h)</label><input type="number" id="setBaseWage" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Sonntag (€/h)</label><input type="number" id="setSunBonus" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Samstag (€/h)</label><input type="number" id="setSatBonus" step="0.01" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Limit (€)</label><input type="number" id="setMinijobLimit" step="1" onchange="lohnSettingsSpeichern()"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3 style="margin-top: 0; color: var(--primary); text-align: center; font-weight: 800;">Jahres-Abrechnung</h3>
                 <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 24px;">
@@ -210,15 +204,18 @@
                     </div>
                 </div>
 
-                <button class="btn-outline" onclick="toggleChart('year-chart-wrapper')" style="margin-bottom: 20px;">📈 Gehalts-Diagramm ein-/ausblenden</button>
+                <button class="btn-outline" onclick="toggleChart('year-chart-wrapper')" style="margin-bottom: 20px;">📈 Gehalts-Diagramm (Linie)</button>
                 <div id="year-chart-wrapper" class="chart-container" style="margin-top: 0; margin-bottom: 20px; border-top: none; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
                     <canvas id="yearChartCanvas"></canvas>
                 </div>
 
                 <div id="annual-salary-container"></div>
+
+                <button class="btn-primary" onclick="exportLohnabgleich()" style="margin-top: 24px;">📥 Daten für Gehaltsabgleich (Excel) exportieren</button>
             </div>
         </div>
 
+        <!-- REITER 3: E-MAIL -->
         <div id="tab-email" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0;">Text-Vorlage</h3>
@@ -239,6 +236,7 @@
             </div>
         </div>
 
+        <!-- REITER 4: PROFIL -->
         <div id="tab-profil" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0;">Persönliche Daten</h3>
@@ -275,13 +273,15 @@
 
     let currentUserUID = null; let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
     let monthChartInstance = null; let yearChartInstance = null;
+    let lohnConfig = { base: 17.16, sun: 4.67, sat: 0.853, limit: 603 };
 
     window.onload = function() {
         let heute = new Date(); document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('yearPicker').value = heute.getFullYear();
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         if(localStorage.getItem('dark_mode') === 'true') document.body.classList.add('dark-mode');
-        ladeLokalesProfil(); ladeEmailVorlage(); renderEmailHistory();
+        
+        ladeLokalesProfil(); ladeEmailVorlage(); ladeLohnSettings(); renderEmailHistory();
     };
 
     document.addEventListener('keydown', function(e) {
@@ -292,6 +292,33 @@
             if (e.key === 'ArrowLeft') changeYear(-1); if (e.key === 'ArrowRight') changeYear(1);
         }
     });
+
+    function ladeLohnSettings() {
+        let saved = JSON.parse(localStorage.getItem('lohn_config'));
+        if (saved) lohnConfig = saved;
+        if (!lohnConfig.limit) lohnConfig.limit = 603;
+        document.getElementById('setBaseWage').value = lohnConfig.base;
+        document.getElementById('setSunBonus').value = lohnConfig.sun;
+        document.getElementById('setSatBonus').value = lohnConfig.sat;
+        document.getElementById('setMinijobLimit').value = lohnConfig.limit;
+    }
+
+    function lohnSettingsSpeichern() {
+        let base = parseFloat(document.getElementById('setBaseWage').value) || 0;
+        let sun = parseFloat(document.getElementById('setSunBonus').value) || 0;
+        let sat = parseFloat(document.getElementById('setSatBonus').value) || 0;
+        let limit = parseInt(document.getElementById('setMinijobLimit').value) || 603;
+        lohnConfig = { base: base, sun: sun, sat: sat, limit: limit };
+        localStorage.setItem('lohn_config', JSON.stringify(lohnConfig));
+        renderAnnualSalary();
+    }
+
+    function toggleSettings() {
+        let el = document.getElementById('salary-settings');
+        let arrow = document.getElementById('settings-arrow');
+        if(el.style.display === 'none') { el.style.display = 'block'; arrow.innerText = '▲'; } 
+        else { el.style.display = 'none'; arrow.innerText = '▼'; }
+    }
 
     function updateHeaderStatus() {
         const badge = document.getElementById('user-badge'); const btnConnect = document.getElementById('btn-cloud-connect'); const btnLogout = document.getElementById('btn-logout');
@@ -323,7 +350,9 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active');
-        if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary(); if(tabName === 'email') renderEmailHistory();
+        if(tabName === 'uebersicht') renderDashboard(); 
+        if(tabName === 'gehalt') renderAnnualSalary();
+        if(tabName === 'email') renderEmailHistory();
     }
 
     function toggleDarkMode() {
@@ -352,7 +381,6 @@
         picker.value = newYear; renderAnnualSalary();
     }
 
-    // === AUTHENTIFIZIERUNG: NEUE HYBRIDE LOGIK ===
     function startLocalMode() {
         isLocalMode = true; localStorage.setItem('mode_lokal', 'true'); currentUserUID = null;
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block';
@@ -369,28 +397,11 @@
     });
 
     function loginWithGoogle() {
-        // 1. Lokale Speicherung erzwingen, damit die Homescreen-App den Login nicht vergisst
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-            // 2. Primär: Popup nutzen (verhindert Rauswurf aus der Homescreen-App auf dem Handy)
-            return auth.signInWithPopup(provider);
-        }).catch((error) => {
-            // 3. Fallback: Falls Firefox oder ein AdBlocker das Popup blockiert, den Redirect nutzen
-            if (error.code === 'auth/popup-blocked') {
-                auth.signInWithRedirect(provider);
-            } else {
-                console.error("Login Fehler:", error);
-                alert("Login Fehler: " + error.message);
-            }
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => { return auth.signInWithPopup(provider); }).catch((error) => {
+            if (error.code === 'auth/popup-blocked') { auth.signInWithRedirect(provider); } else { console.error("Login Fehler:", error); alert("Login Fehler: " + error.message); }
         });
     }
-
-    // Fängt Fehler ab, falls der Fallback (Redirect) benutzt wurde
-    auth.getRedirectResult().catch((error) => {
-        if (error.code !== 'auth/popup-closed-by-user') {
-            alert("Redirect Login Fehler: " + error.message);
-        }
-    });
-
+    auth.getRedirectResult().catch((error) => { if (error.code !== 'auth/popup-closed-by-user') { alert("Redirect Login Fehler: " + error.message); } });
     function logout() { isLocalMode = false; localStorage.removeItem('mode_lokal'); auth.signOut().finally(() => { currentUserUID = null; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }); }
 
     async function cloudDatenLaden() {
@@ -525,58 +536,44 @@
         fileInput.value = ""; 
     }
 
-    function renderDashboard() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
-        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
+    // === EXPORT FÜR GEHALTSABGLEICH ===
+    async function exportLohnabgleich() {
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
+        if (daten.length === 0) { alert("Keine Daten zum Exportieren vorhanden."); return; }
 
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
-        const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet(`Gehaltsabgleich`, { views: [{ showGridLines: true }] });
         
-        let gesamtDezimal = 0; let chartLabels = []; let chartData = [];
-        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
+        sheet.columns = [
+            { header: 'Jahr-Monat', key: 'monat', width: 15 },
+            { header: 'Gesamtstunden', key: 'gesamt', width: 18 },
+            { header: 'Sonntagsstunden', key: 'sonntag', width: 18 },
+            { header: 'Samstagsstunden (13-21)', key: 'samstag', width: 22 },
+            { header: 'Errechnetes Gehalt (€)', key: 'gehalt', width: 22 }
+        ];
 
-        for (let tag = 1; tag <= tageImMonat; tag++) {
-            let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
-            let eintrag = daten.find(e => e.datum === suchDatum);
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
 
-            chartLabels.push(`${tagStr}.`);
+        let monateSet = new Set();
+        daten.forEach(e => monateSet.add(e.datum.substring(0, 7)));
+        let monateArray = Array.from(monateSet).sort();
 
-            if(eintrag) {
-                gesamtDezimal += eintrag.nettoStunden; chartData.push(eintrag.nettoStunden);
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
-                    <td style="color: var(--primary); font-weight: 800;">${eintrag.nettoStunden}</td>
-                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
-                </tr>`;
-            } else {
-                chartData.push(0);
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
-                    <td class="empty-cell">0</td><td></td>
-                </tr>`;
-            }
-        }
-        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
-        container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
-
-        const ctx = document.getElementById('monthChartCanvas').getContext('2d');
-        if(monthChartInstance) monthChartInstance.destroy();
-        const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#a1a1aa' : '#64748b';
-        const barColor = isDark ? '#ffffff' : '#000000';
-
-        monthChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: chartLabels, datasets: [{ label: 'Stunden', data: chartData, backgroundColor: barColor, borderRadius: 4 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor, maxRotation: 0 } } } }
+        monateArray.forEach(monatStr => {
+            let [jahr, monat] = monatStr.split('-');
+            let stats = calculateMonthSalary(parseInt(jahr), parseInt(monat), daten);
+            
+            sheet.addRow({
+                monat: monatStr,
+                gesamt: Math.round(stats.gesamtDezimal * 100) / 100,
+                sonntag: Math.round(stats.sonntagStunden * 100) / 100,
+                samstag: Math.round(stats.samstagBonusStunden * 100) / 100,
+                gehalt: Math.round(stats.gesamtGehalt * 100) / 100
+            });
         });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Gehaltsabgleich_Radiologie.xlsx`);
     }
 
     function calculateMonthSalary(jahr, monat, daten) {
@@ -596,50 +593,124 @@
                 }
             }
         }
-        let basisLohn = gesamtDezimal * 17.16; let sonntagLohn = sonntagStunden * 4.67; let samstagLohn = samstagBonusStunden * 0.853;
-        return { gesamtDezimal, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt: basisLohn + sonntagLohn + samstagLohn };
+        let basisLohn = gesamtDezimal * lohnConfig.base; let sonntagLohn = sonntagStunden * lohnConfig.sun; let samstagLohn = samstagBonusStunden * lohnConfig.sat;
+        return { gesamtDezimal, sonntagStunden, samstagBonusStunden, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt: basisLohn + sonntagLohn + samstagLohn };
+    }
+
+    // === TABELLE & CHART ZEICHNEN ===
+    function renderDashboard() {
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
+
+        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
+        const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+        
+        let gesamtDezimal = 0;
+        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
+
+        for (let tag = 1; tag <= tageImMonat; tag++) {
+            let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
+            let eintrag = daten.find(e => e.datum === suchDatum);
+
+            if(eintrag) {
+                gesamtDezimal += eintrag.nettoStunden;
+                tableHTML += `<tr class="${rowClass}">
+                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
+                    <td style="color: var(--primary); font-weight: 800;">${eintrag.nettoStunden}</td>
+                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
+                </tr>`;
+            } else {
+                tableHTML += `<tr class="${rowClass}">
+                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
+                    <td class="empty-cell">0</td><td></td>
+                </tr>`;
+            }
+        }
+        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
+        container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
+
+        const ctx = document.getElementById('monthChartCanvas').getContext('2d');
+        if(monthChartInstance) monthChartInstance.destroy();
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#a1a1aa' : '#64748b';
+        const lineColor = isDark ? '#ffffff' : '#000000';
+        
+        let annualHoursData = [];
+        const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+        for(let m=1; m<=12; m++) {
+            let s = calculateMonthSalary(jahr, m, daten);
+            annualHoursData.push(s.gesamtDezimal);
+        }
+
+        monthChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: monthNames, datasets: [{ label: 'Stundenverlauf', data: annualHoursData, borderColor: lineColor, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
+        });
     }
 
     function renderAnnualSalary() {
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('annual-salary-container');
-        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
         let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
         let chartLabels = []; let chartData = [];
 
+        const gewaehlterMonat = parseInt(document.getElementById('monthPicker').value.split('-')[1]);
+
         for (let m = 1; m <= 12; m++) {
             let stats = calculateMonthSalary(jahr, m, daten);
-            chartLabels.push(monthNames[m-1]); chartData.push(stats.gesamtGehalt);
-
+            chartLabels.push(monthNames[m-1].substring(0,3)); chartData.push(stats.gesamtGehalt);
+            
             if (stats.gesamtDezimal > 0) {
                 jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
-                htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border);">
+                
+                let currentLimit = lohnConfig.limit || 603;
+                let progress = Math.min(100, (stats.gesamtGehalt / currentLimit) * 100);
+                let remaining = Math.max(0, currentLimit - stats.gesamtGehalt);
+                let hoursLeft = Math.floor(remaining / (lohnConfig.base || 17.16));
+                let progressColor = progress >= 100 ? "var(--danger)" : "var(--success)";
+
+                htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 18px;">
                         <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: 800; font-size: 16px; color: var(--success);"><span>Bruttogehalt:</span> <span>${stats.gesamtGehalt.toFixed(2)} €</span></div>
+                        
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
+                            <div style="font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase;">Minijob Tracker (Max ${currentLimit}€)</div>
+                            <div class="minijob-bar-container"><div class="minijob-bar-fill" style="width: ${progress}%; background-color: ${progressColor};"></div></div>
+                            <div class="minijob-text"><span>Verdient: ${stats.gesamtGehalt.toFixed(2)}€</span> <span>Übrig: ${remaining.toFixed(2)}€ (ca. ${hoursLeft}h)</span></div>
+                        </div>
                     </div>`;
             }
         }
         
         if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
-        else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--success); color: white; padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800;">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
+        else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--text-main); color: var(--bg-color); padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800;">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
         container.innerHTML = htmlStr;
 
         const ctx = document.getElementById('yearChartCanvas').getContext('2d');
         if(yearChartInstance) yearChartInstance.destroy();
         const isDark = document.body.classList.contains('dark-mode');
         const textColor = isDark ? '#a1a1aa' : '#64748b';
-        const barColor = '#10b981';
+        const lineColor = '#10b981';
 
         yearChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: chartLabels, datasets: [{ label: 'Bruttogehalt (€)', data: chartData, backgroundColor: barColor, borderRadius: 4 }] },
+            type: 'line',
+            data: { labels: chartLabels, datasets: [{ label: 'Bruttogehalt (€)', data: chartData, borderColor: lineColor, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
         });
     }
 
-    // === PDF & EXCEL EXPORT ===
+    // === PDF & EXCEL EXPORT (Monatliche Tabelle) ===
     async function startExcelExport() {
         const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); await exportiereExcelExaktBild(parseInt(jahrStr), parseInt(monatStr));
@@ -822,21 +893,14 @@
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
             const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
 
-            // Prüfen, ob das Senden von Dateianhängen vom Gerät unterstützt wird (meist nur Smartphones)
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({ title: customSubj, text: customBody, files: [file] });
                 logEmailHistory(monatName, jahr);
             } else {
-                // PC WORKAROUND: Download erzwingen und Mailto-Link öffnen
                 alert("Am PC blockieren Webbrowser das automatische Anhängen von Dateien an E-Mails.\n\nDas PDF wird nun heruntergeladen. Danach öffnet sich dein E-Mail-Programm. Bitte ziehe die heruntergeladene Datei manuell in den Anhang!");
-                
-                // 1. PDF Download
                 saveAs(pdfBlob, opt.filename);
-                
-                // 2. Mailto Link öffnen
                 const mailtoLink = `mailto:?subject=${encodeURIComponent(customSubj)}&body=${encodeURIComponent(customBody)}`;
                 window.location.href = mailtoLink;
-                
                 logEmailHistory(monatName, jahr);
             }
         } catch (err) { 
