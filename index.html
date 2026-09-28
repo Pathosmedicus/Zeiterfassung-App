@@ -18,75 +18,116 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
+        /* === MODERNES UI DESIGN === */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
         :root {
-            --bg-color: #f3f4f6; --card-bg: #ffffff; --text-main: #111827; --text-muted: #6b7280;
-            --primary: #2563eb; --success: #10b981; --danger: #dc2626; --info: #8b5cf6;
-            --border: #e5e7eb; --radius: 12px; --nav-bg: rgba(255, 255, 255, 0.95);
-            --table-header-bg: #2563eb; --table-header-text: #ffffff; --table-row-even: #f9fafb;
-            --table-weekend-bg: #fee2e2; --table-border: #d1d5db;
+            --bg-color: #f8fafc; /* Modernes, helles Slate */
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5; /* Modernes Indigo */
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --info: #8b5cf6;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+            --table-header-bg: #f1f5f9;
+            --table-header-text: #475569;
+            --table-row-even: #f8fafc;
+            --table-weekend-bg: #fef2f2;
+            --table-border: #f1f5f9;
         }
 
         body.dark-mode {
-            --bg-color: #000000; --card-bg: #111111; --text-main: #f9fafb; --text-muted: #9ca3af;
-            --primary: #3b82f6; --border: #27272a; --nav-bg: rgba(17, 17, 17, 0.95);
-            --table-header-bg: #1e3a8a; --table-header-text: #ffffff; --table-row-even: #18181b;
-            --table-weekend-bg: #451a1a; --table-border: #3f3f46;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --border: #334155;
+            --nav-bg: rgba(30, 41, 59, 0.85);
+            --table-header-bg: #0f172a;
+            --table-header-text: #cbd5e1;
+            --table-row-even: #1e293b;
+            --table-weekend-bg: #451a1a;
+            --table-border: #334155;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 90px 0; transition: background-color 0.3s ease; }
-        .app-header { padding: 20px; font-size: 22px; font-weight: 800; background-color: var(--card-bg); border-bottom: 1px solid var(--border); text-align: center; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center;}
+        body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
         
-        .tab-content { display: none; padding: 15px; animation: fadeUp 0.3s ease forwards; }
+        /* Header */
+        .app-header { padding: 20px 24px; font-size: 22px; font-weight: 800; background-color: var(--nav-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center;}
+        
+        .tab-content { display: none; padding: 20px; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tab-content.active { display: block; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
-        label { font-weight: 600; font-size: 13px; text-transform: uppercase; color: var(--text-muted); display: block; margin-top: 15px; margin-bottom: 5px; }
-        input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px; border: 1px solid var(--border); background-color: var(--bg-color); color: var(--text-main); border-radius: 10px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        /* Karten mit modernen Schatten */
+        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid rgba(255,255,255,0.1); }
+        body.dark-mode .card { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); border: 1px solid var(--border); }
+
+        /* Eingabefelder mit weichen Fokus-Effekten */
+        label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
+        input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid transparent; background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; }
+        input:focus, textarea:focus { border: 1px solid var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
         textarea { resize: vertical; min-height: 120px; }
         
-        button { width: 100%; padding: 16px; margin-top: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; }
-        button:active { transform: scale(0.98); }
-        .btn-primary { background-color: var(--primary); }
-        .btn-success { background-color: var(--success); }
-        .btn-danger { background-color: var(--danger); margin-top: 10px; }
-        .btn-info { background-color: var(--info); margin-top: 10px;}
-        .btn-google { background-color: #ffffff; color: #757575; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px;}
+        /* Buttons */
+        button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: white; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button:active { transform: scale(0.97); }
+        .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-success { background-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-info { background-color: var(--info); }
+        .btn-google { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
-        .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 8px; border-radius: 12px; border: 1px solid var(--border); flex: 1;}
-        .month-selector input[type="month"], .month-selector input[type="number"] { font-size: 16px; font-weight: bold; border: none; background: transparent; padding: 0; color: var(--text-main); width: auto; text-align: center; outline: none; }
-        .btn-nav { background-color: var(--primary); color: white; border: none; border-radius: 8px; width: 40px; height: 40px; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding: 0; margin: 0; }
-        .total-hours-badge { background-color: var(--primary); color: white; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 15px; margin-left: 10px;}
+        /* Bereichsauswahl (Monat/Jahr) */
+        .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 6px; border-radius: 14px; flex: 1; border: 1px solid var(--border); }
+        .month-selector input { font-size: 16px; font-weight: 800; border: none; background: transparent; padding: 0; color: var(--text-main); width: auto; text-align: center; outline: none; }
+        .btn-nav { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; width: 44px; height: 44px; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0; }
+        .btn-nav:hover { background-color: var(--bg-color); }
+        .total-hours-badge { background-color: var(--primary); color: white; padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; margin-left: 12px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
         
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid var(--table-border); margin-top: 15px; }
+        /* Tabelle Modernisiert */
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 20px; background: var(--card-bg); }
         .excel-table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 14px; text-align: center; }
-        .excel-table th { background-color: var(--table-header-bg); color: var(--table-header-text); padding: 12px 8px; font-weight: 600; border-bottom: 2px solid var(--table-border); }
-        .excel-table td { padding: 10px 8px; border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border); }
+        .excel-table th { background-color: var(--table-header-bg); color: var(--table-header-text); padding: 14px 10px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 2;}
+        .excel-table td { padding: 12px 10px; border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border); }
+        .excel-table td:last-child { border-right: none; }
         .excel-table tr:nth-child(even) { background-color: var(--table-row-even); }
+        .excel-table tr:hover { background-color: rgba(79, 70, 229, 0.05); }
         .excel-table tr.weekend { background-color: var(--table-weekend-bg); }
         .excel-table td.empty-cell { color: var(--text-muted); font-style: italic; }
-        .excel-table tr.sum-row { font-weight: bold; background-color: var(--border); }
+        .excel-table tr.sum-row { font-weight: 800; background-color: var(--table-header-bg); border-top: 2px solid var(--border); }
         
-        .editable-cell { cursor: pointer; border-bottom: 1px dashed var(--primary); color: var(--primary); font-weight: bold; min-width: 50px; }
-        .editable-cell:focus { outline: 2px solid var(--primary); background-color: rgba(37, 99, 235, 0.1); border-radius: 4px; }
+        .editable-cell { cursor: pointer; color: var(--primary); font-weight: 600; min-width: 50px; border-radius: 6px; transition: background 0.2s; }
+        .editable-cell:hover { background: rgba(79, 70, 229, 0.1); }
+        .editable-cell:focus { outline: none; background-color: rgba(79, 70, 229, 0.15); box-shadow: inset 0 0 0 2px var(--primary); }
         .editable-cell:empty:before { content: "-"; color: var(--text-muted); font-weight: normal; }
         
-        body.dark-mode .excel-table tr.sum-row { background-color: #27272a; }
-        body.dark-mode .editable-cell { color: #60a5fa; border-bottom: 1px dashed #60a5fa; }
-        
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--nav-bg); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 10px 0 20px 0; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: bold; text-transform: uppercase; cursor: pointer; flex: 1; }
-        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        /* Nav-Bar Bottom (iOS Style) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 12px 0 24px 0; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.02); }
+        .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; flex: 1; transition: color 0.2s; }
+        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; transition: transform 0.2s; }
         .nav-item.active { color: var(--primary); }
+        .nav-item.active .icon { transform: translateY(-2px) scale(1.1); }
+        
+        /* Historie List */
+        .history-list { list-style: none; padding: 0; margin: 0; }
+        .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { color: var(--text-muted); font-size: 12px; }
 
         #login-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app-container { display: none; }
 
-        .salary-card { background-color: var(--card-bg); border-left: 5px solid var(--success); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border); }
-        .salary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .salary-total { display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: bold; font-size: 16px; color: var(--success); }
-        .annual-summary { font-size: 18px; text-align: center; background: var(--success); color: white; padding: 15px; border-radius: 8px; margin-top: 20px; font-weight: bold; }
-
+        /* Print */
         #print-section { display: none; }
         @media print {
             .app-header, .tab-content, .bottom-nav { display: none !important; }
@@ -101,53 +142,56 @@
 <body>
 
     <div id="login-screen">
-        <h1 style="color: var(--primary); text-align: center;">Zeiterfassung Cloud</h1>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">Deine Daten sicher und synchron.</p>
-        <button class="btn-google" onclick="loginWithGoogle()" style="width: 100%; max-width: 320px;">Mit Google anmelden</button>
-        <button onclick="startLocalMode()" style="width: 100%; max-width: 320px; margin-top: 12px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 14px; padding: 12px; border-radius: 10px; cursor: pointer;">Ohne Anmeldung fortfahren</button>
-        <div id="login-notice" style="max-width: 340px; margin-top: 16px; font-size: 12px; text-align: center;"></div>
+        <h1 style="color: var(--primary); text-align: center; margin-bottom: 8px;">Zeiterfassung</h1>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 40px; margin-top: 0;">Deine Daten sicher und synchron.</p>
+        <button class="btn-google" onclick="loginWithGoogle()" style="width: 100%; max-width: 320px; padding: 18px; border-radius: 16px;">Mit Google anmelden</button>
+        <button onclick="startLocalMode()" style="width: 100%; max-width: 320px; margin-top: 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 14px; padding: 16px; border-radius: 16px; cursor: pointer;">Ohne Anmeldung fortfahren</button>
     </div>
 
     <div id="print-section"></div>
 
     <div id="app-container">
         <div class="app-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
                 <span>Zeiterfassung</span>
-                <span id="user-badge" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 12px; background: var(--border); color: var(--text-muted);"></span>
+                <span id="user-badge" style="font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; background: var(--border); color: var(--text-muted);"></span>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button id="btn-cloud-connect" onclick="loginWithGoogle()" style="display: none; width: auto; padding: 6px 12px; margin: 0; background: var(--primary); font-size: 12px;">Cloud</button>
-                <button id="btn-logout" onclick="logout()" style="width: auto; padding: 6px 12px; margin: 0; background: var(--danger); font-size: 12px;">Logout</button>
+                <button id="btn-cloud-connect" onclick="loginWithGoogle()" style="display: none; width: auto; padding: 8px 16px; margin: 0; background: var(--primary); font-size: 12px; border-radius: 20px;">Cloud</button>
+                <button id="btn-logout" onclick="logout()" style="width: auto; padding: 8px 16px; margin: 0; background: var(--danger); font-size: 12px; border-radius: 20px;">Logout</button>
             </div>
         </div>
 
+        <!-- REITER 1: TABELLE -->
         <div id="tab-uebersicht" class="tab-content active">
-            <div class="card" style="padding: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                     <div class="month-selector">
                         <button class="btn-nav" onclick="changeMonth(-1)">&#9664;</button>
                         <input type="month" id="monthPicker" onchange="renderDashboard()">
                         <button class="btn-nav" onclick="changeMonth(1)">&#9654;</button>
                     </div>
-                    <button onclick="deleteCurrentMonth()" style="width: 40px; height: 40px; padding: 0; margin: 0; border-radius: 8px; background-color: var(--danger); display: flex; justify-content: center; align-items: center;" title="Diesen Monat löschen">🗑️</button>
-                    <div class="total-hours-badge" id="totalMonthHours" style="margin-left: 0;">0 h</div>
+                    <button onclick="deleteCurrentMonth()" style="width: 44px; height: 44px; padding: 0; margin: 0; border-radius: 14px; background-color: rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 18px;" title="Monat löschen">🗑️</button>
+                    <div class="total-hours-badge" id="totalMonthHours" style="margin: 0;">0 h</div>
                 </div>
                 
-                <p style="font-size: 11px; text-align: center; color: var(--text-muted); margin-top: 10px;">Tippe direkt in eine leere Zelle, um eine neue Zeit einzutragen!</p>
+                <p style="font-size: 12px; text-align: center; color: var(--text-muted); margin-top: 16px;">Tippe direkt in eine Zelle, um Zeiten zu bearbeiten. Nutze die <b>Pfeiltasten</b> (←/→) auf der Tastatur zum Wechseln des Monats.</p>
+                
                 <div id="month-table-container"></div>
                 
-                <button class="btn-success" onclick="startExcelExport()">Als farbige Excel Exportieren</button>
-                <button class="btn-danger" onclick="startPDFExport()">📄 Als A4 PDF herunterladen</button>
-                <button class="btn-info" onclick="sharePDF()">📧 Direkt als Email senden</button>
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button class="btn-success" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startExcelExport()">📊 Excel</button>
+                    <button class="btn-danger" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF</button>
+                </div>
             </div>
         </div>
 
+        <!-- REITER 2: GEHALT -->
         <div id="tab-gehalt" class="tab-content">
             <div class="card">
-                <h3 style="margin-top: 0; color: var(--primary); text-align: center;">Jahres-Gehaltsabrechnung</h3>
-                <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
-                    <div class="month-selector" style="max-width: 200px;">
+                <h3 style="margin-top: 0; color: var(--primary); text-align: center; font-weight: 800;">Jahres-Abrechnung</h3>
+                <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 24px;">
+                    <div class="month-selector" style="max-width: 220px;">
                         <button class="btn-nav" onclick="changeYear(-1)">&#9664;</button>
                         <input type="number" id="yearPicker" onchange="renderAnnualSalary()" style="width: 80px;" min="2000" max="2100">
                         <button class="btn-nav" onclick="changeYear(1)">&#9654;</button>
@@ -157,15 +201,16 @@
             </div>
         </div>
 
-        <div id="tab-profil" class="tab-content">
+        <!-- REITER 3: E-MAIL (NEU) -->
+        <div id="tab-email" class="tab-content">
             <div class="card">
-                <label>Nachname</label><input type="text" id="name" onchange="profilSpeichern()">
-                <label>Vorname</label><input type="text" id="vorname" onchange="profilSpeichern()">
-                <label>Personalnummer</label><input type="text" id="personalnummer" onchange="profilSpeichern()">
+                <h3 style="margin-top: 0; color: var(--primary);">📧 E-Mail Versand</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">Versende die Stundenübersicht des aktuell ausgewählten Monats direkt an die Verwaltung.</p>
+                <button class="btn-primary" onclick="sharePDF()" style="padding: 20px; font-size: 18px; border-radius: 16px;">✉️ Jetzt E-Mail vorbereiten</button>
             </div>
-            
+
             <div class="card">
-                <h3 style="margin-top: 0; margin-bottom: 5px;">E-Mail Vorlage</h3>
+                <h3 style="margin-top: 0;">Text-Vorlage</h3>
                 <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Platzhalter: {MONAT}, {JAHR}, {NAME}, {VORNAME}</p>
                 <label>Betreff</label>
                 <input type="text" id="emailSubject" onchange="emailVorlageSpeichern()" placeholder="Stundenübersicht {MONAT} {JAHR}">
@@ -173,23 +218,45 @@
                 <textarea id="emailBody" onchange="emailVorlageSpeichern()" placeholder="Sehr geehrte Damen und Herren,..."></textarea>
             </div>
 
-            <!-- NEUER SCHLAUER IMPORT -->
             <div class="card">
-                <label>Dokumente (PDF/Excel) Importieren</label>
-                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest deine PDFs jetzt strikt nach deiner Almatar-Logik (Kommen -> Gehen -> Pause) aus.</p>
-                <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 10px;">
-                <button class="btn-success" style="background-color: #059669;" onclick="startMultiImport()">Dateien scannen & Importieren</button>
-            </div>
-
-            <div class="card">
-                <label>Erscheinungsbild</label>
-                <button class="btn-primary" style="background-color: #4b5563;" onclick="toggleDarkMode()">Dunkelmodus wechseln 🌙</button>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">Verlauf</h3>
+                    <button onclick="clearEmailHistory()" style="width: auto; padding: 6px 12px; margin: 0; background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 12px; border-radius: 8px;">Leeren</button>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Protokoll der generierten E-Mail Anhänge.</p>
+                <ul class="history-list" id="email-history-list">
+                    <!-- Wird durch JS befüllt -->
+                </ul>
             </div>
         </div>
 
+        <!-- REITER 4: PROFIL -->
+        <div id="tab-profil" class="tab-content">
+            <div class="card">
+                <h3 style="margin-top: 0;">Persönliche Daten</h3>
+                <label>Nachname</label><input type="text" id="name" onchange="profilSpeichern()">
+                <label>Vorname</label><input type="text" id="vorname" onchange="profilSpeichern()">
+                <label>Personalnummer</label><input type="text" id="personalnummer" onchange="profilSpeichern()">
+            </div>
+            
+            <div class="card">
+                <h3 style="margin-top: 0;">Daten Import</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest PDFs mathematisch und fehlerfrei aus.</p>
+                <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 14px; background: var(--bg-color); border: 2px dashed var(--border);">
+                <button class="btn-success" onclick="startMultiImport()">Dateien scannen & Importieren</button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0;">Einstellungen</h3>
+                <button class="btn-primary" style="background-color: var(--text-main); color: var(--bg-color);" onclick="toggleDarkMode()">Dunkelmodus umschalten 🌙</button>
+            </div>
+        </div>
+
+        <!-- NEUE NAVIGATION (4 TABS) -->
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-uebersicht" onclick="switchTab('uebersicht', this)"><span class="icon">📊</span>Tabelle</div>
             <div class="nav-item" id="nav-gehalt" onclick="switchTab('gehalt', this)"><span class="icon">💶</span>Gehalt</div>
+            <div class="nav-item" id="nav-email" onclick="switchTab('email', this)"><span class="icon">📧</span>E-Mail</div>
             <div class="nav-item" id="nav-profil" onclick="switchTab('profil', this)"><span class="icon">⚙️</span>Profil</div>
         </div>
     </div>
@@ -214,24 +281,43 @@
     let currentUserUID = null;
     let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
 
+    // === BASIS FUNKTIONEN ===
     window.onload = function() {
         let heute = new Date();
         document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('yearPicker').value = heute.getFullYear();
+        
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
         if(localStorage.getItem('dark_mode') === 'true') document.body.classList.add('dark-mode');
         ladeLokalesProfil();
         ladeEmailVorlage();
+        renderEmailHistory();
     };
+
+    // === NEU: TASTATUR STEUERUNG ===
+    document.addEventListener('keydown', function(e) {
+        // Blockiere die Pfeiltasten-Funktion, wenn der User gerade in einem Eingabefeld schreibt
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        
+        // Prüfen, ob wir im Tab Tabelle oder Gehalt sind
+        if (document.getElementById('tab-uebersicht').classList.contains('active')) {
+            if (e.key === 'ArrowLeft') changeMonth(-1);
+            if (e.key === 'ArrowRight') changeMonth(1);
+        } else if (document.getElementById('tab-gehalt').classList.contains('active')) {
+            if (e.key === 'ArrowLeft') changeYear(-1);
+            if (e.key === 'ArrowRight') changeYear(1);
+        }
+    });
 
     function updateHeaderStatus() {
         const badge = document.getElementById('user-badge'); const btnConnect = document.getElementById('btn-cloud-connect'); const btnLogout = document.getElementById('btn-logout');
         if (currentUserUID) {
-            if (badge) { badge.innerText = "☁️ Synchronisiert"; badge.style.color = "var(--success)"; }
+            if (badge) { badge.innerText = "☁️ Cloud aktiv"; badge.style.color = "var(--success)"; badge.style.background = "rgba(16, 185, 129, 0.1)"; }
             if (btnConnect) btnConnect.style.display = "none";
             if (btnLogout) { btnLogout.style.display = "inline-block"; btnLogout.innerText = "Logout"; }
         } else {
-            if (badge) { badge.innerText = "💾 Lokal"; badge.style.color = "var(--text-muted)"; }
+            if (badge) { badge.innerText = "💾 Lokal"; badge.style.color = "var(--text-muted)"; badge.style.background = "var(--border)"; }
             if (btnConnect) btnConnect.style.display = "inline-block";
             if (btnLogout) { btnLogout.style.display = "inline-block"; btnLogout.innerText = "Zurück"; }
         }
@@ -257,7 +343,9 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active');
-        if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary();
+        if(tabName === 'uebersicht') renderDashboard(); 
+        if(tabName === 'gehalt') renderAnnualSalary();
+        if(tabName === 'email') renderEmailHistory();
     }
 
     function toggleDarkMode() {
@@ -373,76 +461,39 @@
         localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten)); cloudDatenSpeichern(); renderDashboard(); 
     };
 
-    // === DIE NEUE "ALMATAR-LOGIK" FÜR DEN IMPORT ===
+    // === ALMATAR-LOGIK IMPORT ===
     function findeSchichtWerte(validTimes) {
-        // 1. Zahl: Kommen
-        let startStr = validTimes[0].padStart(5, '0');
-        // 2. Zahl: Gehen
-        let endStr = validTimes[1].padStart(5, '0');
-        
-        // Mathematik vorbereiten
+        let startStr = validTimes[0].padStart(5, '0'); let endStr = validTimes[1].padStart(5, '0');
         let sParts = startStr.split(':'); let eParts = endStr.split(':');
-        let startMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]);
-        let endMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
-        
-        let diffMins = endMins - startMins;
-        if (diffMins < 0) diffMins += 1440; // Falls über Mitternacht gearbeitet wurde
-        
+        let startMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]); let endMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
+        let diffMins = endMins - startMins; if (diffMins < 0) diffMins += 1440; 
         let pauseMins = 0;
         
-        // 3. Zahl: Pause 
-        // WICHTIG: Wenn das PDF-Feld für die Pause komplett leer war, rückt die Geleistete Zeit an Position 3.
-        // Deshalb der schlaue Check: Wir nehmen die 3. Zahl nur als Pause, wenn sie logischerweise KLEINER ist als die gesamte Bruttozeit.
         if (validTimes.length >= 3) {
-            let pParts = validTimes[2].split(':');
-            let thirdTimeMins = parseInt(pParts[0]) * 60 + parseInt(pParts[1]);
-            
-            if (thirdTimeMins > 0 && thirdTimeMins < diffMins) {
-                pauseMins = thirdTimeMins;
-            }
+            let pParts = validTimes[2].split(':'); let thirdTimeMins = parseInt(pParts[0]) * 60 + parseInt(pParts[1]);
+            if (thirdTimeMins > 0 && thirdTimeMins < diffMins) { pauseMins = thirdTimeMins; }
         }
-        
         return { start: startStr, end: endStr, pause: pauseMins, diff: diffMins };
     }
 
     function werteGanzenTextAus(fullText, gespeicherteDaten) {
-        let importCount = 0; let lastDate = null;
-        let regex = /(\d{2})\.(\d{2})\.(\d{2,4})([\s\S]*?)(?=\d{2}\.\d{2}\.\d{2,4}|$)/g;
+        let importCount = 0; let lastDate = null; let regex = /(\d{2})\.(\d{2})\.(\d{2,4})([\s\S]*?)(?=\d{2}\.\d{2}\.\d{2,4}|$)/g;
         let matches = [...fullText.matchAll(regex)];
         
         matches.forEach(match => {
-            let tag = match[1]; let monat = match[2]; let jahr = match[3];
-            if (jahr.length === 2) jahr = "20" + jahr;
-            let datumStr = `${jahr}-${monat}-${tag}`; 
-            
-            let dataBlock = match[4]; 
+            let tag = match[1]; let monat = match[2]; let jahr = match[3]; if (jahr.length === 2) jahr = "20" + jahr;
+            let datumStr = `${jahr}-${monat}-${tag}`; let dataBlock = match[4]; 
             let timeMatches = dataBlock.match(/\b\d{1,2}:\d{2}\b/g);
             
             if (timeMatches) {
                 let validTimes = timeMatches.filter(t => t !== "0:00" && t !== "00:00");
-                
                 if (validTimes.length >= 2) {
-                    // Startet die neue Logik
-                    let schicht = findeSchichtWerte(validTimes);
-                    
-                    // Deine genaue Formel: Geleistete Zeit = (Gehen - Kommen) - Pause
-                    let nettoMinuten = schicht.diff - schicht.pause;
+                    let schicht = findeSchichtWerte(validTimes); let nettoMinuten = schicht.diff - schicht.pause;
                     let nettoStundenDezimal = Math.round((nettoMinuten / 60) * 100) / 100;
-                    
                     if (nettoStundenDezimal > 0) {
-                        let idx = gespeicherteDaten.findIndex(e => e.datum === datumStr);
-                        if (idx > -1) gespeicherteDaten.splice(idx, 1); // Überschreibt alte Einträge am selben Tag
-                        
-                        gespeicherteDaten.push({ 
-                            datum: datumStr, 
-                            kommen: schicht.start, 
-                            gehen: schicht.end, 
-                            pauseMinuten: schicht.pause, 
-                            nettoStunden: nettoStundenDezimal 
-                        });
-                        
-                        importCount++; 
-                        lastDate = datumStr;
+                        let idx = gespeicherteDaten.findIndex(e => e.datum === datumStr); if (idx > -1) gespeicherteDaten.splice(idx, 1); 
+                        gespeicherteDaten.push({ datum: datumStr, kommen: schicht.start, gehen: schicht.end, pauseMinuten: schicht.pause, nettoStunden: nettoStundenDezimal });
+                        importCount++; lastDate = datumStr;
                     }
                 }
             }
@@ -451,8 +502,7 @@
     }
 
     async function startMultiImport() {
-        const fileInput = document.getElementById('importFile');
-        const files = Array.from(fileInput.files);
+        const fileInput = document.getElementById('importFile'); const files = Array.from(fileInput.files);
         if(files.length === 0) { alert("Bitte wähle mindestens eine Datei aus."); return; }
         let totalImported = 0; let letzesDatumFuerAnsicht = null;
 
@@ -461,19 +511,10 @@
             try {
                 let result;
                 if (file.name.toLowerCase().endsWith('.pdf')) {
-                    const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    let fullTextStr = "";
+                    const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument(arrayBuffer).promise; let fullTextStr = "";
                     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                         const page = await pdf.getPage(pageNum); const textContent = await page.getTextContent();
-                        
-                        // WICHTIGE ÄNDERUNG: Die Toleranz für PDF-Zeilen wurde von 5 auf 15 Pixel erhöht.
-                        // Das zwingt den Reader dazu, die PDF strikt von links nach rechts (Kommen -> Gehen -> Pause) auszulesen!
-                        const items = textContent.items.sort((a, b) => { 
-                            const yDiff = b.transform[5] - a.transform[5]; 
-                            if (Math.abs(yDiff) > 15) return yDiff; 
-                            return a.transform[4] - b.transform[4]; 
-                        });
-                        
+                        const items = textContent.items.sort((a, b) => { const yDiff = b.transform[5] - a.transform[5]; if (Math.abs(yDiff) > 15) return yDiff; return a.transform[4] - b.transform[4]; });
                         items.forEach(item => { fullTextStr += item.str + " "; });
                     }
                     result = werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []);
@@ -482,33 +523,26 @@
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             try {
-                                const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array', raw: false, dateNF: 'dd.mm.yyyy'});
-                                let fullTextStr = "";
+                                const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array', raw: false, dateNF: 'dd.mm.yyyy'}); let fullTextStr = "";
                                 workbook.SheetNames.forEach(sheetName => {
                                     const sheet = workbook.Sheets[sheetName]; const json = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: false, defval: ""}); 
                                     json.forEach(row => { if (Array.isArray(row)) fullTextStr += row.filter(cell => cell !== "").join(" ") + " | "; });
                                 });
                                 resolve(werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []));
                             } catch (err) { reject(err); }
-                        };
-                        reader.onerror = reject; reader.readAsArrayBuffer(file);
+                        }; reader.onerror = reject; reader.readAsArrayBuffer(file);
                     });
                 }
-                
-                totalImported += result.count;
-                if (result.lastDate) letzesDatumFuerAnsicht = result.lastDate;
+                totalImported += result.count; if (result.lastDate) letzesDatumFuerAnsicht = result.lastDate;
                 localStorage.setItem('meine_arbeitszeiten', JSON.stringify(result.daten));
             } catch (err) { console.error("Fehler bei Datei " + file.name, err); }
         }
 
         if (totalImported > 0) {
-            cloudDatenSpeichern();
-            alert(`✅ Import erfolgreich!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen und gespeichert.`);
+            cloudDatenSpeichern(); alert(`✅ Import erfolgreich!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen.`);
             if (letzesDatumFuerAnsicht) {
-                let importMonat = letzesDatumFuerAnsicht.substring(0, 7);
-                document.getElementById('monthPicker').value = importMonat;
-                switchTab('uebersicht', document.getElementById('nav-uebersicht'));
-                renderDashboard();
+                let importMonat = letzesDatumFuerAnsicht.substring(0, 7); document.getElementById('monthPicker').value = importMonat;
+                switchTab('uebersicht', document.getElementById('nav-uebersicht')); renderDashboard();
             }
         } else { alert("Scan abgeschlossen, aber keine neuen Zeiten gefunden."); }
         fileInput.value = ""; 
@@ -529,8 +563,7 @@
                 if (dayOfWeek === 0) sonntagStunden += eintrag.nettoStunden;
                 else if (dayOfWeek === 6 && eintrag.kommen && eintrag.gehen) {
                     let sSplit = eintrag.kommen.split(":"); let eSplit = eintrag.gehen.split(":");
-                    let startDez = parseInt(sSplit[0]) + (parseInt(sSplit[1]) / 60);
-                    let endDez = parseInt(eSplit[0]) + (parseInt(eSplit[1]) / 60);
+                    let startDez = parseInt(sSplit[0]) + (parseInt(sSplit[1]) / 60); let endDez = parseInt(eSplit[0]) + (parseInt(eSplit[1]) / 60);
                     if (endDez <= startDez) endDez += 24;
                     let overlapStart = Math.max(startDez, 13.0); let overlapEnd = Math.min(endDez, 21.0);
                     if (overlapEnd > overlapStart) samstagBonusStunden += Math.min((overlapEnd - overlapStart), eintrag.nettoStunden);
@@ -542,23 +575,18 @@
     }
 
     function renderDashboard() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        const container = document.getElementById('month-table-container');
-        const gewaehlterMonat = document.getElementById('monthPicker').value; 
-        if(!gewaehlterMonat) return;
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
 
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-');
-        const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
-        const tageImMonat = new Date(jahr, monat, 0).getDate();
-        const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
+        const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
         
         let gesamtDezimal = 0;
-        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause(m)</th><th>Stunden</th><th></th></tr></thead><tbody>`;
+        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
 
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay();
-            let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
             let eintrag = daten.find(e => e.datum === suchDatum);
 
             if(eintrag) {
@@ -581,39 +609,35 @@
                 </tr>`;
             }
         }
-
         tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
         container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
     }
 
     function renderAnnualSalary() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        const container = document.getElementById('annual-salary-container');
-        const jahr = parseInt(document.getElementById('yearPicker').value);
-        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('annual-salary-container');
+        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
         let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
 
         for (let m = 1; m <= 12; m++) {
             let stats = calculateMonthSalary(jahr, m, daten);
             if (stats.gesamtDezimal > 0) {
                 jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
-                htmlStr += `<div class="salary-card">
-                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary);">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
-                        <div class="salary-row"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
-                        <div class="salary-row"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
-                        <div class="salary-row"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
-                        <div class="salary-total"><span>Bruttogehalt:</span> <span>${stats.gesamtGehalt.toFixed(2)} €</span></div>
+                htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary); background: rgba(79, 70, 229, 0.1); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
+                        <div style="display: flex; justify-content: space-between; border-top: 2px solid var(--border); padding-top: 10px; margin-top: 10px; font-weight: 800; font-size: 16px; color: var(--success);"><span>Bruttogehalt:</span> <span>${stats.gesamtGehalt.toFixed(2)} €</span></div>
                     </div>`;
             }
         }
         
         if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
-        else { htmlStr += `<div class="annual-summary">Jahres-Summe ${jahr}: <br><span style="font-size: 24px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
+        else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--success); color: white; padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
         container.innerHTML = htmlStr;
     }
 
-    // === PDF & EXCEL EXPORT (Bleibt unverändert) ===
+    // === PDF & EXCEL EXPORT ===
     async function startExcelExport() {
         const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); await exportiereExcelExaktBild(parseInt(jahrStr), parseInt(monatStr));
@@ -738,12 +762,52 @@
         setTimeout(() => { window.print(); }, 300);
     }
 
+    // === E-MAIL HISTORIE LOGIK ===
+    function logEmailHistory(monthName, year) {
+        let history = JSON.parse(localStorage.getItem('email_history')) || [];
+        const now = new Date();
+        const datumText = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth()+1).padStart(2, '0')}.${now.getFullYear()} um ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} Uhr`;
+        
+        history.unshift({ datumGesendet: datumText, zielMonat: `${monthName} ${year}` });
+        if (history.length > 20) history.pop(); // Maximal die letzten 20 aufheben
+        
+        localStorage.setItem('email_history', JSON.stringify(history));
+        renderEmailHistory();
+    }
+
+    function renderEmailHistory() {
+        const history = JSON.parse(localStorage.getItem('email_history')) || [];
+        const list = document.getElementById('email-history-list');
+        if (!list) return;
+
+        if (history.length === 0) {
+            list.innerHTML = `<li class="history-item" style="color: var(--text-muted); justify-content: center;">Noch keine E-Mails versendet.</li>`;
+            return;
+        }
+
+        list.innerHTML = history.map(item => `
+            <li class="history-item">
+                <span><strong>Anhang:</strong> Stundenübersicht ${item.zielMonat}</span>
+                <span class="history-date">Gesendet: ${item.datumGesendet}</span>
+            </li>
+        `).join('');
+    }
+
+    function clearEmailHistory() {
+        if(confirm("Möchtest du den gesamten E-Mail Verlauf leeren?")) {
+            localStorage.removeItem('email_history');
+            renderEmailHistory();
+        }
+    }
+
     async function sharePDF() {
         if (!navigator.canShare) { alert("Senden per E-Mail am PC nicht möglich. Lade das PDF manuell herunter."); return; }
         const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
+        
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
         const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        const monatName = monthNames[monat - 1]; const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
+        const monatName = monthNames[monat - 1];
+        const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
         
         let customSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let customBody = document.getElementById('emailBody').value || "";
         customSubj = customSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
@@ -753,10 +817,17 @@
         element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
 
         const opt = { margin: 0, filename: 'temp.pdf', image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+
         try {
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-            const file = new File([pdfBlob], `Stundenuebersicht_${monatName}_${jahr}.pdf`, { type: 'application/pdf' });
-            await navigator.share({ title: customSubj, text: customBody, files: [file] });
+            const fileName = `Stundenuebersicht_${monatName}_${jahr}.pdf`;
+            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+            const dataToShare = { title: customSubj, text: customBody, files: [file] };
+            await navigator.share(dataToShare);
+            
+            // Speichert den erfolgreichen Versand in der neuen Historie
+            logEmailHistory(monatName, jahr);
         } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } 
         finally { document.body.removeChild(element); }
     }
