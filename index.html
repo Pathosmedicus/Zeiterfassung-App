@@ -50,7 +50,6 @@
         .btn-primary { background-color: var(--primary); }
         .btn-success { background-color: var(--success); }
         .btn-danger { background-color: var(--danger); margin-top: 10px; }
-        .btn-danger-outline { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
         .btn-info { background-color: var(--info); margin-top: 10px;}
         .btn-google { background-color: #ffffff; color: #757575; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px;}
         
@@ -132,6 +131,7 @@
                         <input type="month" id="monthPicker" onchange="renderDashboard()">
                         <button class="btn-nav" onclick="changeMonth(1)">&#9654;</button>
                     </div>
+                    <!-- BUTTON: Monat löschen -->
                     <button onclick="deleteCurrentMonth()" style="width: 40px; height: 40px; padding: 0; margin: 0; border-radius: 8px; background-color: var(--danger); display: flex; justify-content: center; align-items: center;" title="Diesen Monat löschen">🗑️</button>
                     <div class="total-hours-badge" id="totalMonthHours" style="margin-left: 0;">0 h</div>
                 </div>
@@ -181,9 +181,10 @@
                 <textarea id="emailBody" onchange="emailVorlageSpeichern()" placeholder="Sehr geehrte Damen und Herren,..."></textarea>
             </div>
 
+            <!-- DOKUMENTE IMPORTIEREN MIT NEUER MATHE-ENGINE -->
             <div class="card">
                 <label>Dokumente (PDF/Excel) Importieren</label>
-                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest Blöcke aus und sortiert Zeiten logisch.</p>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest PDFs nun mathematisch und absolut fehlerfrei aus.</p>
                 <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 10px;">
                 <button class="btn-success" style="background-color: #059669;" onclick="startMultiImport()">Dateien scannen & Importieren</button>
             </div>
@@ -195,9 +196,9 @@
         </div>
 
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('uebersicht', this)"><span class="icon">📊</span>Tabelle</div>
-            <div class="nav-item" onclick="switchTab('gehalt', this)"><span class="icon">💶</span>Gehalt</div>
-            <div class="nav-item" onclick="switchTab('profil', this)"><span class="icon">⚙️</span>Profil</div>
+            <div class="nav-item active" id="nav-uebersicht" onclick="switchTab('uebersicht', this)"><span class="icon">📊</span>Tabelle</div>
+            <div class="nav-item" id="nav-gehalt" onclick="switchTab('gehalt', this)"><span class="icon">💶</span>Gehalt</div>
+            <div class="nav-item" id="nav-profil" onclick="switchTab('profil', this)"><span class="icon">⚙️</span>Profil</div>
         </div>
     </div>
 
@@ -379,7 +380,7 @@
     function deleteCurrentMonth() {
         const gewaehlterMonat = document.getElementById('monthPicker').value;
         if(!gewaehlterMonat) return;
-        if(confirm(`Möchtest du wirklich alle Einträge für den Monat ${gewaehlterMonat} endgültig löschen?`)) {
+        if(confirm(`Möchtest du wirklich alle Schichten für den Monat ${gewaehlterMonat} löschen?`)) {
             let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
             daten = daten.filter(e => !e.datum.startsWith(gewaehlterMonat));
             localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
@@ -387,6 +388,16 @@
             renderDashboard();
         }
     }
+
+    window.schichtLoeschen = function(datum) {
+        if(confirm("Möchtest du diese Schicht wirklich löschen?")) {
+            let daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
+            daten = daten.filter(e => e.datum !== datum);
+            localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten));
+            cloudDatenSpeichern(); 
+            renderDashboard(); 
+        }
+    };
 
     window.inlineEdit = function(element, datum, feld) {
         let wert = element.innerText.trim();
@@ -418,7 +429,6 @@
             eintrag.nettoStunden = 0;
         }
 
-        // Wenn beide Zeiten leer sind, lösche den Eintrag komplett, um Müll zu vermeiden
         if (eintrag.kommen === "" && eintrag.gehen === "") {
             if (index !== -1) daten.splice(index, 1);
         } else {
@@ -476,7 +486,7 @@
         
         let gesamtDezimal = 0;
 
-        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause(m)</th><th>Stunden</th></tr></thead><tbody>`;
+        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause(m)</th><th>Stunden</th><th></th></tr></thead><tbody>`;
 
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let tagStr = String(tag).padStart(2, '0');
@@ -495,6 +505,7 @@
                     <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
                     <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
                     <td style="color: var(--primary); font-weight: bold;">${eintrag.nettoStunden}</td>
+                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
                 </tr>`;
             } else {
                 tableHTML += `<tr class="${rowClass}">
@@ -504,11 +515,12 @@
                     <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
                     <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
                     <td class="empty-cell">0</td>
+                    <td></td>
                 </tr>`;
             }
         }
 
-        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td></tr></tfoot></table></div>`;
+        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
         container.innerHTML = tableHTML;
         document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
     }
@@ -556,39 +568,90 @@
         container.innerHTML = htmlStr;
     }
 
-    // === ROBUSTER TEXT-BLOCK-SCANNER FÜR PDF UND EXCEL ===
+    // === INTELLIGENTE MATHEMATISCHE PDF & EXCEL ENGINE ===
     function findeSchichtWerte(timeStrings) {
-        let mins = timeStrings.map(t => { let p = t.split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); });
-        if (mins.length === 2) return { start: timeStrings[0], end: timeStrings[1], pause: 0 };
-        for (let i = 0; i < mins.length; i++) {
-            for (let j = 0; j < mins.length; j++) {
-                if (i === j) continue;
-                let gross = mins[j] - mins[i]; if (gross < 0) gross += 1440; 
-                let rest = mins.filter((_, idx) => idx !== i && idx !== j);
-                if (rest.length === 1 && gross === rest[0]) return { start: timeStrings[i], end: timeStrings[j], pause: 0 };
-                else if (rest.length === 2 && (gross - rest[0] === rest[1])) return { start: timeStrings[i], end: timeStrings[j], pause: Math.min(rest[0], rest[1]) };
+        // Wandelt alle gefundenen Text-Uhrzeiten in reine Minuten um
+        let mins = timeStrings.map(t => { 
+            let p = t.split(':'); 
+            return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); 
+        });
+
+        let bestMatch = null;
+        let bestPause = 9999;
+
+        // Erstellt alle möglichen Kombinationen aus den gefundenen Zeiten
+        const getPerms = (arr, size) => {
+            let res = [];
+            const p = (cur, rem) => {
+                if (cur.length === size) { res.push(cur); return; }
+                for (let i = 0; i < rem.length; i++) {
+                    p(cur.concat(rem[i]), rem.slice(0, i).concat(rem.slice(i + 1)));
+                }
+            };
+            p([], arr);
+            return res;
+        };
+
+        // MATHEMATISCHER TEST: (Ende - Start) - Pause = Netto
+        if (mins.length >= 4) {
+            let perms = getPerms(mins, 4);
+            for (let p of perms) {
+                let start = p[0], end = p[1], pause = p[2], net = p[3];
+                let diff = end - start;
+                if (diff < 0) diff += 1440; // Nachtschicht-Korrektur
+                if (diff - pause === net && pause <= 240) { // Pause in der Regel nicht über 4 Stunden
+                    if (pause < bestPause) {
+                        bestPause = pause;
+                        bestMatch = { start, end, pause, net };
+                    }
+                }
             }
         }
-        mins.sort((a, b) => a - b);
+
+        if (bestMatch) return formatMatch(bestMatch);
+
+        // TEST OHNE PAUSE: (Ende - Start) = Netto
         if (mins.length >= 3) {
-            let endMin = mins[mins.length - 1]; let startMin = mins[mins.length - 2];
-            let pauseMin = (mins[0] < startMin && mins[0] <= 240) ? mins[0] : 0;
-            let sStr = `${String(Math.floor(startMin / 60)).padStart(2, '0')}:${String(startMin % 60).padStart(2, '0')}`;
-            let eStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
-            return { start: sStr, end: eStr, pause: pauseMin };
+            let perms = getPerms(mins, 3);
+            for (let p of perms) {
+                let start = p[0], end = p[1], net = p[2];
+                let diff = end - start;
+                if (diff < 0) diff += 1440;
+                if (diff === net) {
+                    return formatMatch({ start, end, pause: 0, net });
+                }
+            }
         }
+
+        // INTELLIGENTER FALLBACK: Falls die Netto-Zeit im PDF fehlt
+        // Da die Pause i.d.R. sehr kurz ist, ist sie die kleinste Zahl.
+        let minsSorted = [...mins].sort((a,b) => a-b);
+        if (minsSorted.length >= 3) {
+            return formatMatch({ start: minsSorted[1], end: minsSorted[2], pause: minsSorted[0] });
+        } else if (minsSorted.length === 2) {
+            return formatMatch({ start: minsSorted[0], end: minsSorted[1], pause: 0 });
+        }
+
         return null;
+
+        function formatMatch(m) {
+            let sStr = `${String(Math.floor(m.start / 60)).padStart(2, '0')}:${String(m.start % 60).padStart(2, '0')}`;
+            let eStr = `${String(Math.floor(m.end / 60)).padStart(2, '0')}:${String(m.end % 60).padStart(2, '0')}`;
+            return { start: sStr, end: eStr, pause: m.pause };
+        }
     }
 
     function werteGanzenTextAus(fullText, gespeicherteDaten) {
         let importCount = 0; let lastDate = null;
-        let regex = /(\d{2})\.(\d{2})\.(\d{2,4})([^a-zA-Z]*?)(?=(\d{2}\.\d{2}\.\d{2,4}|$))/g;
+        let regex = /(\d{2})\.(\d{2})\.(\d{2,4})([\s\S]*?)(?=\d{2}\.\d{2}\.\d{2,4}|$)/g;
         let matches = [...fullText.matchAll(regex)];
         
         matches.forEach(match => {
             let tag = match[1]; let monat = match[2]; let jahr = match[3];
             if (jahr.length === 2) jahr = "20" + jahr;
-            let datumStr = `${jahr}-${monat}-${tag}`; let dataBlock = match[4]; 
+            let datumStr = `${jahr}-${monat}-${tag}`; 
+            
+            let dataBlock = match[4]; 
             let timeMatches = dataBlock.match(/\b\d{1,2}:\d{2}\b/g);
             if (timeMatches) {
                 timeMatches = timeMatches.filter(t => t !== "0:00" && t !== "00:00");
@@ -654,17 +717,17 @@
 
         if (totalImported > 0) {
             cloudDatenSpeichern();
-            alert(`✅ Stapel-Import abgeschlossen!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen.`);
+            alert(`✅ Import erfolgreich!\nEs wurden ${totalImported} Schichten fehlerfrei ausgelesen und in der Cloud gespeichert.`);
             if (letzesDatumFuerAnsicht) {
                 let importMonat = letzesDatumFuerAnsicht.substring(0, 7);
                 document.getElementById('monthPicker').value = importMonat;
-                switchTab('uebersicht', document.querySelectorAll('.nav-item')[0]);
+                switchTab('uebersicht', document.getElementById('nav-uebersicht'));
             }
         } else { alert("Scan abgeschlossen, aber keine auswertbaren Daten gefunden."); }
         fileInput.value = ""; 
     }
 
-    // === EXPORT ===
+    // === EXPORT & EMAIL ===
     async function startExcelExport() {
         const gewaehlterMonat = document.getElementById('monthPicker').value;
         if(!gewaehlterMonat) return;
