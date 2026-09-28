@@ -673,25 +673,68 @@
     function renderEmailHistory() { const h = JSON.parse(localStorage.getItem('email_history')) || []; const l = document.getElementById('email-history-list'); if (!l) return; if (h.length === 0) { l.innerHTML = `<li class="history-item" style="color: var(--text-muted); justify-content: center;">Noch keine E-Mails versendet.</li>`; return; } l.innerHTML = h.map(i => `<li class="history-item"><span><strong>Anhang:</strong> Stundenübersicht ${i.zielMonat}</span><span class="history-date">Gesendet: ${i.datumGesendet}</span></li>`).join(''); }
     function clearEmailHistory() { if(confirm("Möchtest du den gesamten E-Mail Verlauf leeren?")) { localStorage.removeItem('email_history'); renderEmailHistory(); } }
 
-    async function sharePDF() {
-        const mVal = document.getElementById('monthPicker').value; if(!mVal) return;
-        const [j, m] = mVal.split('-'); const jahr = parseInt(j); const monat = parseInt(m);
-        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        const monatName = monthNames[monat - 1]; const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
+   async function sharePDF() {
+        const mVal = document.getElementById('monthPicker').value; 
+        if(!mVal) return; 
         
-        let cSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let cBody = document.getElementById('emailBody').value || "";
-        cSubj = cSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
+        const [j, m] = mVal.split('-'); 
+        const jahr = parseInt(j); 
+        const monat = parseInt(m);
+        
+        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]; 
+        const monatName = monthNames[monat - 1]; 
+        const pVorname = localStorage.getItem('ma_vorname') || ""; 
+        const pName = localStorage.getItem('ma_name') || "";
+        
+        // Platzhalter in der E-Mail-Vorlage ersetzen
+        let cSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; 
+        let cBody = document.getElementById('emailBody').value || "";
+        cSubj = cSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname); 
         cBody = cBody.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
 
-        const element = document.createElement('div'); element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
-        element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
+        // Unsichtbares Element für die PDF-Erstellung vorbereiten
+        const element = document.createElement('div'); 
+        element.style.position = 'absolute'; 
+        element.style.left = '-9999px'; 
+        element.style.top = '-9999px'; 
+        element.style.width = '800px'; 
+        element.style.padding = '40px'; 
+        element.style.boxSizing = 'border-box'; 
+        element.innerHTML = erstellePdfHtmlString(jahr, monat); 
+        document.body.appendChild(element);
 
-        const opt = { margin: 0, filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        const opt = { 
+            margin: 0, 
+            filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, 
+            image: { type: 'jpeg', quality: 1.0 }, 
+            html2canvas: { scale: 2 }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+
         try {
-            const pdfBlob = await html2pdf().from(element).set(opt).output('blob'); const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: cSubj, text: cBody, files: [file] }); logEmailHistory(monatName, jahr); } 
-            else { alert("Am PC wird das PDF heruntergeladen. Ziehe es dann manuell in den Anhang!"); saveAs(pdfBlob, opt.filename); window.location.href = `mailto:?subject=${encodeURIComponent(cSubj)}&body=${encodeURIComponent(cBody)}`; logEmailHistory(monatName, jahr); }
-        } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } finally { document.body.removeChild(element); }
+            // PDF als Blob generieren und direkt als Download starten
+            const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+            const filename = `Stundenuebersicht_${monatName}_${jahr}.pdf`;
+            
+            // Datei auf dem Gerät speichern
+            saveAs(pdfBlob, filename);
+
+            // Kurzer Hinweis für den Nutzer
+            alert(`📥 Das PDF "${filename}" wurde erfolgreich heruntergeladen!\n\nDein E-Mail-Programm öffnet sich jetzt. Bitte füge die heruntergeladene Datei dort einfach kurz als Anhang hinzu.`);
+
+            // E-Mail-Programm mit Betreff und Text öffnen
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(cSubj)}&body=${encodeURIComponent(cBody)}`;
+            window.location.href = mailtoLink;
+
+            // In den Verlauf eintragen
+            logEmailHistory(monatName, jahr);
+
+        } catch (err) { 
+            console.error(err); 
+            alert("Fehler beim Generieren des PDFs."); 
+        } finally { 
+            document.body.removeChild(element); 
+        }
     }
 </script>
 </body>
