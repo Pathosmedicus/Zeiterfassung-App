@@ -11,7 +11,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- NEU: Chart.js für Diagramme -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -27,11 +27,11 @@
             --card-bg: #ffffff;
             --text-main: #000000;
             --text-muted: #64748b;
-            --primary: #000000; /* Edles Schwarz statt Blau */
+            --primary: #000000; 
             --primary-hover: #333333;
             --success: #10b981;
             --danger: #ef4444;
-            --info: #111827; /* Dunkelgrau für Info-Buttons */
+            --info: #111827; 
             --border: #e2e8f0;
             --radius: 16px;
             --nav-bg: rgba(255, 255, 255, 0.85);
@@ -42,21 +42,22 @@
             --table-border: #f1f5f9;
         }
 
+        /* === ECHTES SCHWARZ FÜR DEN DUNKELMODUS === */
         body.dark-mode {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #000000;
+            --card-bg: #111111;
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary: #ffffff; /* Weiß als Akzent im Dunkelmodus */
+            --text-muted: #a1a1aa;
+            --primary: #ffffff; 
             --primary-hover: #cccccc;
             --info: #f8fafc;
-            --border: #334155;
-            --nav-bg: rgba(30, 41, 59, 0.85);
-            --table-header-bg: #0f172a;
-            --table-header-text: #cbd5e1;
-            --table-row-even: #1e293b;
+            --border: #27272a;
+            --nav-bg: rgba(0, 0, 0, 0.85);
+            --table-header-bg: #000000;
+            --table-header-text: #d4d4d8;
+            --table-row-even: #09090b;
             --table-weekend-bg: #451a1a;
-            --table-border: #334155;
+            --table-border: #27272a;
         }
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
@@ -67,13 +68,13 @@
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid rgba(255,255,255,0.1); }
-        body.dark-mode .card { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); border: 1px solid var(--border); }
+        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid rgba(255,255,255,0.05); }
+        body.dark-mode .card { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); border: 1px solid var(--border); }
 
         label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
         input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid transparent; background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; }
         input:focus, textarea:focus { border: 1px solid var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1); }
-        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15); }
+        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15); border-color: var(--primary); }
         textarea { resize: vertical; min-height: 120px; }
         
         button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: var(--bg-color); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -83,7 +84,6 @@
         .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
         .btn-primary:hover { background-color: var(--primary-hover); }
         
-        /* Outline-Buttons für Sekundäraktionen */
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
         body.dark-mode .btn-outline { color: var(--primary); }
         .btn-outline:hover { background-color: var(--primary); color: var(--bg-color); }
@@ -100,14 +100,13 @@
         .btn-nav:hover { background-color: var(--bg-color); }
         .total-hours-badge { background-color: var(--primary); color: var(--card-bg); padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; margin-left: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
         
-        /* Tabelle Modernisiert */
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 20px; background: var(--card-bg); }
         .excel-table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 14px; text-align: center; }
         .excel-table th { background-color: var(--table-header-bg); color: var(--table-header-text); padding: 14px 10px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 2;}
         .excel-table td { padding: 12px 10px; border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border); }
         .excel-table td:last-child { border-right: none; }
         .excel-table tr:nth-child(even) { background-color: var(--table-row-even); }
-        .excel-table tr:hover { background-color: rgba(0, 0, 0, 0.03); }
+        .excel-table tr:hover { background-color: rgba(0, 0, 0, 0.05); }
         body.dark-mode .excel-table tr:hover { background-color: rgba(255, 255, 255, 0.05); }
         .excel-table tr.weekend { background-color: var(--table-weekend-bg); }
         .excel-table td.empty-cell { color: var(--text-muted); font-style: italic; }
@@ -117,22 +116,20 @@
         .editable-cell:hover { background: rgba(0, 0, 0, 0.05); }
         body.dark-mode .editable-cell:hover { background: rgba(255, 255, 255, 0.1); }
         .editable-cell:focus { outline: none; background-color: rgba(0, 0, 0, 0.05); box-shadow: inset 0 0 0 2px var(--primary); }
-        body.dark-mode .editable-cell:focus { background-color: rgba(255, 255, 255, 0.1); }
+        body.dark-mode .editable-cell:focus { background-color: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 2px var(--primary); }
         .editable-cell:empty:before { content: "-"; color: var(--text-muted); font-weight: normal; border-bottom: none;}
         
-        /* Nav-Bar Bottom */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 12px 0 24px 0; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.02); }
         .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; flex: 1; transition: color 0.2s; }
-        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; transition: transform 0.2s; filter: grayscale(100%); }
+        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; transition: transform 0.2s; filter: grayscale(100%); opacity: 0.7;}
         .nav-item.active { color: var(--primary); }
-        .nav-item.active .icon { transform: translateY(-2px) scale(1.1); filter: grayscale(0%); }
+        .nav-item.active .icon { transform: translateY(-2px) scale(1.1); filter: grayscale(0%); opacity: 1; }
         
         .history-list { list-style: none; padding: 0; margin: 0; }
         .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
         .history-item:last-child { border-bottom: none; }
         .history-date { color: var(--text-muted); font-size: 12px; }
 
-        /* Chart Containers */
         .chart-container { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
         canvas { width: 100% !important; max-height: 250px; }
 
@@ -173,7 +170,6 @@
             </div>
         </div>
 
-        <!-- REITER 1: TABELLE -->
         <div id="tab-uebersicht" class="tab-content active">
             <div class="card" style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
@@ -190,7 +186,6 @@
                 
                 <div id="month-table-container"></div>
                 
-                <!-- NEU: Chart für Stunden -->
                 <button class="btn-outline" onclick="toggleChart('month-chart-wrapper')" style="margin-top: 15px;">📊 Stunden-Diagramm ein-/ausblenden</button>
                 <div id="month-chart-wrapper" class="chart-container">
                     <canvas id="monthChartCanvas"></canvas>
@@ -201,12 +196,10 @@
                     <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF</button>
                 </div>
 
-                <!-- NEU: E-Mail Button direkt unter der Tabelle -->
                 <button class="btn-primary" onclick="sharePDF()" style="margin-top: 12px; padding: 20px; font-size: 16px;">📧 Diesen Monat als E-Mail senden</button>
             </div>
         </div>
 
-        <!-- REITER 2: GEHALT -->
         <div id="tab-gehalt" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0; color: var(--primary); text-align: center; font-weight: 800;">Jahres-Abrechnung</h3>
@@ -218,7 +211,6 @@
                     </div>
                 </div>
 
-                <!-- NEU: Chart für Gehalt -->
                 <button class="btn-outline" onclick="toggleChart('year-chart-wrapper')" style="margin-bottom: 20px;">📈 Gehalts-Diagramm ein-/ausblenden</button>
                 <div id="year-chart-wrapper" class="chart-container" style="margin-top: 0; margin-bottom: 20px; border-top: none; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
                     <canvas id="yearChartCanvas"></canvas>
@@ -228,7 +220,6 @@
             </div>
         </div>
 
-        <!-- REITER 3: E-MAIL -->
         <div id="tab-email" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0;">Text-Vorlage</h3>
@@ -249,7 +240,6 @@
             </div>
         </div>
 
-        <!-- REITER 4: PROFIL -->
         <div id="tab-profil" class="tab-content">
             <div class="card">
                 <h3 style="margin-top: 0;">Persönliche Daten</h3>
@@ -280,52 +270,27 @@
     </div>
 
 <script>
-    // === FIREBASE INIT ===
-    const firebaseConfig = {
-        apiKey: "AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw",
-        authDomain: "zeiterfassung-app-56bfa.firebaseapp.com",
-        projectId: "zeiterfassung-app-56bfa",
-        storageBucket: "zeiterfassung-app-56bfa.firebasestorage.app",
-        messagingSenderId: "48863732219",
-        appId: "1:48863732219:web:7202f1e35ffd4600e76b5e",
-        measurementId: "G-SYG92HFJ33"
-    };
-
+    const firebaseConfig = { apiKey: "AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw", authDomain: "zeiterfassung-app-56bfa.firebaseapp.com", projectId: "zeiterfassung-app-56bfa", storageBucket: "zeiterfassung-app-56bfa.firebasestorage.app", messagingSenderId: "48863732219", appId: "1:48863732219:web:7202f1e35ffd4600e76b5e", measurementId: "G-SYG92HFJ33" };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const auth = firebase.auth(); const db = firebase.firestore(); const provider = new firebase.auth.GoogleAuthProvider();
 
-    let currentUserUID = null;
-    let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
+    let currentUserUID = null; let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
+    let monthChartInstance = null; let yearChartInstance = null;
 
-    // === GLOBALE CHART INSTANZEN ===
-    let monthChartInstance = null;
-    let yearChartInstance = null;
-
-    // === BASIS FUNKTIONEN ===
     window.onload = function() {
-        let heute = new Date();
-        document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
+        let heute = new Date(); document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('yearPicker').value = heute.getFullYear();
-        
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        
         if(localStorage.getItem('dark_mode') === 'true') document.body.classList.add('dark-mode');
-        ladeLokalesProfil();
-        ladeEmailVorlage();
-        renderEmailHistory();
+        ladeLokalesProfil(); ladeEmailVorlage(); renderEmailHistory();
     };
 
-    // === TASTATUR STEUERUNG ===
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
         if (document.getElementById('tab-uebersicht').classList.contains('active')) {
-            if (e.key === 'ArrowLeft') changeMonth(-1);
-            if (e.key === 'ArrowRight') changeMonth(1);
+            if (e.key === 'ArrowLeft') changeMonth(-1); if (e.key === 'ArrowRight') changeMonth(1);
         } else if (document.getElementById('tab-gehalt').classList.contains('active')) {
-            if (e.key === 'ArrowLeft') changeYear(-1);
-            if (e.key === 'ArrowRight') changeYear(1);
+            if (e.key === 'ArrowLeft') changeYear(-1); if (e.key === 'ArrowRight') changeYear(1);
         }
     });
 
@@ -353,26 +318,18 @@
         if (body) document.getElementById('emailBody').value = body; else document.getElementById('emailBody').value = "Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine unterschriebene Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}";
     }
 
-    function emailVorlageSpeichern() {
-        localStorage.setItem('email_subject', document.getElementById('emailSubject').value);
-        localStorage.setItem('email_body', document.getElementById('emailBody').value);
-    }
+    function emailVorlageSpeichern() { localStorage.setItem('email_subject', document.getElementById('emailSubject').value); localStorage.setItem('email_body', document.getElementById('emailBody').value); }
 
     function switchTab(tabName, element) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabName).classList.add('active'); element.classList.add('active');
-        if(tabName === 'uebersicht') renderDashboard(); 
-        if(tabName === 'gehalt') renderAnnualSalary();
-        if(tabName === 'email') renderEmailHistory();
+        if(tabName === 'uebersicht') renderDashboard(); if(tabName === 'gehalt') renderAnnualSalary(); if(tabName === 'email') renderEmailHistory();
     }
 
     function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode'); 
-        localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
-        // Charts aktualisieren, damit die Schriftfarbe passt
-        renderDashboard();
-        renderAnnualSalary();
+        document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
+        renderDashboard(); renderAnnualSalary();
     }
 
     function toggleChart(wrapperId) {
@@ -396,7 +353,6 @@
         picker.value = newYear; renderAnnualSalary();
     }
 
-    // === AUTHENTIFIZIERUNG ===
     function startLocalMode() {
         isLocalMode = true; localStorage.setItem('mode_lokal', 'true'); currentUserUID = null;
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block';
@@ -430,16 +386,9 @@
 
     async function cloudDatenSpeichern() {
         if (!currentUserUID) return;
-        try {
-            await db.collection('users').doc(currentUserUID).set({
-                arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]", ma_name: localStorage.getItem('ma_name') || "",
-                ma_vorname: localStorage.getItem('ma_vorname') || "", ma_personalnummer: localStorage.getItem('ma_personalnummer') || "",
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        } catch (e) {}
+        try { await db.collection('users').doc(currentUserUID).set({ arbeitszeiten: localStorage.getItem('meine_arbeitszeiten') || "[]", ma_name: localStorage.getItem('ma_name') || "", ma_vorname: localStorage.getItem('ma_vorname') || "", ma_personalnummer: localStorage.getItem('ma_personalnummer') || "", lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch (e) {}
     }
 
-    // === BERECHNUNG & INLINE EDITING ===
     function berechneNetto(startStr, endStr, pauseMins) {
         if (!startStr || !endStr) return 0;
         const startTime = new Date(`1970-01-01T${startStr}:00`); let endeTime = new Date(`1970-01-01T${endStr}:00`);
@@ -475,43 +424,29 @@
             wert = parseInt(wert); if (isNaN(wert) || wert < 0) wert = (index !== -1 ? eintrag.pauseMinuten : 0); 
             eintrag.pauseMinuten = wert;
         } else {
-            if (/^\d{1,2}:\d{2}$/.test(wert)) {
-                let teile = wert.split(':'); wert = `${teile[0].padStart(2, '0')}:${teile[1]}`; eintrag[feld] = wert;
-            } else if (wert === "" || wert === "-") { eintrag[feld] = ""; } 
-            else { element.innerText = (index !== -1 ? eintrag[feld] : ""); return; }
+            if (/^\d{1,2}:\d{2}$/.test(wert)) { let teile = wert.split(':'); wert = `${teile[0].padStart(2, '0')}:${teile[1]}`; eintrag[feld] = wert; } else if (wert === "" || wert === "-") { eintrag[feld] = ""; } else { element.innerText = (index !== -1 ? eintrag[feld] : ""); return; }
         }
-
         if (eintrag.kommen && eintrag.gehen) { eintrag.nettoStunden = berechneNetto(eintrag.kommen, eintrag.gehen, eintrag.pauseMinuten); } else { eintrag.nettoStunden = 0; }
-        if (eintrag.kommen === "" && eintrag.gehen === "") { if (index !== -1) daten.splice(index, 1); } 
-        else { if (index !== -1) daten[index] = eintrag; else daten.push(eintrag); }
-        
+        if (eintrag.kommen === "" && eintrag.gehen === "") { if (index !== -1) daten.splice(index, 1); } else { if (index !== -1) daten[index] = eintrag; else daten.push(eintrag); }
         localStorage.setItem('meine_arbeitszeiten', JSON.stringify(daten)); cloudDatenSpeichern(); renderDashboard(); 
     };
 
-    // === ALMATAR-LOGIK IMPORT ===
     function findeSchichtWerte(validTimes) {
         let startStr = validTimes[0].padStart(5, '0'); let endStr = validTimes[1].padStart(5, '0');
         let sParts = startStr.split(':'); let eParts = endStr.split(':');
         let startMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]); let endMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
         let diffMins = endMins - startMins; if (diffMins < 0) diffMins += 1440; 
         let pauseMins = 0;
-        
-        if (validTimes.length >= 3) {
-            let pParts = validTimes[2].split(':'); let thirdTimeMins = parseInt(pParts[0]) * 60 + parseInt(pParts[1]);
-            if (thirdTimeMins > 0 && thirdTimeMins < diffMins) { pauseMins = thirdTimeMins; }
-        }
+        if (validTimes.length >= 3) { let pParts = validTimes[2].split(':'); let thirdTimeMins = parseInt(pParts[0]) * 60 + parseInt(pParts[1]); if (thirdTimeMins > 0 && thirdTimeMins < diffMins) { pauseMins = thirdTimeMins; } }
         return { start: startStr, end: endStr, pause: pauseMins, diff: diffMins };
     }
 
     function werteGanzenTextAus(fullText, gespeicherteDaten) {
         let importCount = 0; let lastDate = null; let regex = /(\d{2})\.(\d{2})\.(\d{2,4})([\s\S]*?)(?=\d{2}\.\d{2}\.\d{2,4}|$)/g;
         let matches = [...fullText.matchAll(regex)];
-        
         matches.forEach(match => {
             let tag = match[1]; let monat = match[2]; let jahr = match[3]; if (jahr.length === 2) jahr = "20" + jahr;
-            let datumStr = `${jahr}-${monat}-${tag}`; let dataBlock = match[4]; 
-            let timeMatches = dataBlock.match(/\b\d{1,2}:\d{2}\b/g);
-            
+            let datumStr = `${jahr}-${monat}-${tag}`; let dataBlock = match[4]; let timeMatches = dataBlock.match(/\b\d{1,2}:\d{2}\b/g);
             if (timeMatches) {
                 let validTimes = timeMatches.filter(t => t !== "0:00" && t !== "00:00");
                 if (validTimes.length >= 2) {
@@ -519,8 +454,7 @@
                     let nettoStundenDezimal = Math.round((nettoMinuten / 60) * 100) / 100;
                     if (nettoStundenDezimal > 0) {
                         let idx = gespeicherteDaten.findIndex(e => e.datum === datumStr); if (idx > -1) gespeicherteDaten.splice(idx, 1); 
-                        gespeicherteDaten.push({ datum: datumStr, kommen: schicht.start, gehen: schicht.end, pauseMinuten: schicht.pause, nettoStunden: nettoStundenDezimal });
-                        importCount++; lastDate = datumStr;
+                        gespeicherteDaten.push({ datum: datumStr, kommen: schicht.start, gehen: schicht.end, pauseMinuten: schicht.pause, nettoStunden: nettoStundenDezimal }); importCount++; lastDate = datumStr;
                     }
                 }
             }
@@ -547,21 +481,16 @@
                     result = werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []);
                 } else {
                     result = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
+                        const reader = new FileReader(); reader.onload = function(e) {
                             try {
                                 const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array', raw: false, dateNF: 'dd.mm.yyyy'}); let fullTextStr = "";
-                                workbook.SheetNames.forEach(sheetName => {
-                                    const sheet = workbook.Sheets[sheetName]; const json = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: false, defval: ""}); 
-                                    json.forEach(row => { if (Array.isArray(row)) fullTextStr += row.filter(cell => cell !== "").join(" ") + " | "; });
-                                });
+                                workbook.SheetNames.forEach(sheetName => { const sheet = workbook.Sheets[sheetName]; const json = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: false, defval: ""}); json.forEach(row => { if (Array.isArray(row)) fullTextStr += row.filter(cell => cell !== "").join(" ") + " | "; }); });
                                 resolve(werteGanzenTextAus(fullTextStr, JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []));
                             } catch (err) { reject(err); }
                         }; reader.onerror = reject; reader.readAsArrayBuffer(file);
                     });
                 }
-                totalImported += result.count; if (result.lastDate) letzesDatumFuerAnsicht = result.lastDate;
-                localStorage.setItem('meine_arbeitszeiten', JSON.stringify(result.daten));
+                totalImported += result.count; if (result.lastDate) letzesDatumFuerAnsicht = result.lastDate; localStorage.setItem('meine_arbeitszeiten', JSON.stringify(result.daten));
             } catch (err) { console.error("Fehler bei Datei " + file.name, err); }
         }
 
@@ -575,7 +504,6 @@
         fileInput.value = ""; 
     }
 
-    // === TABELLE & CHART ZEICHNEN ===
     function renderDashboard() {
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
         const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
@@ -583,10 +511,7 @@
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
         const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
         
-        let gesamtDezimal = 0;
-        let chartLabels = [];
-        let chartData = [];
-        
+        let gesamtDezimal = 0; let chartLabels = []; let chartData = [];
         let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
 
         for (let tag = 1; tag <= tageImMonat; tag++) {
@@ -597,8 +522,7 @@
             chartLabels.push(`${tagStr}.`);
 
             if(eintrag) {
-                gesamtDezimal += eintrag.nettoStunden;
-                chartData.push(eintrag.nettoStunden);
+                gesamtDezimal += eintrag.nettoStunden; chartData.push(eintrag.nettoStunden);
                 tableHTML += `<tr class="${rowClass}">
                     <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
                     <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
@@ -621,11 +545,10 @@
         tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
         container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
 
-        // Chart.js aktualisieren (Monats-Stunden)
         const ctx = document.getElementById('monthChartCanvas').getContext('2d');
         if(monthChartInstance) monthChartInstance.destroy();
         const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const textColor = isDark ? '#a1a1aa' : '#64748b';
         const barColor = isDark ? '#ffffff' : '#000000';
 
         monthChartInstance = new Chart(ctx, {
@@ -636,14 +559,10 @@
     }
 
     function calculateMonthSalary(jahr, monat, daten) {
-        let tageImMonat = new Date(jahr, monat, 0).getDate();
-        let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
-        
+        let tageImMonat = new Date(jahr, monat, 0).getDate(); let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
             let suchDatum = `${jahr}-${String(monat).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay();
-            let eintrag = daten.find(e => e.datum === suchDatum);
-            
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let eintrag = daten.find(e => e.datum === suchDatum);
             if(eintrag) {
                 gesamtDezimal += eintrag.nettoStunden;
                 if (dayOfWeek === 0) sonntagStunden += eintrag.nettoStunden;
@@ -664,19 +583,15 @@
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('annual-salary-container');
         const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
         let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
-        
-        let chartLabels = [];
-        let chartData = [];
+        let chartLabels = []; let chartData = [];
 
         for (let m = 1; m <= 12; m++) {
             let stats = calculateMonthSalary(jahr, m, daten);
-            
-            chartLabels.push(monthNames[m-1]);
-            chartData.push(stats.gesamtGehalt);
+            chartLabels.push(monthNames[m-1]); chartData.push(stats.gesamtGehalt);
 
             if (stats.gesamtDezimal > 0) {
                 jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
-                htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border);">
                         <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
@@ -690,12 +605,11 @@
         else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--success); color: white; padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800;">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
         container.innerHTML = htmlStr;
 
-        // Chart.js aktualisieren (Jahresgehalt)
         const ctx = document.getElementById('yearChartCanvas').getContext('2d');
         if(yearChartInstance) yearChartInstance.destroy();
         const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#94a3b8' : '#64748b';
-        const barColor = '#10b981'; // Grün für Gehalt
+        const textColor = isDark ? '#a1a1aa' : '#64748b';
+        const barColor = '#10b981';
 
         yearChartInstance = new Chart(ctx, {
             type: 'bar',
@@ -829,7 +743,6 @@
         setTimeout(() => { window.print(); }, 300);
     }
 
-    // === E-MAIL HISTORIE LOGIK ===
     function logEmailHistory(monthName, year) {
         let history = JSON.parse(localStorage.getItem('email_history')) || [];
         const now = new Date();
@@ -868,7 +781,6 @@
     }
 
     async function sharePDF() {
-        if (!navigator.canShare) { alert("Senden per E-Mail am PC nicht möglich. Lade das PDF manuell herunter."); return; }
         const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
         
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
@@ -882,15 +794,35 @@
         const element = document.createElement('div'); element.style.position = 'absolute'; element.style.left = '-9999px'; element.style.top = '-9999px'; element.style.width = '800px'; element.style.padding = '40px'; element.style.boxSizing = 'border-box';
         element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
 
-        const opt = { margin: 0, filename: 'temp.pdf', image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        const opt = { margin: 0, filename: `Stundenuebersicht_${monatName}_${jahr}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+
         try {
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-            const file = new File([pdfBlob], `Stundenuebersicht_${monatName}_${jahr}.pdf`, { type: 'application/pdf' });
-            await navigator.share({ title: customSubj, text: customBody, files: [file] });
-            
-            logEmailHistory(monatName, jahr);
-        } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } 
-        finally { document.body.removeChild(element); }
+            const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
+
+            // Pürfen, ob das Senden von Dateianhängen vom Gerät unterstützt wird (meist nur Smartphones)
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ title: customSubj, text: customBody, files: [file] });
+                logEmailHistory(monatName, jahr);
+            } else {
+                // PC WORKAROUND: Download erzwingen und Mailto-Link öffnen
+                alert("Am PC blockieren Webbrowser das automatische Anhängen von Dateien an E-Mails.\n\nDas PDF wird nun heruntergeladen. Danach öffnet sich dein E-Mail-Programm. Bitte ziehe die heruntergeladene Datei manuell in den Anhang!");
+                
+                // 1. PDF Download
+                saveAs(pdfBlob, opt.filename);
+                
+                // 2. Mailto Link öffnen
+                const mailtoLink = `mailto:?subject=${encodeURIComponent(customSubj)}&body=${encodeURIComponent(customBody)}`;
+                window.location.href = mailtoLink;
+                
+                logEmailHistory(monatName, jahr);
+            }
+        } catch (err) { 
+            console.error(err); 
+            alert("Fehler beim Vorbereiten der Email."); 
+        } finally { 
+            document.body.removeChild(element); 
+        }
     }
 </script>
 
