@@ -42,7 +42,6 @@
             --table-border: #f1f5f9;
         }
 
-        /* === ECHTES SCHWARZ FÜR DEN DUNKELMODUS === */
         body.dark-mode {
             --bg-color: #000000;
             --card-bg: #111111;
@@ -353,6 +352,7 @@
         picker.value = newYear; renderAnnualSalary();
     }
 
+    // === AUTHENTIFIZIERUNG: NEUE HYBRIDE LOGIK ===
     function startLocalMode() {
         isLocalMode = true; localStorage.setItem('mode_lokal', 'true'); currentUserUID = null;
         document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-container').style.display = 'block';
@@ -368,8 +368,29 @@
         else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }
     });
 
-    function loginWithGoogle() { auth.signInWithRedirect(provider); }
-    auth.getRedirectResult().catch((error) => { alert("Login Fehler: " + error.message); });
+    function loginWithGoogle() {
+        // 1. Lokale Speicherung erzwingen, damit die Homescreen-App den Login nicht vergisst
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+            // 2. Primär: Popup nutzen (verhindert Rauswurf aus der Homescreen-App auf dem Handy)
+            return auth.signInWithPopup(provider);
+        }).catch((error) => {
+            // 3. Fallback: Falls Firefox oder ein AdBlocker das Popup blockiert, den Redirect nutzen
+            if (error.code === 'auth/popup-blocked') {
+                auth.signInWithRedirect(provider);
+            } else {
+                console.error("Login Fehler:", error);
+                alert("Login Fehler: " + error.message);
+            }
+        });
+    }
+
+    // Fängt Fehler ab, falls der Fallback (Redirect) benutzt wurde
+    auth.getRedirectResult().catch((error) => {
+        if (error.code !== 'auth/popup-closed-by-user') {
+            alert("Redirect Login Fehler: " + error.message);
+        }
+    });
+
     function logout() { isLocalMode = false; localStorage.removeItem('mode_lokal'); auth.signOut().finally(() => { currentUserUID = null; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-container').style.display = 'none'; }); }
 
     async function cloudDatenLaden() {
@@ -743,6 +764,7 @@
         setTimeout(() => { window.print(); }, 300);
     }
 
+    // === E-MAIL HISTORIE LOGIK ===
     function logEmailHistory(monthName, year) {
         let history = JSON.parse(localStorage.getItem('email_history')) || [];
         const now = new Date();
@@ -800,7 +822,7 @@
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
             const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
 
-            // Pürfen, ob das Senden von Dateianhängen vom Gerät unterstützt wird (meist nur Smartphones)
+            // Prüfen, ob das Senden von Dateianhängen vom Gerät unterstützt wird (meist nur Smartphones)
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({ title: customSubj, text: customBody, files: [file] });
                 logEmailHistory(monatName, jahr);
