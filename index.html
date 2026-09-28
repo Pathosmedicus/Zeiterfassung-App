@@ -11,6 +11,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- NEU: Chart.js für Diagramme -->
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -18,19 +19,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        /* === MODERNES UI DESIGN === */
+        /* === MODERNES SCHWARZ-WEISS UI DESIGN === */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
         :root {
-            --bg-color: #f8fafc; /* Modernes, helles Slate */
+            --bg-color: #f8fafc;
             --card-bg: #ffffff;
-            --text-main: #0f172a;
+            --text-main: #000000;
             --text-muted: #64748b;
-            --primary: #4f46e5; /* Modernes Indigo */
-            --primary-hover: #4338ca;
+            --primary: #000000; /* Edles Schwarz statt Blau */
+            --primary-hover: #333333;
             --success: #10b981;
             --danger: #ef4444;
-            --info: #8b5cf6;
+            --info: #111827; /* Dunkelgrau für Info-Buttons */
             --border: #e2e8f0;
             --radius: 16px;
             --nav-bg: rgba(255, 255, 255, 0.85);
@@ -46,8 +47,9 @@
             --card-bg: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --primary: #6366f1;
-            --primary-hover: #818cf8;
+            --primary: #ffffff; /* Weiß als Akzent im Dunkelmodus */
+            --primary-hover: #cccccc;
+            --info: #f8fafc;
             --border: #334155;
             --nav-bg: rgba(30, 41, 59, 0.85);
             --table-header-bg: #0f172a;
@@ -59,40 +61,44 @@
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
         
-        /* Header */
         .app-header { padding: 20px 24px; font-size: 22px; font-weight: 800; background-color: var(--nav-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center;}
         
         .tab-content { display: none; padding: 20px; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Karten mit modernen Schatten */
         .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid rgba(255,255,255,0.1); }
         body.dark-mode .card { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); border: 1px solid var(--border); }
 
-        /* Eingabefelder mit weichen Fokus-Effekten */
         label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
         input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid transparent; background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; }
-        input:focus, textarea:focus { border: 1px solid var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
-        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
+        input:focus, textarea:focus { border: 1px solid var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1); }
+        body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15); }
         textarea { resize: vertical; min-height: 120px; }
         
-        /* Buttons */
-        button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: white; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: var(--bg-color); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        body.dark-mode button { color: var(--bg-color); }
         button:active { transform: scale(0.97); }
-        .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        
+        .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
         .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-success { background-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
-        .btn-danger { background-color: var(--danger); }
-        .btn-info { background-color: var(--info); }
+        
+        /* Outline-Buttons für Sekundäraktionen */
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
+        body.dark-mode .btn-outline { color: var(--primary); }
+        .btn-outline:hover { background-color: var(--primary); color: var(--bg-color); }
+
+        .btn-danger { background-color: transparent; border: 2px solid var(--danger); color: var(--danger); }
+        body.dark-mode .btn-danger { color: var(--danger); }
+        .btn-danger:hover { background-color: var(--danger); color: white; }
+
         .btn-google { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
-        /* Bereichsauswahl (Monat/Jahr) */
         .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 6px; border-radius: 14px; flex: 1; border: 1px solid var(--border); }
         .month-selector input { font-size: 16px; font-weight: 800; border: none; background: transparent; padding: 0; color: var(--text-main); width: auto; text-align: center; outline: none; }
         .btn-nav { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; width: 44px; height: 44px; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0; }
         .btn-nav:hover { background-color: var(--bg-color); }
-        .total-hours-badge { background-color: var(--primary); color: white; padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; margin-left: 12px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        .total-hours-badge { background-color: var(--primary); color: var(--card-bg); padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; margin-left: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
         
         /* Tabelle Modernisiert */
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 20px; background: var(--card-bg); }
@@ -101,33 +107,38 @@
         .excel-table td { padding: 12px 10px; border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border); }
         .excel-table td:last-child { border-right: none; }
         .excel-table tr:nth-child(even) { background-color: var(--table-row-even); }
-        .excel-table tr:hover { background-color: rgba(79, 70, 229, 0.05); }
+        .excel-table tr:hover { background-color: rgba(0, 0, 0, 0.03); }
+        body.dark-mode .excel-table tr:hover { background-color: rgba(255, 255, 255, 0.05); }
         .excel-table tr.weekend { background-color: var(--table-weekend-bg); }
         .excel-table td.empty-cell { color: var(--text-muted); font-style: italic; }
         .excel-table tr.sum-row { font-weight: 800; background-color: var(--table-header-bg); border-top: 2px solid var(--border); }
         
-        .editable-cell { cursor: pointer; color: var(--primary); font-weight: 600; min-width: 50px; border-radius: 6px; transition: background 0.2s; }
-        .editable-cell:hover { background: rgba(79, 70, 229, 0.1); }
-        .editable-cell:focus { outline: none; background-color: rgba(79, 70, 229, 0.15); box-shadow: inset 0 0 0 2px var(--primary); }
-        .editable-cell:empty:before { content: "-"; color: var(--text-muted); font-weight: normal; }
+        .editable-cell { cursor: pointer; color: var(--primary); font-weight: 600; min-width: 50px; border-radius: 6px; transition: background 0.2s; border-bottom: 1px dashed var(--primary); }
+        .editable-cell:hover { background: rgba(0, 0, 0, 0.05); }
+        body.dark-mode .editable-cell:hover { background: rgba(255, 255, 255, 0.1); }
+        .editable-cell:focus { outline: none; background-color: rgba(0, 0, 0, 0.05); box-shadow: inset 0 0 0 2px var(--primary); }
+        body.dark-mode .editable-cell:focus { background-color: rgba(255, 255, 255, 0.1); }
+        .editable-cell:empty:before { content: "-"; color: var(--text-muted); font-weight: normal; border-bottom: none;}
         
-        /* Nav-Bar Bottom (iOS Style) */
+        /* Nav-Bar Bottom */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 12px 0 24px 0; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.02); }
         .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; flex: 1; transition: color 0.2s; }
-        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; transition: transform 0.2s; }
+        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 6px; transition: transform 0.2s; filter: grayscale(100%); }
         .nav-item.active { color: var(--primary); }
-        .nav-item.active .icon { transform: translateY(-2px) scale(1.1); }
+        .nav-item.active .icon { transform: translateY(-2px) scale(1.1); filter: grayscale(0%); }
         
-        /* Historie List */
         .history-list { list-style: none; padding: 0; margin: 0; }
         .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
         .history-item:last-child { border-bottom: none; }
         .history-date { color: var(--text-muted); font-size: 12px; }
 
+        /* Chart Containers */
+        .chart-container { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+        canvas { width: 100% !important; max-height: 250px; }
+
         #login-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #app-container { display: none; }
 
-        /* Print */
         #print-section { display: none; }
         @media print {
             .app-header, .tab-content, .bottom-nav { display: none !important; }
@@ -157,8 +168,8 @@
                 <span id="user-badge" style="font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; background: var(--border); color: var(--text-muted);"></span>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button id="btn-cloud-connect" onclick="loginWithGoogle()" style="display: none; width: auto; padding: 8px 16px; margin: 0; background: var(--primary); font-size: 12px; border-radius: 20px;">Cloud</button>
-                <button id="btn-logout" onclick="logout()" style="width: auto; padding: 8px 16px; margin: 0; background: var(--danger); font-size: 12px; border-radius: 20px;">Logout</button>
+                <button id="btn-cloud-connect" onclick="loginWithGoogle()" style="display: none; width: auto; padding: 8px 16px; margin: 0; font-size: 12px; border-radius: 20px;" class="btn-primary">Cloud</button>
+                <button id="btn-logout" onclick="logout()" style="width: auto; padding: 8px 16px; margin: 0; font-size: 12px; border-radius: 20px;" class="btn-danger">Logout</button>
             </div>
         </div>
 
@@ -175,14 +186,23 @@
                     <div class="total-hours-badge" id="totalMonthHours" style="margin: 0;">0 h</div>
                 </div>
                 
-                <p style="font-size: 12px; text-align: center; color: var(--text-muted); margin-top: 16px;">Tippe direkt in eine Zelle, um Zeiten zu bearbeiten. Nutze die <b>Pfeiltasten</b> (←/→) auf der Tastatur zum Wechseln des Monats.</p>
+                <p style="font-size: 12px; text-align: center; color: var(--text-muted); margin-top: 16px;">Nutze die <b>Pfeiltasten</b> (←/→) auf der Tastatur zum schnellen Wechseln.</p>
                 
                 <div id="month-table-container"></div>
                 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <button class="btn-success" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startExcelExport()">📊 Excel</button>
-                    <button class="btn-danger" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF</button>
+                <!-- NEU: Chart für Stunden -->
+                <button class="btn-outline" onclick="toggleChart('month-chart-wrapper')" style="margin-top: 15px;">📊 Stunden-Diagramm ein-/ausblenden</button>
+                <div id="month-chart-wrapper" class="chart-container">
+                    <canvas id="monthChartCanvas"></canvas>
                 </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startExcelExport()">📊 Excel</button>
+                    <button class="btn-outline" style="margin-top: 0; flex: 1; font-size: 14px;" onclick="startPDFExport()">📄 PDF</button>
+                </div>
+
+                <!-- NEU: E-Mail Button direkt unter der Tabelle -->
+                <button class="btn-primary" onclick="sharePDF()" style="margin-top: 12px; padding: 20px; font-size: 16px;">📧 Diesen Monat als E-Mail senden</button>
             </div>
         </div>
 
@@ -197,18 +217,19 @@
                         <button class="btn-nav" onclick="changeYear(1)">&#9654;</button>
                     </div>
                 </div>
+
+                <!-- NEU: Chart für Gehalt -->
+                <button class="btn-outline" onclick="toggleChart('year-chart-wrapper')" style="margin-bottom: 20px;">📈 Gehalts-Diagramm ein-/ausblenden</button>
+                <div id="year-chart-wrapper" class="chart-container" style="margin-top: 0; margin-bottom: 20px; border-top: none; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                    <canvas id="yearChartCanvas"></canvas>
+                </div>
+
                 <div id="annual-salary-container"></div>
             </div>
         </div>
 
-        <!-- REITER 3: E-MAIL (NEU) -->
+        <!-- REITER 3: E-MAIL -->
         <div id="tab-email" class="tab-content">
-            <div class="card">
-                <h3 style="margin-top: 0; color: var(--primary);">📧 E-Mail Versand</h3>
-                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">Versende die Stundenübersicht des aktuell ausgewählten Monats direkt an die Verwaltung.</p>
-                <button class="btn-primary" onclick="sharePDF()" style="padding: 20px; font-size: 18px; border-radius: 16px;">✉️ Jetzt E-Mail vorbereiten</button>
-            </div>
-
             <div class="card">
                 <h3 style="margin-top: 0;">Text-Vorlage</h3>
                 <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Platzhalter: {MONAT}, {JAHR}, {NAME}, {VORNAME}</p>
@@ -221,12 +242,10 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0;">Verlauf</h3>
-                    <button onclick="clearEmailHistory()" style="width: auto; padding: 6px 12px; margin: 0; background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 12px; border-radius: 8px;">Leeren</button>
+                    <button onclick="clearEmailHistory()" class="btn-danger" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px; border-radius: 8px;">Leeren</button>
                 </div>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Protokoll der generierten E-Mail Anhänge.</p>
-                <ul class="history-list" id="email-history-list">
-                    <!-- Wird durch JS befüllt -->
-                </ul>
+                <ul class="history-list" id="email-history-list"></ul>
             </div>
         </div>
 
@@ -243,16 +262,15 @@
                 <h3 style="margin-top: 0;">Daten Import</h3>
                 <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest PDFs mathematisch und fehlerfrei aus.</p>
                 <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 14px; background: var(--bg-color); border: 2px dashed var(--border);">
-                <button class="btn-success" onclick="startMultiImport()">Dateien scannen & Importieren</button>
+                <button class="btn-primary" onclick="startMultiImport()">Dateien scannen & Importieren</button>
             </div>
 
             <div class="card">
                 <h3 style="margin-top: 0;">Einstellungen</h3>
-                <button class="btn-primary" style="background-color: var(--text-main); color: var(--bg-color);" onclick="toggleDarkMode()">Dunkelmodus umschalten 🌙</button>
+                <button class="btn-outline" onclick="toggleDarkMode()">Dunkelmodus umschalten 🌙</button>
             </div>
         </div>
 
-        <!-- NEUE NAVIGATION (4 TABS) -->
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-uebersicht" onclick="switchTab('uebersicht', this)"><span class="icon">📊</span>Tabelle</div>
             <div class="nav-item" id="nav-gehalt" onclick="switchTab('gehalt', this)"><span class="icon">💶</span>Gehalt</div>
@@ -281,6 +299,10 @@
     let currentUserUID = null;
     let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
 
+    // === GLOBALE CHART INSTANZEN ===
+    let monthChartInstance = null;
+    let yearChartInstance = null;
+
     // === BASIS FUNKTIONEN ===
     window.onload = function() {
         let heute = new Date();
@@ -295,12 +317,9 @@
         renderEmailHistory();
     };
 
-    // === NEU: TASTATUR STEUERUNG ===
+    // === TASTATUR STEUERUNG ===
     document.addEventListener('keydown', function(e) {
-        // Blockiere die Pfeiltasten-Funktion, wenn der User gerade in einem Eingabefeld schreibt
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-        
-        // Prüfen, ob wir im Tab Tabelle oder Gehalt sind
         if (document.getElementById('tab-uebersicht').classList.contains('active')) {
             if (e.key === 'ArrowLeft') changeMonth(-1);
             if (e.key === 'ArrowRight') changeMonth(1);
@@ -349,7 +368,16 @@
     }
 
     function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
+        document.body.classList.toggle('dark-mode'); 
+        localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode'));
+        // Charts aktualisieren, damit die Schriftfarbe passt
+        renderDashboard();
+        renderAnnualSalary();
+    }
+
+    function toggleChart(wrapperId) {
+        const wrapper = document.getElementById(wrapperId);
+        wrapper.style.display = (wrapper.style.display === 'none' || wrapper.style.display === '') ? 'block' : 'none';
     }
 
     function profilSpeichern() {
@@ -410,7 +438,6 @@
             }, { merge: true });
         } catch (e) {}
     }
-
 
     // === BERECHNUNG & INLINE EDITING ===
     function berechneNetto(startStr, endStr, pauseMins) {
@@ -548,7 +575,66 @@
         fileInput.value = ""; 
     }
 
-    // === TABELLE ZEICHNEN ===
+    // === TABELLE & CHART ZEICHNEN ===
+    function renderDashboard() {
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
+        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
+
+        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
+        const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+        
+        let gesamtDezimal = 0;
+        let chartLabels = [];
+        let chartData = [];
+        
+        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
+
+        for (let tag = 1; tag <= tageImMonat; tag++) {
+            let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
+            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
+            let eintrag = daten.find(e => e.datum === suchDatum);
+
+            chartLabels.push(`${tagStr}.`);
+
+            if(eintrag) {
+                gesamtDezimal += eintrag.nettoStunden;
+                chartData.push(eintrag.nettoStunden);
+                tableHTML += `<tr class="${rowClass}">
+                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
+                    <td style="color: var(--primary); font-weight: 800;">${eintrag.nettoStunden}</td>
+                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
+                </tr>`;
+            } else {
+                chartData.push(0);
+                tableHTML += `<tr class="${rowClass}">
+                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
+                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
+                    <td class="empty-cell">0</td><td></td>
+                </tr>`;
+            }
+        }
+        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
+        container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
+
+        // Chart.js aktualisieren (Monats-Stunden)
+        const ctx = document.getElementById('monthChartCanvas').getContext('2d');
+        if(monthChartInstance) monthChartInstance.destroy();
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const barColor = isDark ? '#ffffff' : '#000000';
+
+        monthChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: chartLabels, datasets: [{ label: 'Stunden', data: chartData, backgroundColor: barColor, borderRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor, maxRotation: 0 } } } }
+        });
+    }
+
     function calculateMonthSalary(jahr, monat, daten) {
         let tageImMonat = new Date(jahr, monat, 0).getDate();
         let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
@@ -574,56 +660,24 @@
         return { gesamtDezimal, basisLohn, sonntagLohn, samstagLohn, gesamtGehalt: basisLohn + sonntagLohn + samstagLohn };
     }
 
-    function renderDashboard() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('month-table-container');
-        const gewaehlterMonat = document.getElementById('monthPicker').value; if(!gewaehlterMonat) return;
-
-        const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
-        const tageImMonat = new Date(jahr, monat, 0).getDate(); const wochentage = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-        
-        let gesamtDezimal = 0;
-        let tableHTML = `<div class="table-responsive"><table class="excel-table"><thead><tr><th>Datum</th><th>Tag</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Stunden</th><th></th></tr></thead><tbody>`;
-
-        for (let tag = 1; tag <= tageImMonat; tag++) {
-            let tagStr = String(tag).padStart(2, '0'); let suchDatum = `${jahrStr}-${monatStr}-${tagStr}`;
-            let dayOfWeek = new Date(jahr, monat - 1, tag).getDay(); let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); let rowClass = isWeekend ? "weekend" : "";
-            let eintrag = daten.find(e => e.datum === suchDatum);
-
-            if(eintrag) {
-                gesamtDezimal += eintrag.nettoStunden;
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')">${eintrag.kommen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')">${eintrag.gehen}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')">${eintrag.pauseMinuten}</td>
-                    <td style="color: var(--primary); font-weight: bold;">${eintrag.nettoStunden}</td>
-                    <td style="cursor: pointer; font-size: 16px;" onclick="schichtLoeschen('${suchDatum}')">🗑️</td>
-                </tr>`;
-            } else {
-                tableHTML += `<tr class="${rowClass}">
-                    <td><strong>${tagStr}.</strong></td><td>${wochentage[dayOfWeek]}</td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'kommen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'gehen')"></td>
-                    <td class="editable-cell" contenteditable="true" onblur="inlineEdit(this, '${suchDatum}', 'pauseMinuten')"></td>
-                    <td class="empty-cell">0</td><td></td>
-                </tr>`;
-            }
-        }
-        tableHTML += `</tbody><tfoot><tr class="sum-row"><td colspan="5" style="text-align: right; padding-right: 15px;">GESAMT:</td><td style="color: var(--primary); font-size: 16px;">${Math.round(gesamtDezimal * 100) / 100} h</td><td></td></tr></tfoot></table></div>`;
-        container.innerHTML = tableHTML; document.getElementById('totalMonthHours').innerText = `${Math.round(gesamtDezimal * 100) / 100} h`;
-    }
-
     function renderAnnualSalary() {
         const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('annual-salary-container');
-        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
         let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
+        
+        let chartLabels = [];
+        let chartData = [];
 
         for (let m = 1; m <= 12; m++) {
             let stats = calculateMonthSalary(jahr, m, daten);
+            
+            chartLabels.push(monthNames[m-1]);
+            chartData.push(stats.gesamtGehalt);
+
             if (stats.gesamtDezimal > 0) {
                 jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
                 htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary); background: rgba(79, 70, 229, 0.1); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
+                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
@@ -633,8 +687,21 @@
         }
         
         if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
-        else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--success); color: white; padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
+        else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--success); color: white; padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800;">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
         container.innerHTML = htmlStr;
+
+        // Chart.js aktualisieren (Jahresgehalt)
+        const ctx = document.getElementById('yearChartCanvas').getContext('2d');
+        if(yearChartInstance) yearChartInstance.destroy();
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const barColor = '#10b981'; // Grün für Gehalt
+
+        yearChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: chartLabels, datasets: [{ label: 'Bruttogehalt (€)', data: chartData, backgroundColor: barColor, borderRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
+        });
     }
 
     // === PDF & EXCEL EXPORT ===
@@ -769,7 +836,7 @@
         const datumText = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth()+1).padStart(2, '0')}.${now.getFullYear()} um ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} Uhr`;
         
         history.unshift({ datumGesendet: datumText, zielMonat: `${monthName} ${year}` });
-        if (history.length > 20) history.pop(); // Maximal die letzten 20 aufheben
+        if (history.length > 20) history.pop();
         
         localStorage.setItem('email_history', JSON.stringify(history));
         renderEmailHistory();
@@ -806,8 +873,7 @@
         
         const [jahrStr, monatStr] = gewaehlterMonat.split('-'); const jahr = parseInt(jahrStr); const monat = parseInt(monatStr);
         const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        const monatName = monthNames[monat - 1];
-        const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
+        const monatName = monthNames[monat - 1]; const pVorname = localStorage.getItem('ma_vorname') || ""; const pName = localStorage.getItem('ma_name') || "";
         
         let customSubj = document.getElementById('emailSubject').value || "Stundenübersicht {MONAT} {JAHR}"; let customBody = document.getElementById('emailBody').value || "";
         customSubj = customSubj.replace(/{MONAT}/g, monatName).replace(/{JAHR}/g, jahr).replace(/{NAME}/g, pName).replace(/{VORNAME}/g, pVorname);
@@ -817,16 +883,11 @@
         element.innerHTML = erstellePdfHtmlString(jahr, monat); document.body.appendChild(element);
 
         const opt = { margin: 0, filename: 'temp.pdf', image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-
         try {
             const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-            const fileName = `Stundenuebersicht_${monatName}_${jahr}.pdf`;
-            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
-            const dataToShare = { title: customSubj, text: customBody, files: [file] };
-            await navigator.share(dataToShare);
+            const file = new File([pdfBlob], `Stundenuebersicht_${monatName}_${jahr}.pdf`, { type: 'application/pdf' });
+            await navigator.share({ title: customSubj, text: customBody, files: [file] });
             
-            // Speichert den erfolgreichen Versand in der neuen Historie
             logEmailHistory(monatName, jahr);
         } catch (err) { console.error(err); alert("Fehler beim Vorbereiten der Email."); } 
         finally { document.body.removeChild(element); }
