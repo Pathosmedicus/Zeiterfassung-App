@@ -29,11 +29,22 @@
             --table-weekend-bg: #fef2f2; --table-border: #f1f5f9; --warning: #f59e0b;
         }
 
+        /* === VERBESSERTE KONTRASTE IM DUNKELMODUS === */
         body.dark-mode {
-            --bg-color: #000000; --card-bg: #111111; --text-main: #f8fafc; --text-muted: #a1a1aa;
-            --primary: #ffffff; --primary-hover: #cccccc; --info: #f8fafc; --border: #27272a;
-            --nav-bg: rgba(0, 0, 0, 0.85); --table-header-bg: #000000; --table-header-text: #d4d4d8;
-            --table-row-even: #09090b; --table-weekend-bg: #451a1a; --table-border: #27272a;
+            --bg-color: #000000; 
+            --card-bg: #09090b; 
+            --text-main: #f8fafc; 
+            --text-muted: #a1a1aa;
+            --primary: #ffffff; 
+            --primary-hover: #cccccc; 
+            --info: #f8fafc; 
+            --border: #27272a;
+            --nav-bg: rgba(0, 0, 0, 0.85); 
+            --table-header-bg: #18181b; 
+            --table-header-text: #e2e8f0;
+            --table-row-even: #0f0f11; 
+            --table-weekend-bg: #3f1515; 
+            --table-border: #27272a;
         }
 
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0 0 100px 0; transition: background-color 0.3s ease; }
@@ -42,13 +53,20 @@
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid rgba(255,255,255,0.05); }
-        body.dark-mode .card { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); border: 1px solid var(--border); }
-
+        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); border: 1px solid var(--border); }
+        
         label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-top: 16px; margin-bottom: 8px; }
-        input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid transparent; background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; }
+        input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 14px 16px; border: 1px solid var(--border); background-color: var(--bg-color); color: var(--text-main); border-radius: 12px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: all 0.2s ease; outline: none; }
         input:focus, textarea:focus { border: 1px solid var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1); }
+        
+        /* Eingabefelder im Dunkelmodus besser sichtbar machen */
+        body.dark-mode input[type="text"], body.dark-mode input[type="date"], body.dark-mode input[type="time"], body.dark-mode input[type="number"], body.dark-mode input[type="file"], body.dark-mode textarea {
+            background-color: #18181b; 
+            color: #f8fafc; 
+            border-color: #3f3f46;
+        }
         body.dark-mode input:focus, body.dark-mode textarea:focus { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15); border-color: var(--primary); }
+        
         textarea { resize: vertical; min-height: 120px; }
         
         button { width: 100%; padding: 16px; margin-top: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: var(--bg-color); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -56,20 +74,28 @@
         button:active { transform: scale(0.97); }
         
         .btn-primary { background-color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+        body.dark-mode .btn-primary { color: #000000; font-weight: 800; }
         .btn-primary:hover { background-color: var(--primary-hover); }
+        
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
         body.dark-mode .btn-outline { color: var(--primary); }
         .btn-outline:hover { background-color: var(--primary); color: var(--bg-color); }
+        body.dark-mode .btn-outline:hover { color: #000000; }
+        
         .btn-danger { background-color: transparent; border: 2px solid var(--danger); color: var(--danger); }
         body.dark-mode .btn-danger { color: var(--danger); }
         .btn-danger:hover { background-color: var(--danger); color: white; }
         .btn-google { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
         .month-selector { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 6px; border-radius: 14px; flex: 1; border: 1px solid var(--border); }
+        body.dark-mode .month-selector { background-color: #18181b; border-color: #3f3f46; }
         .month-selector input { font-size: 16px; font-weight: 800; border: none; background: transparent; padding: 0; color: var(--text-main); width: auto; text-align: center; outline: none; }
         .btn-nav { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; width: 44px; height: 44px; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0; }
+        body.dark-mode .btn-nav { background-color: #27272a; border-color: #3f3f46; color: #ffffff; }
         .btn-nav:hover { background-color: var(--bg-color); }
+        body.dark-mode .btn-nav:hover { background-color: #3f3f46; }
         .total-hours-badge { background-color: var(--primary); color: var(--card-bg); padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 15px; margin-left: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+        body.dark-mode .total-hours-badge { color: #000000; }
         
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 20px; background: var(--card-bg); }
         .excel-table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 14px; text-align: center; }
@@ -104,8 +130,8 @@
         .chart-container { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
         canvas { width: 100% !important; max-height: 250px; }
 
-        /* Minijob Tracker */
-        .minijob-bar-container { width: 100%; background-color: var(--border); border-radius: 8px; height: 12px; margin-top: 10px; overflow: hidden; }
+        .minijob-bar-container { width: 100%; background-color: var(--border); border-radius: 8px; height: 14px; margin-top: 10px; overflow: hidden; }
+        body.dark-mode .minijob-bar-container { background-color: #27272a; }
         .minijob-bar-fill { height: 100%; background-color: var(--success); transition: width 0.4s ease; }
         .minijob-text { font-size: 13px; margin-top: 8px; color: var(--text-muted); display: flex; justify-content: space-between; }
 
@@ -185,11 +211,14 @@
                 </div>
                 <div id="salary-settings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
                     <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Passe die Werte an deine Abrechnungen an. Die App rechnet sofort alles neu.</p>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <div style="flex: 1;"><label>Basis (€/h)</label><input type="number" id="setBaseWage" step="0.01" onchange="lohnSettingsSpeichern()"></div>
                         <div style="flex: 1;"><label>Sonntag (€/h)</label><input type="number" id="setSunBonus" step="0.01" onchange="lohnSettingsSpeichern()"></div>
                         <div style="flex: 1;"><label>Samstag (€/h)</label><input type="number" id="setSatBonus" step="0.01" onchange="lohnSettingsSpeichern()"></div>
-                        <div style="flex: 1;"><label>Limit (€)</label><input type="number" id="setMinijobLimit" step="1" onchange="lohnSettingsSpeichern()"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;"><label>Limit Monat (€)</label><input type="number" id="setMinijobLimit" step="1" onchange="lohnSettingsSpeichern()"></div>
+                        <div style="flex: 1;"><label>Limit Jahr (€)</label><input type="number" id="setAnnualLimit" step="1" onchange="lohnSettingsSpeichern()"></div>
                     </div>
                 </div>
             </div>
@@ -203,6 +232,8 @@
                         <button class="btn-nav" onclick="changeYear(1)">&#9654;</button>
                     </div>
                 </div>
+
+                <div id="annual-tracker-container"></div>
 
                 <button class="btn-outline" onclick="toggleChart('year-chart-wrapper')" style="margin-bottom: 20px;">📈 Gehalts-Diagramm (Linie)</button>
                 <div id="year-chart-wrapper" class="chart-container" style="margin-top: 0; margin-bottom: 20px; border-top: none; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
@@ -248,7 +279,7 @@
             <div class="card">
                 <h3 style="margin-top: 0;">Daten Import</h3>
                 <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Liest PDFs mathematisch und fehlerfrei aus.</p>
-                <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 14px; background: var(--bg-color); border: 2px dashed var(--border);">
+                <input type="file" id="importFile" accept=".pdf, .xlsx, .xls" multiple style="padding: 14px;">
                 <button class="btn-primary" onclick="startMultiImport()">Dateien scannen & Importieren</button>
             </div>
 
@@ -273,7 +304,7 @@
 
     let currentUserUID = null; let isLocalMode = localStorage.getItem('mode_lokal') === 'true';
     let monthChartInstance = null; let yearChartInstance = null;
-    let lohnConfig = { base: 17.16, sun: 4.67, sat: 0.853, limit: 603 };
+    let lohnConfig = { base: 18.90, sun: 4.67, sat: 0.64, limit: 603, annualLimit: 7236 };
 
     window.onload = function() {
         let heute = new Date(); document.getElementById('monthPicker').value = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, '0')}`;
@@ -296,11 +327,18 @@
     function ladeLohnSettings() {
         let saved = JSON.parse(localStorage.getItem('lohn_config'));
         if (saved) lohnConfig = saved;
+        
+        // Automatische Korrekturen für Alt-Nutzer auf die korrekten Werte
         if (!lohnConfig.limit) lohnConfig.limit = 603;
+        if (!lohnConfig.annualLimit) lohnConfig.annualLimit = 7236;
+        if (lohnConfig.base === 17.16) lohnConfig.base = 18.90;
+        if (lohnConfig.sat === 0.853) lohnConfig.sat = 0.64;
+
         document.getElementById('setBaseWage').value = lohnConfig.base;
         document.getElementById('setSunBonus').value = lohnConfig.sun;
         document.getElementById('setSatBonus').value = lohnConfig.sat;
         document.getElementById('setMinijobLimit').value = lohnConfig.limit;
+        document.getElementById('setAnnualLimit').value = lohnConfig.annualLimit;
     }
 
     function lohnSettingsSpeichern() {
@@ -308,7 +346,9 @@
         let sun = parseFloat(document.getElementById('setSunBonus').value) || 0;
         let sat = parseFloat(document.getElementById('setSatBonus').value) || 0;
         let limit = parseInt(document.getElementById('setMinijobLimit').value) || 603;
-        lohnConfig = { base: base, sun: sun, sat: sat, limit: limit };
+        let annualLimit = parseInt(document.getElementById('setAnnualLimit').value) || 7236;
+        
+        lohnConfig = { base: base, sun: sun, sat: sat, limit: limit, annualLimit: annualLimit };
         localStorage.setItem('lohn_config', JSON.stringify(lohnConfig));
         renderAnnualSalary();
     }
@@ -536,46 +576,6 @@
         fileInput.value = ""; 
     }
 
-    // === EXPORT FÜR GEHALTSABGLEICH ===
-    async function exportLohnabgleich() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
-        if (daten.length === 0) { alert("Keine Daten zum Exportieren vorhanden."); return; }
-
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet(`Gehaltsabgleich`, { views: [{ showGridLines: true }] });
-        
-        sheet.columns = [
-            { header: 'Jahr-Monat', key: 'monat', width: 15 },
-            { header: 'Gesamtstunden', key: 'gesamt', width: 18 },
-            { header: 'Sonntagsstunden', key: 'sonntag', width: 18 },
-            { header: 'Samstagsstunden (13-21)', key: 'samstag', width: 22 },
-            { header: 'Errechnetes Gehalt (€)', key: 'gehalt', width: 22 }
-        ];
-
-        sheet.getRow(1).font = { bold: true };
-        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
-
-        let monateSet = new Set();
-        daten.forEach(e => monateSet.add(e.datum.substring(0, 7)));
-        let monateArray = Array.from(monateSet).sort();
-
-        monateArray.forEach(monatStr => {
-            let [jahr, monat] = monatStr.split('-');
-            let stats = calculateMonthSalary(parseInt(jahr), parseInt(monat), daten);
-            
-            sheet.addRow({
-                monat: monatStr,
-                gesamt: Math.round(stats.gesamtDezimal * 100) / 100,
-                sonntag: Math.round(stats.sonntagStunden * 100) / 100,
-                samstag: Math.round(stats.samstagBonusStunden * 100) / 100,
-                gehalt: Math.round(stats.gesamtGehalt * 100) / 100
-            });
-        });
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Gehaltsabgleich_Radiologie.xlsx`);
-    }
-
     function calculateMonthSalary(jahr, monat, daten) {
         let tageImMonat = new Date(jahr, monat, 0).getDate(); let gesamtDezimal = 0; let sonntagStunden = 0; let samstagBonusStunden = 0;
         for (let tag = 1; tag <= tageImMonat; tag++) {
@@ -657,28 +657,30 @@
     }
 
     function renderAnnualSalary() {
-        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; const container = document.getElementById('annual-salary-container');
-        const jahr = parseInt(document.getElementById('yearPicker').value); const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || []; 
+        const containerAnnual = document.getElementById('annual-salary-container');
+        const containerTracker = document.getElementById('annual-tracker-container');
+        const jahr = parseInt(document.getElementById('yearPicker').value); 
+        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        
         let htmlStr = ""; let jahresGesamtGehalt = 0; let jahresGesamtStunden = 0;
         let chartLabels = []; let chartData = [];
-
-        const gewaehlterMonat = parseInt(document.getElementById('monthPicker').value.split('-')[1]);
 
         for (let m = 1; m <= 12; m++) {
             let stats = calculateMonthSalary(jahr, m, daten);
             chartLabels.push(monthNames[m-1].substring(0,3)); chartData.push(stats.gesamtGehalt);
-            
+
             if (stats.gesamtDezimal > 0) {
                 jahresGesamtGehalt += stats.gesamtGehalt; jahresGesamtStunden += stats.gesamtDezimal;
                 
                 let currentLimit = lohnConfig.limit || 603;
                 let progress = Math.min(100, (stats.gesamtGehalt / currentLimit) * 100);
                 let remaining = Math.max(0, currentLimit - stats.gesamtGehalt);
-                let hoursLeft = Math.floor(remaining / (lohnConfig.base || 17.16));
+                let hoursLeft = Math.floor(remaining / (lohnConfig.base || 18.90));
                 let progressColor = progress >= 100 ? "var(--danger)" : "var(--success)";
 
-                htmlStr += `<div class="card" style="margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); padding: 18px;">
-                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--primary); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
+                htmlStr += `<div class="card" style="margin-bottom: 16px; padding: 18px;">
+                        <div style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main);">${monthNames[m-1]} ${jahr} <span style="float:right; color: var(--text-main); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 8px;">${Math.round(stats.gesamtDezimal*100)/100} h</span></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Basislohn:</span> <strong>${stats.basisLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Sonntagszuschlag:</span> <strong>${stats.sonntagLohn.toFixed(2)} €</strong></div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;"><span>Samstagszuschlag:</span> <strong>${stats.samstagLohn.toFixed(2)} €</strong></div>
@@ -693,9 +695,30 @@
             }
         }
         
+        // Jahres-Limit Tracker HTML
+        let currentAnnualLimit = lohnConfig.annualLimit || 7236;
+        let progressAnnual = Math.min(100, (jahresGesamtGehalt / currentAnnualLimit) * 100);
+        let remainingAnnual = Math.max(0, currentAnnualLimit - jahresGesamtGehalt);
+        let hoursLeftAnnual = Math.floor(remainingAnnual / (lohnConfig.base || 18.90));
+        let progressColorAnnual = progressAnnual >= 100 ? "var(--danger)" : "var(--primary)";
+        
+        let trackerHtml = `
+            <div class="card" style="margin-bottom: 24px; border: 2px solid var(--border); padding: 20px;">
+                <div style="font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Jahres-Limit Tracker (Max ${currentAnnualLimit}€)</div>
+                <div class="minijob-bar-container" style="height: 16px; margin-top: 12px; background-color: var(--border);">
+                    <div class="minijob-bar-fill" style="width: ${progressAnnual}%; background-color: ${progressColorAnnual}; border-radius: 8px;"></div>
+                </div>
+                <div class="minijob-text" style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 12px;">
+                    <span>Verdient: ${jahresGesamtGehalt.toFixed(2)}€</span> 
+                    <span style="color: ${progressColorAnnual};">Übrig: ${remainingAnnual.toFixed(2)}€ (ca. ${hoursLeftAnnual}h)</span>
+                </div>
+            </div>
+        `;
+        
+        containerTracker.innerHTML = trackerHtml;
+
         if (htmlStr === "") { htmlStr = `<p style="text-align: center; color: var(--text-muted);">Keine Einträge für das Jahr ${jahr} gefunden.</p>`; } 
-        else { htmlStr += `<div style="font-size: 18px; text-align: center; background: var(--text-main); color: var(--bg-color); padding: 20px; border-radius: 16px; margin-top: 24px; font-weight: 800;">Jahres-Summe ${jahr}: <br><span style="font-size: 28px;">${jahresGesamtGehalt.toFixed(2)} €</span><br><span style="font-size: 14px; font-weight: normal; opacity: 0.9;">(für ${Math.round(jahresGesamtStunden*100)/100} Stunden)</span></div>`; }
-        container.innerHTML = htmlStr;
+        containerAnnual.innerHTML = htmlStr;
 
         const ctx = document.getElementById('yearChartCanvas').getContext('2d');
         if(yearChartInstance) yearChartInstance.destroy();
@@ -708,6 +731,46 @@
             data: { labels: chartLabels, datasets: [{ label: 'Bruttogehalt (€)', data: chartData, borderColor: lineColor, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: lineColor }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
         });
+    }
+
+    // === EXPORT FÜR GEHALTSABGLEICH ===
+    async function exportLohnabgleich() {
+        const daten = JSON.parse(localStorage.getItem('meine_arbeitszeiten')) || [];
+        if (daten.length === 0) { alert("Keine Daten zum Exportieren vorhanden."); return; }
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet(`Gehaltsabgleich`, { views: [{ showGridLines: true }] });
+        
+        sheet.columns = [
+            { header: 'Jahr-Monat', key: 'monat', width: 15 },
+            { header: 'Gesamtstunden', key: 'gesamt', width: 18 },
+            { header: 'Sonntagsstunden', key: 'sonntag', width: 18 },
+            { header: 'Samstagsstunden (13-21)', key: 'samstag', width: 22 },
+            { header: 'Errechnetes Gehalt (€)', key: 'gehalt', width: 22 }
+        ];
+
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+
+        let monateSet = new Set();
+        daten.forEach(e => monateSet.add(e.datum.substring(0, 7)));
+        let monateArray = Array.from(monateSet).sort();
+
+        monateArray.forEach(monatStr => {
+            let [jahr, monat] = monatStr.split('-');
+            let stats = calculateMonthSalary(parseInt(jahr), parseInt(monat), daten);
+            
+            sheet.addRow({
+                monat: monatStr,
+                gesamt: Math.round(stats.gesamtDezimal * 100) / 100,
+                sonntag: Math.round(stats.sonntagStunden * 100) / 100,
+                samstag: Math.round(stats.samstagBonusStunden * 100) / 100,
+                gehalt: Math.round(stats.gesamtGehalt * 100) / 100
+            });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Gehaltsabgleich_Radiologie.xlsx`);
     }
 
     // === PDF & EXCEL EXPORT (Monatliche Tabelle) ===
@@ -835,7 +898,6 @@
         setTimeout(() => { window.print(); }, 300);
     }
 
-    // === E-MAIL HISTORIE LOGIK ===
     function logEmailHistory(monthName, year) {
         let history = JSON.parse(localStorage.getItem('email_history')) || [];
         const now = new Date();
