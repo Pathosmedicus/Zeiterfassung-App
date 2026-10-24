@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Unit Test Runner - Zeiterfassung</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 24px; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; max-width: 700px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        h1 { margin-top: 0; font-size: 20px; }
+        .summary { padding: 12px; border-radius: 8px; margin-bottom: 16px; font-weight: bold; }
+        .summary.passed { background: #065f46; color: #6ee7b7; }
+        .summary.failed { background: #991b1b; color: #fca5a5; }
+        .test-case { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #334155; font-size: 14px; }
+        .pass { color: #34d399; font-weight: bold; }
+        .fail { color: #f87171; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧪 Unit Test Suite - Zeiterfassung Radiologie</h1>
+        <div id="summary" class="summary">Tests werden ausgeführt...</div>
+        <div id="results"></div>
+    </div>
+
+    <script src="zeiterfassung.test.js"></script>
+    <script>
+        let passed = 0;
+        let failed = 0;
+        const resultsEl = document.getElementById('results');
+
+        tests.forEach(t => {
+            const row = document.createElement('div');
+            row.className = 'test-case';
+            try {
+                t.fn();
+                passed++;
+                row.innerHTML = `<span>${t.name}</span><span class="pass">✔ PASS</span>`;
+            } catch (err) {
+                failed++;
+                row.innerHTML = `<span>${t.name}<br><small style="color: #f87171;">${err.message}</small></span><span class="fail">✖ FAIL</span>`;
+            }
+            resultsEl.appendChild(row);
+        });
+
+        const summaryEl = document.getElementById('summary');
+        if (failed === 0) {
+            summaryEl.className = 'summary passed';
+            summaryEl.innerText = `✔ Alle ${passed} Tests erfolgreich bestanden!`;
+        } else {
+            summaryEl.className = 'summary failed';
+            summaryEl.innerText = `✖ ${failed} von ${tests.length} Tests fehlgeschlagen! (${passed} bestanden)`;
+        }
+    </script>
+</body>
+</html>

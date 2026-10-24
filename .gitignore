@@ -1,0 +1,19 @@
+# Environment and Secrets (Geschützt durch secrets-guard)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Node & Dependencies
+node_modules/
+npm-debug.log*
+
+# Backups & Temp files
+dist/
+*.tsbuildinfo
+.antigravity/
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db

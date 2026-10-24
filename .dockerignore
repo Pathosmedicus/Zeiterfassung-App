@@ -1,0 +1,16 @@
+# Docker Ignore - Unnötige Dateien für den Container-Build ausschließen
+# (docker-containerizer Skill)
+
+.git/
+.gitignore
+.env
+.env.*
+node_modules/
+test/
+database/
+api/
+types/
+*.md
+*.log
+Thumbs.db
+.DS_Store
