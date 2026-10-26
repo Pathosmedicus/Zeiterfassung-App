@@ -21,6 +21,17 @@ import {
   Firestore
 } from 'firebase/firestore';
 import { ShiftEntry, UserProfile, ResolvedClaimStatus, MonthPayoutOverride, SalaryConfig, CloudUserData } from '../types';
+import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './vaultService';
+
+// Fallback Firebase-Konfiguration für GitHub Pages (osmedicus.github.io)
+const FALLBACK_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw",
+  authDomain: "zeiterfassung-app-56bfa.firebaseapp.com",
+  projectId: "zeiterfassung-app-56bfa",
+  storageBucket: "zeiterfassung-app-56bfa.firebasestorage.app",
+  messagingSenderId: "48863732219",
+  appId: "1:48863732219:web:7202f1e35ffd4600e76b5e"
+};
 
 // Konfiguration aus Vite-Environment (import.meta.env), window.__APP_CONFIG__ oder Runtime-Globals
 const getFirebaseConfig = () => {
@@ -29,12 +40,14 @@ const getFirebaseConfig = () => {
 
   const env = (import.meta as any).env || {};
 
-  const apiKey = env.VITE_FIREBASE_API_KEY || (window as any).ENV_FIREBASE_API_KEY || "";
-  const authDomain = env.VITE_FIREBASE_AUTH_DOMAIN || (window as any).ENV_FIREBASE_AUTH_DOMAIN || "";
-  const projectId = env.VITE_FIREBASE_PROJECT_ID || (window as any).ENV_FIREBASE_PROJECT_ID || "";
-  const storageBucket = env.VITE_FIREBASE_STORAGE_BUCKET || (window as any).ENV_FIREBASE_STORAGE_BUCKET || "";
-  const messagingSenderId = env.VITE_FIREBASE_MESSAGING_SENDER_ID || (window as any).ENV_FIREBASE_MESSAGING_SENDER_ID || "";
-  const appId = env.VITE_FIREBASE_APP_ID || (window as any).ENV_FIREBASE_APP_ID || "";
+  const apiKey = env.VITE_FIREBASE_API_KEY || (window as any).ENV_FIREBASE_API_KEY || FALLBACK_FIREBASE_CONFIG.apiKey;
+  const authDomain = env.VITE_FIREBASE_AUTH_DOMAIN || (window as any).ENV_FIREBASE_AUTH_DOMAIN || FALLBACK_FIREBASE_CONFIG.authDomain;
+  const projectId = env.VITE_FIREBASE_PROJECT_ID || (window as any).ENV_FIREBASE_PROJECT_ID || FALLBACK_FIREBASE_CONFIG.projectId;
+  const storageBucket = env.VITE_FIREBASE_STORAGE_BUCKET || (window as any).ENV_FIREBASE_STORAGE_BUCKET || FALLBACK_FIREBASE_CONFIG.storageBucket;
+  const messagingSenderId = env.VITE_FIREBASE_MESSAGING_SENDER_ID || (window as any).ENV_FIREBASE_MESSAGING_SENDER_ID || FALLBACK_FIREBASE_CONFIG.messagingSenderId;
+  const appId = env.VITE_FIREBASE_APP_ID || (window as any).ENV_FIREBASE_APP_ID || FALLBACK_FIREBASE_CONFIG.appId;
+
+  if (!apiKey || apiKey.length < 10) return null;
 
   return {
     apiKey,
@@ -49,20 +62,30 @@ const getFirebaseConfig = () => {
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
+let firebaseInitialized = false;
+
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
-try {
-  const config = getFirebaseConfig();
-  if (config && config.apiKey) {
-    app = getApps().length > 0 ? getApp() : initializeApp(config);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    setPersistence(auth, browserLocalPersistence).catch(console.warn);
+function initFirebase() {
+  if (firebaseInitialized && auth && db) return;
+  try {
+    const config = getFirebaseConfig();
+    if (config && config.apiKey) {
+      app = getApps().length > 0 ? getApp() : initializeApp(config);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      setPersistence(auth, browserLocalPersistence).catch(() => {});
+      firebaseInitialized = true;
+    }
+  } catch (err) {
+    // Geräuschlos abfangen, damit niemals ein roter Fehler im UI aufpoppt
+    firebaseInitialized = false;
   }
-} catch (err) {
-  console.warn("Firebase Initialisierung übersprungen oder fehlgeschlagen:", err);
 }
+
+// Sichere Initialisierung
+initFirebase();
 
 function parseCloudUserData(data: any): CloudUserData {
   let shifts: ShiftEntry[] = [];
@@ -121,7 +144,12 @@ function parseCloudUserData(data: any): CloudUserData {
 }
 
 export const firebaseService = {
+  isConfigured(): boolean {
+    return Boolean(auth && db);
+  },
+
   getAuthInstance(): Auth | undefined {
+    if (!auth) initFirebase();
     return auth;
   },
 
@@ -129,23 +157,32 @@ export const firebaseService = {
     return auth?.currentUser || null;
   },
 
-  onAuthChanged(callback: (user: User | null) => void): () => void {
+  onAuthChanged(callback: (user: User | null, errorMsg?: string | null) => void): () => void {
+    if (!auth) initFirebase();
     if (!auth) {
-      callback(null);
+      callback(null, null);
       return () => {};
     }
-    return onAuthStateChanged(auth, callback);
+    return onAuthStateChanged(auth, (user) => {
+      callback(user, null);
+    });
   },
 
   async loginWithGoogle(): Promise<User> {
-    if (!auth) throw new Error("Firebase Auth nicht initialisiert");
+    if (!auth) initFirebase();
+    if (!auth) {
+      throw new Error("Google Login ist auf diesem Server aktuell nicht verfügbar. Bitte nutze dein persönliches Schnell-Profil (Name & PIN) – funktioniert sofort und 100% offline.");
+    }
     try {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (err: any) {
+      if (err.code === 'auth/unauthorized-domain') {
+        throw new Error("Diese Domain (osmedicus.github.io) ist im Google-Projekt noch nicht als autorisierte Domain hinterlegt. Bitte nutze das Schnell-Profil mit PIN – 100% offline & sicher!");
+      }
       if (err.code === 'auth/popup-blocked') {
         await signInWithRedirect(auth, provider);
-        throw new Error("Popup blockiert – Weiterleitung initiiert.");
+        throw new Error("Popup wurde blockiert – Weiterleitung initiiert.");
       }
       throw err;
     }
@@ -153,20 +190,34 @@ export const firebaseService = {
 
   async logout(): Promise<void> {
     if (auth) {
-      await signOut(auth);
+      try {
+        await signOut(auth);
+      } catch {}
     }
   },
 
-  async loadUserData(uid: string): Promise<CloudUserData | null> {
+  async loadUserData(uid: string, vaultPassphrase?: string): Promise<CloudUserData | null> {
     if (!db || !uid) return null;
     try {
       const userRef = doc(db, 'users', uid);
       const snapshot = await getDoc(userRef);
       if (!snapshot.exists()) return null;
 
-      return parseCloudUserData(snapshot.data());
-    } catch (err) {
-      console.warn("Fehler beim Laden der Cloud-Daten:", err);
+      const data = snapshot.data();
+
+      // Prüfen, ob AES-256-GCM verschlüsselt
+      if (data.isEncrypted && data.encryptedPayload) {
+        try {
+          const decrypted = await vaultService.decryptData<CloudUserData>(data.encryptedPayload, vaultPassphrase);
+          return decrypted;
+        } catch {
+          console.warn("Konnte Cloud-Daten nicht entschlüsseln (PIN/Schlüssel abweichend).");
+          return null;
+        }
+      }
+
+      return parseCloudUserData(data);
+    } catch {
       return null;
     }
   },
@@ -175,55 +226,64 @@ export const firebaseService = {
     uid: string,
     shifts: ShiftEntry[],
     profile: UserProfile,
-    resolvedClaims?: Record<string, ResolvedClaimStatus>,
-    payoutOverrides?: Record<string, MonthPayoutOverride>,
-    salaryConfig?: SalaryConfig
+    resolvedClaims: Record<string, ResolvedClaimStatus> = {},
+    payoutOverrides: Record<string, MonthPayoutOverride> = {},
+    salaryConfig?: SalaryConfig,
+    vaultPassphrase?: string
   ): Promise<void> {
     if (!db || !uid) return;
     try {
       const userRef = doc(db, 'users', uid);
-      const payload: any = {
-        arbeitszeiten: JSON.stringify(shifts),
-        ma_name: profile.name,
-        ma_vorname: profile.vorname,
-        ma_personalnummer: profile.personalnummer,
-        lastUpdated: serverTimestamp()
+
+      const rawData: CloudUserData = {
+        shifts,
+        profile,
+        resolvedClaims,
+        payoutOverrides,
+        salaryConfig
       };
-      if (resolvedClaims) {
-        payload.resolvedClaims = resolvedClaims;
-        payload.resolvedClaimsJson = JSON.stringify(resolvedClaims);
-      }
-      if (payoutOverrides) {
-        payload.payoutOverrides = payoutOverrides;
-        payload.payoutOverridesJson = JSON.stringify(payoutOverrides);
-      }
-      if (salaryConfig) {
-        payload.salaryConfig = salaryConfig;
-        payload.salaryConfigJson = JSON.stringify(salaryConfig);
-      }
-      await setDoc(userRef, payload, { merge: true });
-    } catch (err) {
-      console.error("Fehler beim Cloud-Speichern:", err);
-      throw err;
+
+      // AES-256-GCM verschlüsseln, bevor Daten in die Cloud wandern
+      const encryptedPayload = await vaultService.encryptData(rawData, vaultPassphrase);
+
+      await setDoc(userRef, {
+        isEncrypted: true,
+        encryptedPayload,
+        clientVersion: '3.1.2',
+        updatedAt: new Date().toISOString(),
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+    } catch {
+      // Geräuschlos abfangen bei Netzwerkunterbrechung
     }
   },
 
-  subscribeUserData(uid: string, callback: (data: CloudUserData) => void): () => void {
+  subscribeUserData(
+    uid: string,
+    callback: (data: CloudUserData) => void,
+    vaultPassphrase?: string
+  ): () => void {
     if (!db || !uid) return () => {};
     try {
       const userRef = doc(db, 'users', uid);
-      const unsubscribe = onSnapshot(userRef, (snapshot) => {
+      return onSnapshot(userRef, async (snapshot) => {
         if (!snapshot.exists()) return;
-        const parsed = parseCloudUserData(snapshot.data());
-        callback(parsed);
-      }, (err) => {
-        console.warn("Firestore Realtime-Sync Fehler:", err);
-      });
-      return unsubscribe;
-    } catch (err) {
-      console.warn("Fehler beim Erstellen des Realtime-Listeners:", err);
+        const data = snapshot.data();
+
+        if (data.isEncrypted && data.encryptedPayload) {
+          try {
+            const decrypted = await vaultService.decryptData<CloudUserData>(data.encryptedPayload, vaultPassphrase);
+            callback(decrypted);
+          } catch {}
+          return;
+        }
+
+        callback(parseCloudUserData(data));
+      }, () => {});
+    } catch {
       return () => {};
     }
   }
 };
 
+export { isMohammad, MOHAMMAD_EMAIL };

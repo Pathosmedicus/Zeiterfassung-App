@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { ShiftEntry, SalaryConfig, UserProfile } from '../../types';
 import { calculateMonthSalary, getTariffForMonth } from '../../services/salaryEngine';
-import { HISTORICAL_PAYROLL_RECORDS, formatMonthLabel } from '../../services/clinicPayrollEngine';
+import { getHistoricalRecords, formatMonthLabel } from '../../services/clinicPayrollEngine';
 
 interface MinijobJahresradarProps {
   shifts: ShiftEntry[];
@@ -80,7 +80,7 @@ export const MinijobJahresradar: React.FC<MinijobJahresradarProps> = ({
     for (let m = 1; m <= 12; m++) {
       const ym = `${selectedYear}-${String(m).padStart(2, '0')}`;
       const statsM = calculateMonthSalary(selectedYear, m, shifts, salaryConfig);
-      const hist = HISTORICAL_PAYROLL_RECORDS.find(h => h.yearMonth === ym);
+      const hist = getHistoricalRecords().find(h => h.yearMonth === ym);
       const tariff = getTariffForMonth(selectedYear, m, salaryConfig);
 
       let stunden = statsM.gesamtDezimal;

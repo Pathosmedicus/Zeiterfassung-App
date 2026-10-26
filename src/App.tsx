@@ -28,8 +28,21 @@ import { Stammdaten } from './components/Settings/Stammdaten';
 import { PresetsConfig } from './components/Settings/PresetsConfig';
 import { SalaryConfig as SalaryConfigComponent } from './components/Settings/SalaryConfig';
 import { BackupManager } from './components/Settings/BackupManager';
+import { VaultConfig } from './components/Settings/VaultConfig';
 
-import { storageService } from './services/storageService';
+// Sicherheits-Architektur, Multi-User & Auth-Wall
+import { AuthLockScreen } from './components/Auth/AuthLockScreen';
+import { OnboardingModal } from './components/Auth/OnboardingModal';
+import { SyncModal } from './components/Auth/SyncModal';
+import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './services/vaultService';
+import { setDecryptedHistoricalRecords, setDecryptedInitialClaims } from './services/clinicPayrollEngine';
+
+import {
+  storageService,
+  DEFAULT_USER_PROFILE,
+  DEFAULT_SALARY_CONFIG,
+  DEFAULT_PRESETS
+} from './services/storageService';
 import { firebaseService } from './services/firebaseService';
 import { calculateMonthSalary } from './services/salaryEngine';
 import {
@@ -40,12 +53,20 @@ import {
   SalaryConfig,
   MonthPayoutOverride,
   ResolvedClaimStatus,
-  CloudUserData
+  CloudUserData,
+  AppUserSession
 } from './types';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('erfassen');
   const [tableSubView, setTableSubView] = useState<'comparison' | 'radar' | 'month' | 'charts'>('comparison');
+
+  // Multi-User Sitzung & Autorisierung
+  const [activeSession, setActiveSession] = useState<AppUserSession | null>(() => storageService.getActiveSession());
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
+  const [vaultKey, setVaultKey] = useState<string>(() => vaultService.getDefaultPass());
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Aktuelles Datum für Default-Werte
   const now = new Date();
@@ -55,19 +76,15 @@ export const App: React.FC = () => {
   const [currentYearMonth, setCurrentYearMonth] = useState<string>(defaultYearMonth);
   const [selectedDate, setSelectedDate] = useState<string>(defaultDate);
 
-  // App Daten
+  // App Daten (im unautorisierten Zustand: 0 Schichten im Speicher!)
   const [shifts, setShifts] = useState<ShiftEntry[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile>(storageService.getProfile());
-  const [presets, setPresets] = useState<PresetShift[]>(storageService.getPresets());
-  const [salaryConfig, setSalaryConfig] = useState<SalaryConfig>(storageService.getSalaryConfig());
+  const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE);
+  const [presets, setPresets] = useState<PresetShift[]>(DEFAULT_PRESETS);
+  const [salaryConfig, setSalaryConfig] = useState<SalaryConfig>(DEFAULT_SALARY_CONFIG);
 
   // Zentral synchronisierter State für Abrechnungsstatus & Overrides
-  const [resolvedClaims, setResolvedClaims] = useState<Record<string, ResolvedClaimStatus>>(
-    () => storageService.getResolvedClaims()
-  );
-  const [payoutOverrides, setPayoutOverrides] = useState<Record<string, MonthPayoutOverride>>(
-    () => storageService.getPayoutOverrides()
-  );
+  const [resolvedClaims, setResolvedClaims] = useState<Record<string, ResolvedClaimStatus>>({});
+  const [payoutOverrides, setPayoutOverrides] = useState<Record<string, MonthPayoutOverride>>({});
 
   // Firebase Auth & Cloud Sync State
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
@@ -103,7 +120,7 @@ export const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Daten initial lokal laden
+  // Daten initial aus dem Scoped Storage des aktuellen Nutzers laden
   const loadAllData = useCallback(() => {
     const loadedShifts = storageService.getShifts();
     const loadedProfile = storageService.getProfile();
@@ -122,12 +139,45 @@ export const App: React.FC = () => {
     return { loadedShifts, loadedProfile, loadedClaims, loadedOverrides };
   }, []);
 
+  // Exklusives Entschlüsseln von Mohammads Seed (nur bei Mohammads Konto!)
+  const unlockMohammadData = useCallback(async (keyToUse?: string) => {
+    const activeKey = keyToUse || vaultKey || '1971';
+    try {
+      const seed = await vaultService.unlockSeed(activeKey);
+      if (seed) {
+        if (!storageService.hasSavedShifts()) {
+          storageService.importDecryptedSeed(seed.shifts, seed.profile);
+        }
+        setDecryptedHistoricalRecords(seed.payrollRecords || []);
+        setDecryptedInitialClaims(seed.claims || []);
+      }
+    } catch (e) {
+      console.warn("Konnte Mohammads Seed nicht entschlüsseln:", e);
+    }
+  }, [vaultKey]);
+
+  // Initialisierung beim Start der App, wenn bereits eine Sitzung aktiv ist
   useEffect(() => {
-    loadAllData();
-  }, [loadAllData]);
+    const session = storageService.getActiveSession();
+    if (session) {
+      setActiveSession(session);
+      if (session.isOwner || isMohammad(session.id)) {
+        unlockMohammadData();
+      } else {
+        setDecryptedHistoricalRecords([]);
+        setDecryptedInitialClaims([]);
+        if (!storageService.isUserOnboarded(session.id)) {
+          setShowOnboarding(true);
+        }
+      }
+      loadAllData();
+    }
+  }, [loadAllData, unlockMohammadData]);
 
   // Helper zum Anwenden von Daten aus der Google Cloud (Deduplizierung & Timestamp-Merge)
   const applyCloudData = useCallback((cloudData: CloudUserData) => {
+    if (!cloudData) return;
+
     // 1. Schichten zusammenführen
     if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
       const currentLocal = storageService.getShifts();
@@ -163,7 +213,6 @@ export const App: React.FC = () => {
         if (!localClaim || !localClaim.updatedAt || !cloudClaim.updatedAt) {
           mergedClaims[k] = cloudClaim;
         } else {
-          // Neuester Zeitstempel gewinnt
           if (new Date(cloudClaim.updatedAt) >= new Date(localClaim.updatedAt)) {
             mergedClaims[k] = cloudClaim;
           }
@@ -182,7 +231,7 @@ export const App: React.FC = () => {
       setPayoutOverrides({ ...mergedOverrides });
     }
 
-    // 5. Gehaltskonfiguration (inkl. konfigurierte Jahresgrenze)
+    // 5. Gehaltskonfiguration
     if (cloudData.salaryConfig && typeof cloudData.salaryConfig === 'object') {
       const currentSalary = storageService.getSalaryConfig();
       const mergedSalary = { ...currentSalary, ...cloudData.salaryConfig };
@@ -193,22 +242,22 @@ export const App: React.FC = () => {
     setLastSyncTime(new Date());
   }, []);
 
-  // Manueller oder automatischer Cloud-Pull
+  // Manueller oder automatischer Cloud-Pull (mit AES-256-GCM Verschlüsselung)
   const handleManualSync = useCallback(async (showNotification: boolean = true) => {
     if (!firebaseUser) {
       if (showNotification) {
-        showToast('ℹ️ Offline-Modus aktiv. Bitte mit Google anmelden für Cloud-Sync.', 'info');
+        setIsSyncModalOpen(true);
       }
       return;
     }
 
     setIsSyncing(true);
     try {
-      const cloudData = await firebaseService.loadUserData(firebaseUser.uid);
+      const cloudData = await firebaseService.loadUserData(firebaseUser.uid, vaultKey);
       if (cloudData) {
         applyCloudData(cloudData);
 
-        // Aktuellen Stand auch zurück in die Cloud spiegeln
+        // Aktuellen Stand auch verschlüsselt in die Cloud spiegeln
         const currentShifts = storageService.getShifts();
         const currentProfile = storageService.getProfile();
         const currentClaims = storageService.getResolvedClaims();
@@ -221,11 +270,12 @@ export const App: React.FC = () => {
           currentProfile,
           currentClaims,
           currentOverrides,
-          currentSalary
+          currentSalary,
+          vaultKey
         );
 
         if (showNotification) {
-          showToast('☁️ Daten & Nachforderungsstatus erfolgreich synchronisiert!', 'success');
+          showToast('☁️ Daten mit AES-256-GCM erfolgreich synchronisiert!', 'success');
         }
       } else {
         // Erste Initialisierung in Firestore
@@ -241,46 +291,73 @@ export const App: React.FC = () => {
           currentProfile,
           currentClaims,
           currentOverrides,
-          currentSalary
+          currentSalary,
+          vaultKey
         );
         setLastSyncTime(new Date());
 
         if (showNotification) {
-          showToast('☁️ Cloud-Konto verbunden! Lokale Daten gesichert.', 'success');
+          showToast('☁️ Cloud-Konto verbunden! Daten AES-256-GCM verschlüsselt.', 'success');
         }
       }
     } catch (err: any) {
       console.warn("Cloud-Sync Fehler:", err);
       if (showNotification) {
-        showToast('Fehler bei der Cloud-Synchronisation.', 'error');
+        showToast(err.message || 'Fehler bei der Cloud-Synchronisation.', 'error');
       }
     } finally {
       setIsSyncing(false);
     }
-  }, [firebaseUser, applyCloudData, showToast]);
+  }, [firebaseUser, vaultKey, applyCloudData, showToast]);
 
   // Firebase Auth Listener
   useEffect(() => {
-    const unsubscribe = firebaseService.onAuthChanged(async user => {
+    const unsubscribe = firebaseService.onAuthChanged(async (user) => {
       setFirebaseUser(user);
       if (user) {
+        const isOwner = isMohammad(user.email);
+        const session: AppUserSession = {
+          id: user.uid,
+          name: user.displayName || user.email?.split('@')[0] || 'Mitarbeiter',
+          email: user.email || undefined,
+          authProvider: 'google',
+          isOwner,
+          isOnboarded: isOwner || storageService.isUserOnboarded(user.uid),
+          avatarUrl: user.photoURL || undefined,
+          lastLogin: new Date().toISOString()
+        };
+
+        storageService.setActiveSession(session);
+        setActiveSession(session);
+
+        if (isOwner) {
+          await unlockMohammadData();
+        } else {
+          setDecryptedHistoricalRecords([]);
+          setDecryptedInitialClaims([]);
+          if (!storageService.isUserOnboarded(user.uid)) {
+            setShowOnboarding(true);
+          }
+        }
+
+        loadAllData();
         handleManualSync(false);
       }
     });
 
     return () => unsubscribe();
-  }, [handleManualSync]);
+  }, [handleManualSync, unlockMohammadData, loadAllData]);
 
-  // Firestore Realtime-Listener (onSnapshot: PC & Handy sofort synchron!)
+  // Firestore Realtime-Listener (AES-256-GCM verschlüsselt)
   useEffect(() => {
     if (!firebaseUser) return;
     const unsubscribe = firebaseService.subscribeUserData(firebaseUser.uid, (cloudData) => {
       applyCloudData(cloudData);
-    });
+    }, vaultKey);
     return () => unsubscribe();
-  }, [firebaseUser, applyCloudData]);
+  }, [firebaseUser, applyCloudData, vaultKey]);
 
-  // Automatischer Pull bei Tab-Wechsel / Smartphone-Reaktivierung (visibilitychange / focus)
+  // Automatischer Pull bei Tab-Wechsel / Smartphone-Reaktivierung
   useEffect(() => {
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible' && firebaseUser) {
@@ -312,25 +389,134 @@ export const App: React.FC = () => {
     setIsDarkMode(prev => !prev);
   };
 
-  // Google Login / Logout
+  // Google Login für beliebige Konten (Mohammad oder Kollegen)
   const handleGoogleLogin = async () => {
     try {
       setIsSyncing(true);
-      await firebaseService.loginWithGoogle();
+      setAuthError(null);
+      const user = await firebaseService.loginWithGoogle();
+      const isOwner = isMohammad(user.email);
+
+      const session: AppUserSession = {
+        id: user.uid,
+        name: user.displayName || user.email?.split('@')[0] || 'Mitarbeiter',
+        email: user.email || undefined,
+        authProvider: 'google',
+        isOwner,
+        isOnboarded: isOwner || storageService.isUserOnboarded(user.uid),
+        avatarUrl: user.photoURL || undefined,
+        lastLogin: new Date().toISOString()
+      };
+
+      storageService.setActiveSession(session);
+      setActiveSession(session);
+      setFirebaseUser(user);
+
+      if (isOwner) {
+        await unlockMohammadData();
+      } else {
+        setDecryptedHistoricalRecords([]);
+        setDecryptedInitialClaims([]);
+        if (!storageService.isUserOnboarded(user.uid)) {
+          setShowOnboarding(true);
+        }
+      }
+
+      loadAllData();
+      showToast(`Willkommen, ${session.name}!`, 'success');
     } catch (err: any) {
-      showToast(err.message || 'Google Anmeldung fehlgeschlagen.', 'error');
+      const msg = err.message || 'Google Anmeldung fehlgeschlagen.';
+      setAuthError(msg);
+      showToast(msg, 'error');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const handleGoogleLogout = async () => {
+  // Persönliches Schnell-Profil mit PIN entsperren (funktioniert 100% offline!)
+  const handleUnlockWithPin = async (
+    userId: string,
+    pin: string,
+    remember: boolean,
+    userName?: string
+  ): Promise<boolean> => {
     try {
-      await firebaseService.logout();
-      showToast('Erfolgreich von Google abgemeldet. Lokaler Modus aktiv.', 'info');
+      setAuthError(null);
+      const isValid = await vaultService.verifyUserPin(userId, pin);
+      if (!isValid) return false;
+
+      const isOwner = isMohammad(userId);
+      const session: AppUserSession = {
+        id: userId,
+        name: userName || (isOwner ? 'Mohammad Almatar' : 'Mitarbeiter'),
+        authProvider: 'pin',
+        isOwner,
+        isOnboarded: isOwner || storageService.isUserOnboarded(userId),
+        lastLogin: new Date().toISOString()
+      };
+
+      setVaultKey(pin);
+      vaultService.setStoredSession(remember);
+      storageService.setActiveSession(session);
+      setActiveSession(session);
+
+      if (isOwner) {
+        await unlockMohammadData(pin);
+      } else {
+        setDecryptedHistoricalRecords([]);
+        setDecryptedInitialClaims([]);
+        if (!storageService.isUserOnboarded(userId)) {
+          setShowOnboarding(true);
+        }
+      }
+
+      loadAllData();
+      showToast(`🔓 Willkommen, ${session.name}!`, 'success');
+      return true;
     } catch (err: any) {
-      showToast('Fehler beim Abmelden.', 'error');
+      setAuthError(err.message || 'Entschlüsselung fehlgeschlagen.');
+      return false;
     }
+  };
+
+  // BLAUER LOGOUT-BUTTON / PROFIL-WECHSEL: Dashboard leeren & zurück zum Anmeldebildschirm
+  const handleLogout = useCallback(async () => {
+    storageService.clearActiveSession();
+    vaultService.clearSession();
+    await firebaseService.logout();
+
+    setFirebaseUser(null);
+    setActiveSession(null);
+    setShowOnboarding(false);
+
+    // Alle React-Zustände restlos leeren (Zero Data Leak)
+    setShifts([]);
+    setUserProfile(DEFAULT_USER_PROFILE);
+    setSalaryConfig(DEFAULT_SALARY_CONFIG);
+    setPresets(DEFAULT_PRESETS);
+    setResolvedClaims({});
+    setPayoutOverrides({});
+    setDecryptedHistoricalRecords([]);
+    setDecryptedInitialClaims([]);
+
+    showToast('👋 Erfolgreich abgemeldet. Alle Daten aus dem sichtbaren Speicher entfernt.', 'info');
+  }, [showToast]);
+
+  // Onboarding für neue Kollegen abschließen
+  const handleOnboardingComplete = (profile: UserProfile, config: SalaryConfig) => {
+    storageService.saveProfile(profile);
+    storageService.saveSalaryConfig(config);
+    storageService.setUserOnboarded(true);
+
+    setUserProfile(profile);
+    setSalaryConfig(config);
+    setShowOnboarding(false);
+
+    // Initial startet der Kollege mit 0 Stunden
+    setShifts([]);
+    storageService.saveShifts([]);
+
+    showToast(`🎉 Willkommen, ${profile.vorname || profile.name}! Dein Arbeitsbereich ist bereit (0 Stunden).`, 'success');
   };
 
   // Monatswechsel
@@ -341,7 +527,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // Schicht speichern (Lokal + Cloud Sync)
+  // Schicht speichern
   const handleSaveShift = async (newShift: ShiftEntry) => {
     const updated = storageService.upsertShift(newShift);
     setShifts(updated);
@@ -356,7 +542,6 @@ export const App: React.FC = () => {
       });
     }
 
-    // In Cloud sichern
     if (firebaseUser) {
       try {
         setIsSyncing(true);
@@ -366,7 +551,8 @@ export const App: React.FC = () => {
           userProfile,
           resolvedClaims,
           payoutOverrides,
-          salaryConfig
+          salaryConfig,
+          vaultKey
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -377,7 +563,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // Schicht löschen (mit Undo & Cloud Sync)
+  // Schicht löschen
   const handleDeleteShift = (datum: string) => {
     const shiftToDelete = shifts.find(s => s.datum === datum);
     if (!shiftToDelete) return;
@@ -392,7 +578,8 @@ export const App: React.FC = () => {
         userProfile,
         resolvedClaims,
         payoutOverrides,
-        salaryConfig
+        salaryConfig,
+        vaultKey
       ).catch(console.warn);
       setLastSyncTime(new Date());
     }
@@ -412,7 +599,8 @@ export const App: React.FC = () => {
               userProfile,
               resolvedClaims,
               payoutOverrides,
-              salaryConfig
+              salaryConfig,
+              vaultKey
             ).catch(console.warn);
             setLastSyncTime(new Date());
           }
@@ -422,7 +610,7 @@ export const App: React.FC = () => {
     );
   };
 
-  // Posten abhaken / öffnen (mit direktem Auto-Sync)
+  // Posten abhaken / öffnen
   const handleToggleClaim = async (claimId: string) => {
     const isCurrentlyResolved = Boolean(resolvedClaims[claimId]?.isResolved);
     const updated = storageService.setClaimResolved(claimId, !isCurrentlyResolved);
@@ -434,7 +622,6 @@ export const App: React.FC = () => {
       showToast('↩️ Posten wieder geöffnet!', 'info');
     }
 
-    // Sofortiger Cloud-Auto-Sync
     if (firebaseUser) {
       try {
         setIsSyncing(true);
@@ -444,7 +631,8 @@ export const App: React.FC = () => {
           userProfile,
           updated,
           payoutOverrides,
-          salaryConfig
+          salaryConfig,
+          vaultKey
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -469,7 +657,8 @@ export const App: React.FC = () => {
           userProfile,
           resolvedClaims,
           updated,
-          salaryConfig
+          salaryConfig,
+          vaultKey
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -493,7 +682,8 @@ export const App: React.FC = () => {
           userProfile,
           resolvedClaims,
           updated,
-          salaryConfig
+          salaryConfig,
+          vaultKey
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -515,7 +705,8 @@ export const App: React.FC = () => {
         profile,
         resolvedClaims,
         payoutOverrides,
-        salaryConfig
+        salaryConfig,
+        vaultKey
       ).catch(console.warn);
       setLastSyncTime(new Date());
     }
@@ -536,11 +727,28 @@ export const App: React.FC = () => {
         userProfile,
         resolvedClaims,
         payoutOverrides,
-        config
+        config,
+        vaultKey
       ).catch(console.warn);
       setLastSyncTime(new Date());
     }
   };
+
+  // STRIKTE AUTH-WALL: Solange kein Nutzer aktiv ist, wird das Dashboard NIEMALS gerendert!
+  if (!activeSession) {
+    return (
+      <>
+        <AuthLockScreen
+          onGoogleLogin={handleGoogleLogin}
+          onUnlockPin={handleUnlockWithPin}
+          authError={authError}
+          isSyncing={isSyncing}
+          onClearError={() => setAuthError(null)}
+        />
+        <Toast toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
 
   // Monatsstatistiken berechnen
   const [jStr, mStr] = currentYearMonth.split('-');
@@ -551,20 +759,39 @@ export const App: React.FC = () => {
       {/* Toast Notifications */}
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Sticky Header mit Monatsauswahl, Live-Stundenzähler, Cloud-Sync-Button & Google-Login */}
+      {/* Kollegen Onboarding Wizard beim ersten Start */}
+      {showOnboarding && (
+        <OnboardingModal
+          initialName={activeSession.name}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+
+      {/* Geräteübergreifender Sync-Modal (PC ↔ Handy) */}
+      <SyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        onSyncComplete={loadAllData}
+        showToast={showToast}
+      />
+
+      {/* Sticky Header mit Name, Blue-Logout-Button, Sync-Trigger und Monatsnavigation */}
       <Header
         currentYearMonth={currentYearMonth}
         onMonthChange={handleMonthChange}
         stats={stats}
         isDarkMode={isDarkMode}
         onToggleTheme={toggleTheme}
-        userName={`${userProfile.vorname} ${userProfile.name}`}
+        userName={`${userProfile.vorname} ${userProfile.name}`.trim() || activeSession.name}
+        activeSession={activeSession}
         firebaseUser={firebaseUser}
         onLogin={handleGoogleLogin}
-        onLogout={handleGoogleLogout}
+        onLogout={handleLogout}
         isSyncing={isSyncing}
         onManualSync={() => handleManualSync(true)}
+        onOpenSyncModal={() => setIsSyncModalOpen(true)}
         lastSyncTime={lastSyncTime}
+        onLockApp={handleLogout}
       />
 
       {/* Hauptinhalt */}
@@ -593,7 +820,6 @@ export const App: React.FC = () => {
         {/* TAB 2: 📊 Monatsübersicht & Abrechnungsabgleich */}
         {activeTab === 'tabelle' && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Sub-Nav Pillen für Übersicht */}
             <div className="flex p-1 rounded-2xl bg-slate-200/80 dark:bg-zinc-800/80 border border-slate-300/60 dark:border-zinc-700/60 text-xs gap-1 flex-wrap sm:flex-nowrap">
               <button
                 onClick={() => setTableSubView('comparison')}
@@ -633,92 +859,66 @@ export const App: React.FC = () => {
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span>📊 Diagramme</span>
+                <span>📈 Statistiken</span>
               </button>
             </div>
 
-            {/* Ansicht 1: Reale Vergleichstabelle & Offene Nachforderungen */}
             {tableSubView === 'comparison' && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <PayrollComparisonCard
-                  userProfile={userProfile}
-                  currentYearMonth={currentYearMonth}
-                  shifts={shifts}
-                  salaryConfig={salaryConfig}
-                  onSelectMonth={ym => {
-                    handleMonthChange(ym);
-                    setTableSubView('month');
-                    showToast(`Monat ${ym} im Stundenzettel geladen!`, 'info');
-                  }}
-                  onShowToast={showToast}
-                  resolvedClaims={resolvedClaims}
-                  onToggleClaim={handleToggleClaim}
-                  payoutOverrides={payoutOverrides}
-                  onSavePayoutOverride={handleSavePayoutOverride}
-                  onDeletePayoutOverride={handleDeletePayoutOverride}
-                  lastSyncTime={lastSyncTime}
-                  onManualSync={() => handleManualSync(true)}
-                  isSyncing={isSyncing}
-                />
-                <KpiCards stats={stats} salaryConfig={salaryConfig} />
-              </div>
+              <PayrollComparisonCard
+                userProfile={userProfile}
+                currentYearMonth={currentYearMonth}
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                payoutOverrides={payoutOverrides}
+                onSavePayoutOverride={handleSavePayoutOverride}
+                onDeletePayoutOverride={handleDeletePayoutOverride}
+                resolvedClaims={resolvedClaims}
+                onToggleClaim={handleToggleClaim}
+                onShowToast={showToast}
+                onSelectMonth={handleMonthChange}
+                isSyncing={isSyncing}
+                lastSyncTime={lastSyncTime}
+                onManualSync={() => handleManualSync(true)}
+              />
             )}
 
-            {/* Ansicht 1b: 🎯 Minijob-Jahresradar (7.230 €) */}
             {tableSubView === 'radar' && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <MinijobJahresradar
-                  shifts={shifts}
-                  salaryConfig={salaryConfig}
-                  userProfile={userProfile}
-                  currentYearMonth={currentYearMonth}
-                  onSaveSalaryConfig={handleSaveSalaryConfig}
-                  onSelectMonth={ym => {
-                    handleMonthChange(ym);
-                    setTableSubView('month');
-                    showToast(`Monat ${ym} im Stundenzettel geladen!`, 'info');
-                  }}
-                  onShowToast={showToast}
-                  lastSyncTime={lastSyncTime}
-                  onManualSync={() => handleManualSync(true)}
-                  isSyncing={isSyncing}
-                />
-              </div>
+              <MinijobJahresradar
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                userProfile={userProfile}
+                currentYearMonth={currentYearMonth}
+                onSaveSalaryConfig={handleSaveSalaryConfig}
+                onSelectMonth={handleMonthChange}
+                onShowToast={showToast}
+              />
             )}
 
-            {/* Ansicht 2: Stundenzettel des ausgewählten Monats */}
             {tableSubView === 'month' && (
-              <div className="space-y-4 animate-in fade-in duration-150">
+              <>
                 <KpiCards stats={stats} salaryConfig={salaryConfig} />
                 <MonthTable
                   currentYearMonth={currentYearMonth}
                   shifts={shifts}
-                  onSaveShift={handleSaveShift}
                   onDeleteShift={handleDeleteShift}
-                  onSelectDateForQuickEntry={datum => {
-                    setSelectedDate(datum);
-                    setActiveTab('erfassen');
-                  }}
+                  onSaveShift={handleSaveShift}
+                  onSelectDateForQuickEntry={setSelectedDate}
                 />
-              </div>
+              </>
             )}
 
-            {/* Ansicht 3: Säulendiagramme */}
             {tableSubView === 'charts' && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <SalaryCharts
-                  currentYearMonth={currentYearMonth}
-                  shifts={shifts}
-                  salaryConfig={salaryConfig}
-                  isDarkMode={isDarkMode}
-                />
-                <KpiCards stats={stats} salaryConfig={salaryConfig} />
-              </div>
+              <SalaryCharts
+                currentYearMonth={currentYearMonth}
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                isDarkMode={isDarkMode}
+              />
             )}
           </div>
         )}
 
-        {/* NEUER TAB: 🎯 Minijob-Jahresradar (7.230 €) aus Bottom-Navigation */}
+        {/* TAB 2b: 🎯 Direktzugriff auf Minijob-Jahresradar */}
         {activeTab === 'jahresradar' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <MinijobJahresradar
@@ -727,54 +927,39 @@ export const App: React.FC = () => {
               userProfile={userProfile}
               currentYearMonth={currentYearMonth}
               onSaveSalaryConfig={handleSaveSalaryConfig}
-              onSelectMonth={ym => {
-                handleMonthChange(ym);
-                setActiveTab('tabelle');
-                setTableSubView('month');
-                showToast(`Monat ${ym} im Stundenzettel geladen!`, 'info');
-              }}
+              onSelectMonth={handleMonthChange}
               onShowToast={showToast}
-              lastSyncTime={lastSyncTime}
-              onManualSync={() => handleManualSync(true)}
-              isSyncing={isSyncing}
             />
           </div>
         )}
 
-        {/* TAB 3: ✉️ E-Mail */}
+        {/* TAB 3: ✉️ E-Mail Vorlage */}
         {activeTab === 'email' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <EmailTemplateCard
               currentYearMonth={currentYearMonth}
-              shifts={shifts}
               userProfile={userProfile}
+              shifts={shifts}
               onShowToast={showToast}
             />
           </div>
         )}
 
-        {/* TAB 4: 📤 Export & PDF */}
+        {/* TAB 4: 📄 Export */}
         {activeTab === 'export' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <ExportActions
               currentYearMonth={currentYearMonth}
-              shifts={shifts}
               userProfile={userProfile}
+              shifts={shifts}
               salaryConfig={salaryConfig}
-              onShowToast={showToast}
-            />
-
-            <EmailTemplateCard
-              currentYearMonth={currentYearMonth}
-              shifts={shifts}
-              userProfile={userProfile}
               onShowToast={showToast}
             />
 
             <SheetPreview
               currentYearMonth={currentYearMonth}
-              shifts={shifts}
               userProfile={userProfile}
+              shifts={shifts}
             />
           </div>
         )}
@@ -782,56 +967,46 @@ export const App: React.FC = () => {
         {/* TAB 5: ⚙️ Einstellungen */}
         {activeTab === 'settings' && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Google Cloud Status Kachel mit manuellem Sync Button */}
+            {/* 🔒 Tresor & Sicherheits-Konfiguration */}
+            <VaultConfig
+              onLockApp={handleLogout}
+              onOpenSyncModal={() => setIsSyncModalOpen(true)}
+              onShowToast={showToast}
+            />
+
+            {/* Cloud & Geräte Synchronisation */}
             <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden group">
-              <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-blue-500/15 transition-all duration-700" />
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between relative z-10 gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-500/10">
-                    <span className="text-lg">☁️</span>
+                  <div className="w-9 h-9 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <span className="text-base">🔄</span>
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white tracking-wide font-display">
-                      Google Cloud Synchronisation
+                      Geräte-Synchronisation (PC ↔ Handy)
                     </h3>
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       {firebaseUser
-                        ? `Verbunden mit ${firebaseUser.email} • Echtzeit-Synchronisation aktiv`
-                        : 'Nicht angemeldet • Lokaler Offline-Modus aktiv'}
+                        ? `Cloud aktiv: Verbunden mit ${firebaseUser.email}`
+                        : 'AES-256 Offline-Modus aktiv • Sync-Code für Mobilgeräte'}
                     </p>
-                    {lastSyncTime && (
-                      <p className="text-[10px] text-emerald-400 mt-0.5">
-                        Zuletzt synchronisiert: {lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr
-                      </p>
-                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {firebaseUser ? (
-                    <>
-                      <button
-                        onClick={() => handleManualSync(true)}
-                        disabled={isSyncing}
-                        className="px-3.5 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5"
-                      >
-                        <span className={isSyncing ? 'animate-spin inline-block' : ''}>🔄</span>
-                        <span>Jetzt synchronisieren</span>
-                      </button>
-
-                      <button
-                        onClick={handleGoogleLogout}
-                        className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/10 text-slate-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 text-xs font-semibold transition-all"
-                      >
-                        Abmelden
-                      </button>
-                    </>
-                  ) : (
+                  <button
+                    onClick={() => setIsSyncModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all active:scale-95"
+                  >
+                    Sync-Code (PC ↔ Handy)
+                  </button>
+                  {firebaseUser && (
                     <button
-                      onClick={handleGoogleLogin}
-                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all active:scale-95"
+                      onClick={() => handleManualSync(true)}
+                      disabled={isSyncing}
+                      className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-semibold"
                     >
-                      Mit Google anmelden
+                      Jetzt synchronisieren
                     </button>
                   )}
                 </div>

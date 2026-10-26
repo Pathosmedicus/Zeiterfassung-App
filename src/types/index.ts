@@ -186,3 +186,26 @@ export interface AppBackup {
   lohn_config_v2?: any;
   meine_arbeitszeiten?: ShiftEntry[];
 }
+
+export interface AppUserSession {
+  id: string; // E-Mail, Google UID oder lokale ID
+  name: string;
+  email?: string;
+  authProvider: 'google' | 'pin';
+  isOwner?: boolean;
+  isOnboarded?: boolean;
+  avatarUrl?: string;
+  lastLogin: string;
+}
+
+export interface SyncPackage {
+  version: string;
+  timestamp: string;
+  userId: string;
+  userProfile: UserProfile;
+  salaryConfig: SalaryConfig;
+  presets: PresetShift[];
+  shifts: ShiftEntry[];
+  payoutOverrides: Record<string, MonthPayoutOverride>;
+  resolvedClaims: Record<string, ResolvedClaimStatus>;
+}

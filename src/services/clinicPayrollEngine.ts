@@ -17,258 +17,30 @@ export interface OpenClaim {
   details: string[];
 }
 
-export const OPEN_CLAIMS: OpenClaim[] = [
-  {
-    id: 'claim_2025_zuschlaege',
-    titel: 'Ausstehende Zeitzuschläge Sep–Dez 2025',
-    zeitraum: 'September 2025 – Dezember 2025',
-    betragNetto: 181.14,
-    kategorie: 'anomalie_2025',
-    status: 'offen',
-    kurzBeschreibung: 'Zeitzuschläge für 4 Monate wurden vom Klinikum noch nicht ausgezahlt.',
-    details: [
-      '38,25 Std. Sonntagszuschlag (LA 362) à 4,67 € = 178,63 € (steuer- und VBL-frei)',
-      '3,92 Std. Samstagszuschlag (LA 332) à 0,64 € = 2,51 € (abzgl. 1,81 % VBL = 2,46 € netto)',
-      'Betrifft: Sep (9,0h So, 0,17h Sa), Okt (3,25h So, 3,75h Sa), Nov (12,0h So), Dez (14,0h So)',
-      'Gesamtforderung 2025: 181,14 € netto'
-    ]
-  },
-  {
-    id: 'claim_2026_09_abrechnungsfehler',
-    titel: 'Abrechnungsfehler Personalabteilung September 2026',
-    zeitraum: 'Abrechnungsmonat September 2026',
-    betragNetto: 317.98,
-    kategorie: 'nachforderung_2026',
-    status: 'offen',
-    kurzBeschreibung: 'Gravierender HR-Berechnungsfehler: Netto-Nachforderungsanspruch von 317,98 €.',
-    details: [
-      'Fehler 1: Sozialversicherungstage (SV-Tage) fälschlicherweise auf 0 gesetzt',
-      'Fehler 2: August-Grundvergütung (-94,51 €) und August-Zuschlag (-64,80 €) unberechtigt storniert/abgezogen',
-      'Fehler 3: Regulärer September-Grundlohn (5,00 Std. LA 200 = 94,51 €) gar nicht vergütet (0,00 €)',
-      'Fehler 4: August-Mehrstunden (24,33 Std.) nur mit 17,64 € statt 18,90 € (Stufe 2 ab 01.08.2026) abgerechnet (-30,66 €)',
-      'Tatsächliche Überweisung Bank 09/26: 263,81 € (Soll wäre 581,79 €)',
-      'Netto-Differenz / Nachforderungsanspruch: 317,98 € netto'
-    ]
-  }
-];
+// Registry für entschlüsselte historische Daten (im Arbeitsspeicher, nur nach Auth verfügbar - Zero Data Leak)
+let decryptedHistoricalRecords: ClinicPayrollRecord[] = [];
+let decryptedInitialClaims: OpenClaimItem[] = [];
 
-export const TOTAL_OPEN_CLAIMS_NETTO = 181.14 + 317.98; // 499.12 €
+export function setDecryptedHistoricalRecords(records: ClinicPayrollRecord[]) {
+  decryptedHistoricalRecords = records;
+}
 
-/**
- * Reale historische Monatsdaten 2025 & 2026
- */
-export const HISTORICAL_PAYROLL_RECORDS: ClinicPayrollRecord[] = [
-  // --- JAHR 2025 ---
-  {
-    yearMonth: '2025-08',
-    label: 'Aug 2025',
-    gesamtStunden: 23.00,
-    sonntagStunden: 5.00,
-    samstagStunden: 6.00,
-    bankIst: 84.25,
-    bankSollRegulaer: 84.25,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Exakt',
-    hrNotiz: 'Erster Monat: 5,00h Grundvergütung (LA 200: 85,80 € abzgl. 1,81 % VBL 1,55 € = 84,25 €).'
-  },
-  {
-    yearMonth: '2025-09',
-    label: 'Sep 2025',
-    gesamtStunden: 24.50,
-    sonntagStunden: 9.00,
-    samstagStunden: 0.17,
-    bankIst: 400.54,
-    bankSollRegulaer: 387.54,
-    differenz: 13.00,
-    status: 'ok',
-    statusBadge: '✅ Inkl. Sondererstattung',
-    sonderzahlungText: 'Führungszeugnis-Erstattung',
-    sonderzahlungBetrag: 13.00,
-    hrNotiz: 'Regulär 387,54 € + 13,00 € steuerfreie Erstattung für Führungszeugnis = 400,54 €.'
-  },
-  {
-    yearMonth: '2025-10',
-    label: 'Okt 2025',
-    gesamtStunden: 28.00,
-    sonntagStunden: 3.25,
-    samstagStunden: 3.75,
-    bankIst: 111.37,
-    bankSollRegulaer: 440.00,
-    differenz: -328.63,
-    status: 'anomaly',
-    statusBadge: '⚠️ HR-Fehler: Sep-Mehrstunden vergessen',
-    hrNotiz: 'HR-Fehler: Rückrechnung der Sep-Mehrstunden (19,5h * 17,16 € = 334,62 € brutto / 328,56 € netto) wurde vergessen! Nur Grundlohn + Aug-Zuschläge ausgezahlt.'
-  },
-  {
-    yearMonth: '2025-11',
-    label: 'Nov 2025',
-    gesamtStunden: 25.00,
-    sonntagStunden: 12.00,
-    samstagStunden: 0.00,
-    bankIst: 830.17,
-    bankSollRegulaer: 471.78,
-    differenz: 358.39,
-    status: 'ok',
-    statusBadge: '💰 Doppel-Rückrechnung + JSZ',
-    sonderzahlungText: 'Jahressonderzahlung + Doppel-Rückrechnung',
-    sonderzahlungBetrag: 30.38,
-    hrNotiz: 'Doppel-Rückrechnung für Sep (+328,56 € netto) & Okt (+387,53 € netto) + Jahressonderzahlung (+30,38 € brutto / 29,83 € netto) + Nov-Grundlohn (84,25 €) = 830,17 €.'
-  },
-  {
-    yearMonth: '2025-12',
-    label: 'Dez 2025',
-    gesamtStunden: 14.00,
-    sonntagStunden: 14.00,
-    samstagStunden: 0.00,
-    bankIst: 421.24,
-    bankSollRegulaer: 421.24,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Exakt (Grund + Nov)',
-    hrNotiz: 'Nov-Mehrstunden (20h * 17,16 € = 343,20 €) + Dez-Grundlohn (85,80 €) - 1,81 % VBL (7,76 €) = 421,24 €. Hinweis: Zeitzuschläge Sep–Dez stehen weiter aus.'
-  },
+export function getHistoricalRecords(): ClinicPayrollRecord[] {
+  return decryptedHistoricalRecords;
+}
 
-  // --- JAHR 2026 ---
-  {
-    yearMonth: '2026-01',
-    label: 'Jan 2026',
-    gesamtStunden: 29.00,
-    sonntagStunden: 12.75,
-    samstagStunden: 0.00,
-    abgerechnetSonntag: 12.50,
-    bankIst: 235.89,
-    bankSollRegulaer: 235.89,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Exakt',
-    hrNotiz: 'Dez-Mehrstunden (9h * 17,16 € = 154,44 €) + Jan-Grundlohn (85,80 €) - 1,81 % VBL (4,35 €) = 235,89 €.'
-  },
-  {
-    yearMonth: '2026-02',
-    label: 'Feb 2026',
-    gesamtStunden: 29.50,
-    sonntagStunden: 16.00,
-    samstagStunden: 0.75,
-    abgerechnetSonntag: 15.25,
-    bankIst: 488.63,
-    bankSollRegulaer: 488.63,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Exakt',
-    hrNotiz: 'Jan-Mehrstunden (24h * 17,16 € = 411,84 €) + Feb-Grundlohn (85,80 €) - 1,81 % VBL (9,01 €) = 488,63 €.'
-  },
-  {
-    yearMonth: '2026-03',
-    label: 'Mär 2026',
-    gesamtStunden: 30.00,
-    sonntagStunden: 14.75,
-    samstagStunden: 0.00,
-    nachtStunden: 3.17,
-    bankIst: 1039.86,
-    bankSollRegulaer: 546.51,
-    differenz: 493.35,
-    status: 'anomaly',
-    statusBadge: '⚠️ HR-Fehler: März zu früh bezahlt',
-    hrNotiz: 'HR-Fehler: Neben Feb-Rückrechnung (420,42 €) wurden 28,75h für März bereits im März ausgezahlt (+493,35 €) + Jan-Zuschläge (58,38 €) = 1.039,86 €.'
-  },
-  {
-    yearMonth: '2026-04',
-    label: 'Apr 2026',
-    gesamtStunden: 29.00,
-    sonntagStunden: 12.25,
-    samstagStunden: 0.00,
-    bankIst: 92.75,
-    bankSollRegulaer: 155.94,
-    differenz: -63.19,
-    status: 'anomaly',
-    statusBadge: '📉 Korrektur März-Überzahlung',
-    hrNotiz: 'Verrechnung März-Überzahlung: Abzug von -3,75h (-64,35 € brutto / -63,19 € netto) + Feb-Zuschläge (71,69 €) + Apr-Grundlohn (85,80 €) = 92,75 €.'
-  },
-  {
-    yearMonth: '2026-05',
-    label: 'Mai 2026',
-    gesamtStunden: 29.75,
-    sonntagStunden: 13.25,
-    samstagStunden: 5.25,
-    abgerechnetSamstag: 5.00,
-    bankIst: 571.73,
-    bankSollRegulaer: 571.74,
-    differenz: -0.01,
-    status: 'ok',
-    statusBadge: '✅ Tariferhöhung (17,64 €)',
-    hrNotiz: 'Neuer Grundlohn (88,21 €) + Apr-Mehrstunden (24h * 17,16 € = 411,84 €) + Mär-Zuschläge (68,88 € So + 11,86 € Nacht) - VBL = 571,73 €.'
-  },
-  {
-    yearMonth: '2026-06',
-    label: 'Jun 2026',
-    gesamtStunden: 30.00,
-    sonntagStunden: 14.00,
-    samstagStunden: 0.00,
-    abgerechnetSonntag: 13.50,
-    bankIst: 572.51,
-    bankSollRegulaer: 572.51,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Exakt',
-    hrNotiz: 'Mai-Mehrstunden (24,75h * 17,64 € = 436,59 €) + Jun-Grundlohn (88,21 €) + Apr-Zuschläge (12,25h * 4,67 € = 57,21 €) - VBL = 572,51 €.'
-  },
-  {
-    yearMonth: '2026-07',
-    label: 'Jul 2026',
-    gesamtStunden: 29.50,
-    sonntagStunden: 7.00,
-    samstagStunden: 6.17,
-    bankIst: 594.17,
-    bankSollRegulaer: 594.17,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Inkl. Einmalzahlung',
-    sonderzahlungText: 'Tarifl. Einmalzahlung',
-    sonderzahlungBetrag: 7.94,
-    hrNotiz: 'Jun-Mehrstunden (441,00 €) + Jul-Grundlohn (88,21 €) + Einmalzahlung (7,94 €) + Mai-Zuschläge (63,60 € So + 3,20 € Sa) - VBL = 594,17 €.'
-  },
-  {
-    yearMonth: '2026-08',
-    label: 'Aug 2026',
-    gesamtStunden: 29.33,
-    sonntagStunden: 12.33,
-    samstagStunden: 6.25,
-    bankIst: 581.96,
-    bankSollRegulaer: 581.96,
-    differenz: 0.00,
-    status: 'ok',
-    statusBadge: '✅ Stufenaufstieg Stufe 2 (18,90 €)',
-    hrNotiz: 'Neuer Grundlohn Stufe 2 (94,51 €) + Jul-Mehrstunden (24,5h * 17,64 € = 432,18 €) + Jun-Zuschläge (13,5h * 4,80 € = 64,80 €) - VBL = 581,96 €.'
-  },
-  {
-    yearMonth: '2026-09',
-    label: 'Sep 2026',
-    gesamtStunden: 28.50,
-    sonntagStunden: 8.00,
-    samstagStunden: 6.50,
-    bankIst: 263.81,
-    bankSollRegulaer: 581.79,
-    differenz: -317.98,
-    status: 'claim',
-    statusBadge: '🚨 Abrechnungsfehler (317,98 € offen)',
-    offenerAnspruch: 317.98,
-    hrNotiz: 'HR-FEHLER: SV-Tage fälschlich auf 0 gesetzt, Aug-Grundlohn (-94,51 €) & Aug-Zuschlag (-64,80 €) storniert, Sep-Grundlohn 0,00 €, Aug-Lohn nur mit 17,64 € statt 18,90 € gerechnet -> 317,98 € Netto-Nachforderungsanspruch!'
-  },
-  {
-    yearMonth: '2026-10',
-    label: 'Okt 2026',
-    gesamtStunden: 29.42,
-    sonntagStunden: 19.75,
-    samstagStunden: 1.75,
-    bankIst: 910.00, // Erwartet inkl. Korrektur
-    bankSollRegulaer: 592.02,
-    differenz: 317.98,
-    status: 'forecast',
-    statusBadge: '🔮 Prognose: 592,02 € / 910,00 €',
-    hrNotiz: 'Auszahlungsprognose Ende 10/26: Regulär fällig 592,02 € bzw. 910,00 € inkl. Nachzahlung der 317,98 € aus September.'
-  }
-];
+export function setDecryptedInitialClaims(claims: OpenClaimItem[]) {
+  decryptedInitialClaims = claims;
+}
+
+export function getDecryptedInitialClaims(): OpenClaimItem[] {
+  return decryptedInitialClaims;
+}
+
+// Kompatibilitäts-Export (leer im unautorisierten Zustand - Zero Data Leak)
+export const HISTORICAL_PAYROLL_RECORDS: ClinicPayrollRecord[] = [];
+export const OPEN_CLAIMS: OpenClaim[] = [];
+export const TOTAL_OPEN_CLAIMS_NETTO = 0;
 
 const MONTH_NAMES_DE = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
@@ -289,8 +61,9 @@ export function getClinicPayrollRecords(
 ): ClinicPayrollRecord[] {
   const monthSet = new Set<string>();
 
-  // 1. Reale Referenzmonate (Aug 2025 bis Okt 2026)
-  for (const r of HISTORICAL_PAYROLL_RECORDS) {
+  // 1. Entschlüsselte historische Referenzmonate (nur nach Auth vorhanden)
+  const recordsPool = decryptedHistoricalRecords.length > 0 ? decryptedHistoricalRecords : HISTORICAL_PAYROLL_RECORDS;
+  for (const r of recordsPool) {
     monthSet.add(r.yearMonth);
   }
 
@@ -310,7 +83,7 @@ export function getClinicPayrollRecords(
 
   return sortedMonths.map(yearMonth => {
     const [jahr, monat] = yearMonth.split('-').map(Number);
-    const hist = HISTORICAL_PAYROLL_RECORDS.find(h => h.yearMonth === yearMonth);
+    const hist = recordsPool.find(h => h.yearMonth === yearMonth);
     const override = overrides[yearMonth];
 
     // Leistungswert des Monats (gearbeitete Stunden)
@@ -398,50 +171,43 @@ export function getDynamicOpenClaims(
 ): OpenClaimItem[] {
   const claims: OpenClaimItem[] = [];
 
-  // 1. Feste Nachforderung: Ausstehende Zeitzuschläge Sep–Dez 2025 (181,14 €)
-  const zuschlaege2025Resolution = resolvedClaims['claim_2025_zuschlaege'];
-  claims.push({
-    id: 'claim_2025_zuschlaege',
-    titel: 'Ausstehende Zeitzuschläge Sep–Dez 2025',
-    zeitraum: 'September 2025 – Dezember 2025',
-    betragNetto: 181.14,
-    kategorie: 'anomalie_2025',
-    isResolved: Boolean(zuschlaege2025Resolution?.isResolved),
-    resolvedDate: zuschlaege2025Resolution?.resolvedDate,
-    kurzBeschreibung: 'Zeitzuschläge für 4 Monate wurden vom Klinikum noch nicht ausgezahlt.',
-    details: [
-      '38,25 Std. Sonntagszuschlag (LA 362) à 4,67 € = 178,63 € (steuer- und VBL-frei)',
-      '3,92 Std. Samstagszuschlag (LA 332) à 0,64 € = 2,51 € (abzgl. 1,81 % VBL = 2,46 € netto)',
-      'Betrifft: Sep (9,0h So, 0,17h Sa), Okt (3,25h So, 3,75h Sa), Nov (12,0h So), Dez (14,0h So)',
-      'Gesamtforderung 2025: 181,14 € netto'
-    ]
-  });
+  // 1. Entschlüsselte initiale Nachforderungen (nur vorhanden, wenn autorisiert entsperrt - Zero Data Leak)
+  for (const baseClaim of decryptedInitialClaims) {
+    const res = resolvedClaims[baseClaim.id];
+    claims.push({
+      ...baseClaim,
+      isResolved: Boolean(baseClaim.isResolved || res?.isResolved),
+      resolvedDate: baseClaim.resolvedDate || res?.resolvedDate
+    });
+  }
 
   // 2. Dynamisch erkannte Abrechnungsfehler aus den Monatsdatensätzen
   for (const r of records) {
     if (r.yearMonth === '2026-09') {
-      const sepResolution = resolvedClaims['claim_2026_09_abrechnungsfehler'] || resolvedClaims['2026-09'];
-      const isResolved = Boolean(r.isResolved || sepResolution?.isResolved);
-      const diffBetrag = Math.abs(r.differenz) > 0.05 ? Math.abs(r.differenz) : 317.98;
-      claims.push({
-        id: 'claim_2026_09_abrechnungsfehler',
-        yearMonth: '2026-09',
-        titel: 'Abrechnungsfehler Personalabteilung September 2026',
-        zeitraum: 'Abrechnungsmonat September 2026',
-        betragNetto: diffBetrag,
-        kategorie: 'nachforderung_2026',
-        isResolved,
-        resolvedDate: r.resolvedDate || sepResolution?.resolvedDate,
-        kurzBeschreibung: 'Gravierender HR-Berechnungsfehler: Netto-Nachforderungsanspruch von 317,98 €.',
-        details: [
-          'Fehler 1: Sozialversicherungstage (SV-Tage) fälschlicherweise auf 0 gesetzt',
-          'Fehler 2: August-Grundvergütung (-94,51 €) und August-Zuschlag (-64,80 €) unberechtigt storniert/abgezogen',
-          'Fehler 3: Regulärer September-Grundlohn (5,00 Std. LA 200 = 94,51 €) gar nicht vergütet (0,00 €)',
-          'Fehler 4: August-Mehrstunden (24,33 Std.) nur mit 17,64 € statt 18,90 € (Stufe 2 ab 01.08.2026) abgerechnet (-30,66 €)',
-          `Tatsächliche Überweisung Bank 09/26: ${r.bankIst.toFixed(2)} € (Soll wäre ${r.bankSollRegulaer.toFixed(2)} €)`,
-          `Netto-Differenz / Nachforderungsanspruch: ${diffBetrag.toFixed(2)} € netto`
-        ]
-      });
+      if (!claims.some(c => c.id === 'claim_2026_09_abrechnungsfehler')) {
+        const sepResolution = resolvedClaims['claim_2026_09_abrechnungsfehler'] || resolvedClaims['2026-09'];
+        const isResolved = Boolean(r.isResolved || sepResolution?.isResolved);
+        const diffBetrag = Math.abs(r.differenz) > 0.05 ? Math.abs(r.differenz) : 317.98;
+        claims.push({
+          id: 'claim_2026_09_abrechnungsfehler',
+          yearMonth: '2026-09',
+          titel: 'Abrechnungsfehler Personalabteilung September 2026',
+          zeitraum: 'Abrechnungsmonat September 2026',
+          betragNetto: diffBetrag,
+          kategorie: 'nachforderung_2026',
+          isResolved,
+          resolvedDate: r.resolvedDate || sepResolution?.resolvedDate,
+          kurzBeschreibung: 'Gravierender HR-Berechnungsfehler: Netto-Nachforderungsanspruch von 317,98 €.',
+          details: [
+            'Fehler 1: Sozialversicherungstage (SV-Tage) fälschlicherweise auf 0 gesetzt',
+            'Fehler 2: August-Grundvergütung (-94,51 €) und August-Zuschlag (-64,80 €) unberechtigt storniert/abgezogen',
+            'Fehler 3: Regulärer September-Grundlohn (5,00 Std. LA 200 = 94,51 €) gar nicht vergütet (0,00 €)',
+            'Fehler 4: August-Mehrstunden (24,33 Std.) nur mit 17,64 € statt 18,90 € (Stufe 2 ab 01.08.2026) abgerechnet (-30,66 €)',
+            `Tatsächliche Überweisung Bank 09/26: ${r.bankIst.toFixed(2)} € (Soll wäre ${r.bankSollRegulaer.toFixed(2)} €)`,
+            `Netto-Differenz / Nachforderungsanspruch: ${diffBetrag.toFixed(2)} € netto`
+          ]
+        });
+      }
     } else if (r.status === 'claim' || (r.differenz < -0.05 && r.yearMonth !== '2025-10')) {
       const claimId = `claim_${r.yearMonth}`;
       const res = resolvedClaims[claimId] || resolvedClaims[r.yearMonth];

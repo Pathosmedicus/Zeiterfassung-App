@@ -1,7 +1,21 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Calendar, Sparkles, Cloud, LogIn, LogOut, CheckCircle2, RefreshCw } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sun,
+  Moon,
+  Calendar,
+  Sparkles,
+  Cloud,
+  LogIn,
+  LogOut,
+  RefreshCw,
+  Lock,
+  ShieldCheck,
+  Smartphone
+} from 'lucide-react';
 import { User } from 'firebase/auth';
-import { MonthSalaryStats } from '../types';
+import { MonthSalaryStats, AppUserSession } from '../types';
 
 interface HeaderProps {
   currentYearMonth: string; // YYYY-MM
@@ -10,12 +24,15 @@ interface HeaderProps {
   isDarkMode: boolean;
   onToggleTheme: () => void;
   userName: string;
+  activeSession?: AppUserSession | null;
   firebaseUser: User | null;
   onLogin: () => void;
   onLogout: () => void;
   isSyncing?: boolean;
   onManualSync?: () => void;
+  onOpenSyncModal?: () => void;
   lastSyncTime?: Date | null;
+  onLockApp?: () => void;
 }
 
 const MONATSNAMEN = [
@@ -30,12 +47,15 @@ export const Header: React.FC<HeaderProps> = ({
   isDarkMode,
   onToggleTheme,
   userName,
+  activeSession,
   firebaseUser,
   onLogin,
   onLogout,
   isSyncing,
   onManualSync,
-  lastSyncTime
+  onOpenSyncModal,
+  lastSyncTime,
+  onLockApp
 }) => {
   const [jahrStr, monatStr] = currentYearMonth.split('-');
   const jahr = parseInt(jahrStr, 10);
@@ -62,96 +82,82 @@ export const Header: React.FC<HeaderProps> = ({
     onMonthChange(`${newYear}-${String(newMonth).padStart(2, '0')}`);
   };
 
+  const displayName = activeSession?.name || userName || firebaseUser?.displayName || 'Mitarbeiter';
+  const displayEmail = activeSession?.email || firebaseUser?.email || '';
+
   return (
-    <header className="sticky top-0 z-40 bg-[#0b0f1a]/85 backdrop-blur-xl border-b border-white/10 transition-colors duration-200">
-      <div className="max-w-4xl mx-auto px-4 py-3">
-        {/* Obere Zeile: Branding & Firebase Auth & Theme Switcher */}
+    <header className="sticky top-0 z-40 bg-[#070a13]/90 backdrop-blur-2xl border-b border-white/10 transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5">
+        {/* Obere Zeile: Branding, User Badge, Sync & Logout */}
         <div className="flex items-center justify-between gap-2 mb-2.5">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-600 to-cyan-400 grid place-items-center text-white shadow-md shadow-violet-500/20 shrink-0">
+          {/* Logo & Mitarbeiterinfo */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-violet-600 to-cyan-400 grid place-items-center text-white shadow-md shadow-violet-500/20 shrink-0">
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="font-display text-lg font-bold text-white tracking-tight leading-tight truncate">
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-display text-base sm:text-lg font-bold text-white tracking-tight leading-tight truncate">
                   Zeiterfassung
                 </h1>
                 <span className="hidden sm:inline-flex items-center text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
                   Radiologie
                 </span>
               </div>
-              <p className="text-[11px] text-[var(--muted)] font-medium truncate">
-                {userName || 'Mitarbeiter'} • Radiologie
+              <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
+                <span className="text-cyan-300 font-semibold">{displayName}</span>
+                <span>•</span>
+                <span className="truncate">Klinikum</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Google Account Status / Login & Cloud Sync Button */}
-            {firebaseUser ? (
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="flex items-center gap-2 pl-1 pr-2.5 py-1 bg-white/5 hover:bg-white/10 border border-emerald-500/30 rounded-full text-xs font-semibold shadow-sm transition-all"
-                  title={`Angemeldet als ${firebaseUser.email}`}
-                >
-                  {firebaseUser.photoURL ? (
-                    <img
-                      src={firebaseUser.photoURL}
-                      alt="Google User"
-                      className="w-5 h-5 rounded-full ring-1 ring-emerald-400"
-                    />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center">
-                      G
-                    </div>
-                  )}
-                  <span className="text-slate-200 hidden md:inline max-w-[120px] truncate">
-                    {firebaseUser.displayName || firebaseUser.email?.split('@')[0]}
-                  </span>
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-400 animate-pulse'
-                    }`}
-                    title={isSyncing ? 'Synchronisiere mit Cloud...' : 'Google Cloud aktiv'}
-                  />
-                  <button
-                    type="button"
-                    onClick={onLogout}
-                    className="text-xs text-slate-400 hover:text-rose-400 transition-colors ml-0.5 font-bold px-1"
-                    title="Von Google abmelden"
-                  >
-                    ✕
-                  </button>
-                </div>
+          {/* Steuerungsleiste rechts */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Sync-Status Badge & Button */}
+            <button
+              type="button"
+              onClick={onOpenSyncModal || onManualSync}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-cyan-500/30 rounded-full text-xs font-semibold shadow-sm transition-all active:scale-95"
+              title={firebaseUser ? "Google Cloud-Sync aktiv (Klicken für Optionen)" : "AES-256 Tresor (Klicken zum Synchronisieren mit Handy/PC)"}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-400' : 'text-cyan-400'}`} />
+              <span className="text-slate-300 hidden md:inline text-[11px]">
+                {firebaseUser ? 'Cloud' : 'Sync'}
+              </span>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isSyncing
+                    ? 'bg-amber-400 animate-spin'
+                    : firebaseUser
+                    ? 'bg-emerald-400 animate-pulse'
+                    : 'bg-cyan-400'
+                }`}
+              />
+            </button>
 
-                {onManualSync && (
-                  <button
-                    type="button"
-                    onClick={onManualSync}
-                    disabled={isSyncing}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all active:scale-95 shadow-sm"
-                    title={
-                      lastSyncTime
-                        ? `Zuletzt synchronisiert: ${lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr • Klicken zum Synchronisieren`
-                        : 'Jetzt mit Cloud synchronisieren'
-                    }
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-400' : 'text-cyan-400'}`} />
-                    <span className="hidden sm:inline">
-                      {isSyncing ? 'Sync...' : 'Sync'}
-                    </span>
-                  </button>
-                )}
-              </div>
-            ) : (
+            {/* BLAUER LOGOUT-BUTTON: Sauberes Abmelden & Zurückkehren zum Login-Bildschirm */}
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-md shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+              title="Aktuellen Nutzer abmelden und zurück zum Anmeldebildschirm wechseln"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Abmelden</span>
+            </button>
+
+            {/* Tresor Sperren Button */}
+            {onLockApp && (
               <button
                 type="button"
-                onClick={onLogin}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/30 text-blue-300 transition-all shadow-sm active:scale-95"
-                title="Mit Google anmelden für Cloud-Synchronisation"
+                onClick={onLockApp}
+                className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-cyan-300 hover:bg-cyan-500/10 border border-white/10 hover:border-cyan-500/30 transition-all duration-200 active:scale-95 flex items-center"
+                title="🔒 Tresor sperren (Geschützter Bereich)"
+                aria-label="Tresor sperren"
               >
-                <LogIn className="w-3.5 h-3.5 text-blue-400" />
-                <span className="hidden sm:inline">Google Login</span>
+                <Lock className="w-3.5 h-3.5 text-cyan-400" />
               </button>
             )}
 
@@ -162,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
               title={isDarkMode ? 'Zu Hellmodus wechseln' : 'Zu Dunkelmodus wechseln'}
               aria-label="Theme umschalten"
             >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-300" />}
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-300" />}
             </button>
           </div>
         </div>
@@ -201,19 +207,27 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Direkter Live-Stundenzähler Badge */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/5 border border-white/10 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-              <div className="text-right">
-                <div className="text-xs font-black text-cyan-300 font-display">
-                  {stats.gesamtDezimal.toFixed(2)} h
-                </div>
-              </div>
+          {/* Stundenzähler des aktiven Monats */}
+          <div className="flex items-center gap-3 pr-2">
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">
+                {monatName}
+              </span>
+              <span className="font-mono text-base font-black text-cyan-300 leading-tight">
+                {stats.gesamtDezimal.toFixed(2)}
+                <span className="text-xs font-medium text-slate-400 ml-1">h</span>
+              </span>
             </div>
 
-            <div className="hidden sm:flex items-center px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold font-display">
-              ~ {stats.erwartetesNetto.toFixed(2)} €
+            <div className="hidden sm:block h-7 w-px bg-white/10" />
+
+            <div className="hidden sm:block text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">
+                Dienste
+              </span>
+              <span className="font-mono text-base font-bold text-white leading-tight">
+                {stats.anzahlDienste}
+              </span>
             </div>
           </div>
         </div>

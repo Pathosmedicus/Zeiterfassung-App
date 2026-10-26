@@ -1,11 +1,20 @@
-import { ShiftEntry, UserProfile, PresetShift, SalaryConfig, AppBackup, MonthPayoutOverride, ResolvedClaimStatus } from '../types';
+import {
+  ShiftEntry,
+  UserProfile,
+  PresetShift,
+  SalaryConfig,
+  AppBackup,
+  MonthPayoutOverride,
+  ResolvedClaimStatus,
+  AppUserSession
+} from '../types';
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
-  name: 'Mustermann',
-  vorname: 'Max',
-  personalnummer: '123456',
-  abteilung: 'Radiologie & Nuklearmedizin',
-  klinik: 'Universitätsklinikum'
+  name: '',
+  vorname: '',
+  personalnummer: '',
+  abteilung: 'Radiologie',
+  klinik: 'Klinikum'
 };
 
 export const DEFAULT_PRESETS: PresetShift[] = [
@@ -56,100 +65,7 @@ export const DEFAULT_PRESETS: PresetShift[] = [
   }
 ];
 
-export const DEFAULT_HISTORICAL_SHIFTS: ShiftEntry[] = [
-  // 08/2025: 23.00h (5.00h So, 6.00h Sa)
-  { datum: '2025-08-03', kommen: '11:00', gehen: '16:00', pauseMinuten: 0, nettoStunden: 5.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2025-08-09', kommen: '13:00', gehen: '19:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Samstagsdienst' },
-  { datum: '2025-08-15', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Kurzdienst' },
-  { datum: '2025-08-22', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Kurzdienst' },
-
-  // 09/2025: 24.50h (9.00h So, 0.17h Sa)
-  { datum: '2025-09-07', kommen: '07:30', gehen: '17:00', pauseMinuten: 30, nettoStunden: 9.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2025-09-13', kommen: '13:00', gehen: '13:10', pauseMinuten: 0, nettoStunden: 0.17, schichtTyp: 'Kurz-Einsatz Sa' },
-  { datum: '2025-09-18', kommen: '08:00', gehen: '16:00', pauseMinuten: 30, nettoStunden: 7.50, schichtTyp: 'Regeldienst' },
-  { datum: '2025-09-25', kommen: '08:00', gehen: '16:20', pauseMinuten: 30, nettoStunden: 7.83, schichtTyp: 'Regeldienst' },
-
-  // 10/2025: 28.00h (3.25h So, 3.75h Sa)
-  { datum: '2025-10-05', kommen: '13:00', gehen: '16:15', pauseMinuten: 0, nettoStunden: 3.25, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2025-10-11', kommen: '13:00', gehen: '16:45', pauseMinuten: 0, nettoStunden: 3.75, schichtTyp: 'Samstagsdienst' },
-  { datum: '2025-10-16', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Frühdienst' },
-  { datum: '2025-10-23', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Frühdienst' },
-  { datum: '2025-10-30', kommen: '09:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 5.00, schichtTyp: 'Kurzdienst' },
-
-  // 11/2025: 25.00h (12.00h So, 0.00h Sa)
-  { datum: '2025-11-02', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2025-11-16', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2025-11-20', kommen: '08:00', gehen: '15:00', pauseMinuten: 30, nettoStunden: 6.50, schichtTyp: 'Regeldienst' },
-  { datum: '2025-11-27', kommen: '08:00', gehen: '15:00', pauseMinuten: 30, nettoStunden: 6.50, schichtTyp: 'Regeldienst' },
-
-  // 12/2025: 14.00h (14.00h So, 0.00h Sa)
-  { datum: '2025-12-07', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2025-12-21', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Sonntagsdienst' },
-
-  // 01/2026: 29.00h (12.75h So [abgerechnet 12.50h], 0.00h Sa)
-  { datum: '2026-01-04', kommen: '08:00', gehen: '14:45', pauseMinuten: 0, nettoStunden: 6.75, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-01-18', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-01-15', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Frühdienst' },
-  { datum: '2026-01-22', kommen: '08:00', gehen: '16:45', pauseMinuten: 30, nettoStunden: 8.25, schichtTyp: 'Frühdienst' },
-
-  // 02/2026: 29.50h (16.00h So [abgerechnet 15.25h], 0.75h Sa)
-  { datum: '2026-02-01', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-02-15', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-02-21', kommen: '13:00', gehen: '13:45', pauseMinuten: 0, nettoStunden: 0.75, schichtTyp: 'Samstagsdienst' },
-  { datum: '2026-02-26', kommen: '08:00', gehen: '16:45', pauseMinuten: 30, nettoStunden: 8.25, schichtTyp: 'Frühdienst' },
-  { datum: '2026-02-27', kommen: '09:00', gehen: '13:30', pauseMinuten: 0, nettoStunden: 4.50, schichtTyp: 'Kurzdienst' },
-
-  // 03/2026: 30.00h (14.75h So, 0.00h Sa, 3.17h Nacht)
-  { datum: '2026-03-01', kommen: '08:00', gehen: '15:45', pauseMinuten: 30, nettoStunden: 7.25, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-03-15', kommen: '08:00', gehen: '16:00', pauseMinuten: 30, nettoStunden: 7.50, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-03-19', kommen: '20:00', gehen: '03:40', pauseMinuten: 30, nettoStunden: 7.17, nachtStunden: 3.17, schichtTyp: 'Nachtdienst' },
-  { datum: '2026-03-26', kommen: '08:00', gehen: '16:35', pauseMinuten: 30, nettoStunden: 8.08, schichtTyp: 'Frühdienst' },
-
-  // 04/2026: 29.00h (12.25h So, 0.00h Sa)
-  { datum: '2026-04-05', kommen: '08:00', gehen: '14:15', pauseMinuten: 0, nettoStunden: 6.25, schichtTyp: 'Ostersonntag' },
-  { datum: '2026-04-19', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-04-16', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Frühdienst' },
-  { datum: '2026-04-23', kommen: '08:00', gehen: '17:15', pauseMinuten: 30, nettoStunden: 8.75, schichtTyp: 'Frühdienst' },
-
-  // 05/2026: 29.75h (13.25h So, 5.25h Sa [abgerechnet 5.00h])
-  { datum: '2026-05-03', kommen: '08:00', gehen: '15:15', pauseMinuten: 30, nettoStunden: 6.75, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-05-17', kommen: '08:00', gehen: '15:00', pauseMinuten: 30, nettoStunden: 6.50, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-05-23', kommen: '13:00', gehen: '18:15', pauseMinuten: 0, nettoStunden: 5.25, schichtTyp: 'Samstagsdienst' },
-  { datum: '2026-05-28', kommen: '08:00', gehen: '16:45', pauseMinuten: 30, nettoStunden: 8.25, schichtTyp: 'Frühdienst' },
-  { datum: '2026-05-29', kommen: '09:00', gehen: '12:00', pauseMinuten: 0, nettoStunden: 3.00, schichtTyp: 'Kurzdienst' },
-
-  // 06/2026: 30.00h (14.00h So [abgerechnet 13.50h], 0.00h Sa)
-  { datum: '2026-06-07', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-06-21', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-06-18', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Frühdienst' },
-  { datum: '2026-06-25', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Frühdienst' },
-
-  // 07/2026: 29.50h (7.00h So, 6.17h Sa)
-  { datum: '2026-07-05', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-07-11', kommen: '13:00', gehen: '19:10', pauseMinuten: 0, nettoStunden: 6.17, schichtTyp: 'Samstagsdienst' },
-  { datum: '2026-07-16', kommen: '08:00', gehen: '16:45', pauseMinuten: 30, nettoStunden: 8.25, schichtTyp: 'Frühdienst' },
-  { datum: '2026-07-23', kommen: '08:00', gehen: '16:35', pauseMinuten: 30, nettoStunden: 8.08, schichtTyp: 'Frühdienst' },
-
-  // 08/2026: 29.33h (12.33h So, 6.25h Sa)
-  { datum: '2026-08-02', kommen: '08:00', gehen: '14:20', pauseMinuten: 0, nettoStunden: 6.33, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-08-16', kommen: '08:00', gehen: '14:00', pauseMinuten: 0, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-08-22', kommen: '13:00', gehen: '19:15', pauseMinuten: 0, nettoStunden: 6.25, schichtTyp: 'Samstagsdienst' },
-  { datum: '2026-08-27', kommen: '08:00', gehen: '17:15', pauseMinuten: 30, nettoStunden: 8.75, schichtTyp: 'Frühdienst' },
-  { datum: '2026-08-28', kommen: '09:00', gehen: '11:00', pauseMinuten: 0, nettoStunden: 2.00, schichtTyp: 'Kurzdienst' },
-
-  // 09/2026: 28.50h (8.00h So, 6.50h Sa)
-  { datum: '2026-09-06', kommen: '08:00', gehen: '16:30', pauseMinuten: 30, nettoStunden: 8.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-09-12', kommen: '13:00', gehen: '19:30', pauseMinuten: 0, nettoStunden: 6.50, schichtTyp: 'Samstagsdienst' },
-  { datum: '2026-09-17', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Regeldienst' },
-  { datum: '2026-09-24', kommen: '08:00', gehen: '15:30', pauseMinuten: 30, nettoStunden: 7.00, schichtTyp: 'Regeldienst' },
-
-  // 10/2026: 29.42h (19.75h So, 1.75h Sa)
-  { datum: '2026-10-04', kommen: '08:00', gehen: '15:45', pauseMinuten: 30, nettoStunden: 7.25, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-10-11', kommen: '08:00', gehen: '15:00', pauseMinuten: 30, nettoStunden: 6.50, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-10-18', kommen: '08:00', gehen: '14:30', pauseMinuten: 30, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
-  { datum: '2026-10-24', kommen: '13:00', gehen: '14:45', pauseMinuten: 0, nettoStunden: 1.75, schichtTyp: 'Samstagsdienst' },
-  { datum: '2026-10-29', kommen: '08:00', gehen: '16:25', pauseMinuten: 30, nettoStunden: 7.92, schichtTyp: 'Regeldienst' }
-];
+export const DEFAULT_HISTORICAL_SHIFTS: ShiftEntry[] = [];
 
 export const DEFAULT_SALARY_CONFIG: SalaryConfig = {
   baseOld: 17.16,
@@ -169,97 +85,249 @@ export const DEFAULT_SALARY_CONFIG: SalaryConfig = {
   satPercent: 3.73
 };
 
-const STORAGE_KEYS = {
+const GLOBAL_KEYS = {
+  ACTIVE_SESSION: 'zeiterfassung_active_session_v3',
+  USERS_INDEX: 'zeiterfassung_users_index_v3',
+  THEME: 'zeiterfassung_theme_v3'
+};
+
+const LEGACY_KEYS = {
   SHIFTS: 'zeiterfassung_shifts_v3',
   PROFILE: 'zeiterfassung_profile_v3',
   PRESETS: 'zeiterfassung_presets_v3',
   SALARY: 'zeiterfassung_salary_v3',
-  THEME: 'zeiterfassung_theme_v3',
   PAYOUT_OVERRIDES: 'zeiterfassung_payout_overrides_v3',
   RESOLVED_CLAIMS: 'zeiterfassung_resolved_claims_v3',
-  LEGACY_SHIFTS: 'meine_arbeitszeiten',
-  LEGACY_NAME: 'ma_name',
-  LEGACY_VORNAME: 'ma_vorname',
-  LEGACY_PNR: 'ma_personalnummer',
-  LEGACY_LOHN: 'lohn_config_v2'
+  OLD_SHIFTS: 'meine_arbeitszeiten',
+  OLD_NAME: 'ma_name',
+  OLD_VORNAME: 'ma_vorname',
+  OLD_PNR: 'ma_personalnummer',
+  OLD_LOHN: 'lohn_config_v2'
 };
 
+let activeUserId: string | null = null;
+let activeSession: AppUserSession | null = null;
+
+// Initialer Ladeversuch der aktiven Sitzung
+try {
+  const sessionRaw = localStorage.getItem(GLOBAL_KEYS.ACTIVE_SESSION);
+  if (sessionRaw) {
+    activeSession = JSON.parse(sessionRaw);
+    activeUserId = activeSession?.id || null;
+  }
+} catch {
+  activeSession = null;
+  activeUserId = null;
+}
+
+function sanitizeId(id: string): string {
+  return id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+}
+
+function getUserKey(baseKey: string, customUserId?: string): string {
+  const uid = customUserId || activeUserId;
+  if (!uid) return `anon_${baseKey}`;
+  return `usr_${sanitizeId(uid)}_${baseKey}`;
+}
+
 export const storageService = {
-  getProfile(): UserProfile {
+  // --- SITZUNGSVERWALTUNG (MULTI-USER ISOLATION) ---
+
+  getActiveSession(): AppUserSession | null {
+    if (activeSession) return activeSession;
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.PROFILE);
-      if (stored) return { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
+      const raw = localStorage.getItem(GLOBAL_KEYS.ACTIVE_SESSION);
+      if (raw) {
+        activeSession = JSON.parse(raw);
+        activeUserId = activeSession?.id || null;
+        return activeSession;
+      }
+    } catch {}
+    return null;
+  },
 
-      // Legacy Übernahme falls vorhanden
-      const legacyName = localStorage.getItem(STORAGE_KEYS.LEGACY_NAME);
-      const legacyVorname = localStorage.getItem(STORAGE_KEYS.LEGACY_VORNAME);
-      const legacyPnr = localStorage.getItem(STORAGE_KEYS.LEGACY_PNR);
+  setActiveSession(session: AppUserSession): void {
+    activeSession = session;
+    activeUserId = session.id;
+    try {
+      localStorage.setItem(GLOBAL_KEYS.ACTIVE_SESSION, JSON.stringify(session));
+      this.registerUserInIndex(session);
 
-      return {
-        ...DEFAULT_USER_PROFILE,
-        name: legacyName || DEFAULT_USER_PROFILE.name,
-        vorname: legacyVorname || DEFAULT_USER_PROFILE.vorname,
-        personalnummer: legacyPnr || DEFAULT_USER_PROFILE.personalnummer
+      // Falls Mohammad sich anmeldet, migriere vorhandene Altdaten in seinen exklusiven Speicher
+      if (this.isMohammadUser(session.id)) {
+        this.migrateMohammadLegacyIfPresent();
+      }
+    } catch (e) {
+      console.warn('Fehler beim Speichern der aktiven Sitzung:', e);
+    }
+  },
+
+  clearActiveSession(): void {
+    activeSession = null;
+    activeUserId = null;
+    try {
+      localStorage.removeItem(GLOBAL_KEYS.ACTIVE_SESSION);
+    } catch {}
+  },
+
+  isMohammadUser(userId?: string | null): boolean {
+    const id = (userId || activeUserId || '').toLowerCase().trim();
+    return id === 'mohammadmattar1971@gmail.com' || id === 'mohammad';
+  },
+
+  getRegisteredUsers(): AppUserSession[] {
+    try {
+      const raw = localStorage.getItem(GLOBAL_KEYS.USERS_INDEX);
+      if (raw) return JSON.parse(raw);
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  registerUserInIndex(user: AppUserSession): void {
+    try {
+      const users = this.getRegisteredUsers();
+      const existingIdx = users.findIndex(u => u.id.toLowerCase() === user.id.toLowerCase());
+      const updatedUser: AppUserSession = {
+        ...user,
+        lastLogin: new Date().toISOString()
       };
+      if (existingIdx >= 0) {
+        users[existingIdx] = { ...users[existingIdx], ...updatedUser };
+      } else {
+        users.push(updatedUser);
+      }
+      localStorage.setItem(GLOBAL_KEYS.USERS_INDEX, JSON.stringify(users));
+    } catch (e) {
+      console.warn('Konnte User-Index nicht aktualisieren:', e);
+    }
+  },
+
+  removeUserFromIndex(userId: string): void {
+    try {
+      const users = this.getRegisteredUsers().filter(u => u.id.toLowerCase() !== userId.toLowerCase());
+      localStorage.setItem(GLOBAL_KEYS.USERS_INDEX, JSON.stringify(users));
+    } catch {}
+  },
+
+  isUserOnboarded(userId?: string): boolean {
+    const uid = userId || activeUserId;
+    if (!uid) return false;
+    // Mohammad ist standardmäßig onboarded
+    if (this.isMohammadUser(uid)) return true;
+    return localStorage.getItem(getUserKey('onboarded_v3', uid)) === 'true';
+  },
+
+  setUserOnboarded(onboarded: boolean = true, userId?: string): void {
+    const uid = userId || activeUserId;
+    if (!uid) return;
+    localStorage.setItem(getUserKey('onboarded_v3', uid), onboarded ? 'true' : 'false');
+  },
+
+  migrateMohammadLegacyIfPresent(): void {
+    const mohammadId = 'mohammadmattar1971@gmail.com';
+    const scopedShiftsKey = getUserKey('shifts_v3', mohammadId);
+    const existingScoped = localStorage.getItem(scopedShiftsKey);
+
+    if (!existingScoped || existingScoped === '[]') {
+      const legacyV3 = localStorage.getItem(LEGACY_KEYS.SHIFTS);
+      const legacyOld = localStorage.getItem(LEGACY_KEYS.OLD_SHIFTS);
+      const candidate = (legacyV3 && legacyV3 !== '[]') ? legacyV3 : ((legacyOld && legacyOld !== '[]') ? legacyOld : null);
+
+      if (candidate) {
+        localStorage.setItem(scopedShiftsKey, candidate);
+      }
+
+      const legacyProfile = localStorage.getItem(LEGACY_KEYS.PROFILE);
+      if (legacyProfile) {
+        localStorage.setItem(getUserKey('profile_v3', mohammadId), legacyProfile);
+      }
+
+      const legacyOverrides = localStorage.getItem(LEGACY_KEYS.PAYOUT_OVERRIDES);
+      if (legacyOverrides) {
+        localStorage.setItem(getUserKey('payout_overrides_v3', mohammadId), legacyOverrides);
+      }
+
+      const legacyClaims = localStorage.getItem(LEGACY_KEYS.RESOLVED_CLAIMS);
+      if (legacyClaims) {
+        localStorage.setItem(getUserKey('resolved_claims_v3', mohammadId), legacyClaims);
+      }
+    }
+
+    // Lösche globale Altdaten, damit fremde Nutzer 0 Bytes vorfinden
+    localStorage.removeItem(LEGACY_KEYS.SHIFTS);
+    localStorage.removeItem(LEGACY_KEYS.OLD_SHIFTS);
+    localStorage.removeItem(LEGACY_KEYS.PROFILE);
+    localStorage.removeItem(LEGACY_KEYS.OLD_NAME);
+    localStorage.removeItem(LEGACY_KEYS.OLD_VORNAME);
+    localStorage.removeItem(LEGACY_KEYS.OLD_PNR);
+  },
+
+  // --- STAMMDATEN & PROFIL (USER SCOPED) ---
+
+  getProfile(): UserProfile {
+    if (!activeUserId) return DEFAULT_USER_PROFILE;
+    try {
+      const stored = localStorage.getItem(getUserKey('profile_v3'));
+      if (stored) return { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
+      return DEFAULT_USER_PROFILE;
     } catch {
       return DEFAULT_USER_PROFILE;
     }
   },
 
   saveProfile(profile: UserProfile): void {
-    localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
-    // Synchrone Rückfallebene für altes Schema
-    localStorage.setItem(STORAGE_KEYS.LEGACY_NAME, profile.name);
-    localStorage.setItem(STORAGE_KEYS.LEGACY_VORNAME, profile.vorname);
-    localStorage.setItem(STORAGE_KEYS.LEGACY_PNR, profile.personalnummer);
+    if (!activeUserId) return;
+    localStorage.setItem(getUserKey('profile_v3'), JSON.stringify(profile));
   },
 
-  getShifts(): ShiftEntry[] {
+  hasSavedShifts(): boolean {
+    if (!activeUserId) return false;
+    const raw = localStorage.getItem(getUserKey('shifts_v3'));
+    if (!raw || raw === '[]') return false;
     try {
-      const v3Raw = localStorage.getItem(STORAGE_KEYS.SHIFTS);
-      const legacyRaw = localStorage.getItem(STORAGE_KEYS.LEGACY_SHIFTS);
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) && parsed.length > 0;
+    } catch {
+      return false;
+    }
+  },
 
-      const v3Shifts: ShiftEntry[] = v3Raw ? JSON.parse(v3Raw) : [];
-      const legacyShifts: ShiftEntry[] = legacyRaw ? JSON.parse(legacyRaw) : [];
+  importDecryptedSeed(shifts: ShiftEntry[], profile?: UserProfile): void {
+    if (!activeUserId) return;
+    // Schutzregel: Der Seed gehört exklusiv Mohammad
+    if (!this.isMohammadUser()) {
+      console.warn('Seed-Import für Nicht-Owner abgewiesen (Datenschutz).');
+      return;
+    }
+    if (shifts && shifts.length > 0) {
+      this.saveShifts(shifts);
+    }
+    if (profile && (profile.name || profile.vorname)) {
+      this.saveProfile(profile);
+    }
+  },
 
-      // Fusioniere Altdaten und Neudaten lückenlos nach Datum (neuere überschreiben ältere)
-      const shiftMap = new Map<string, ShiftEntry>();
+  // --- SCHICHTEN (USER SCOPED) ---
 
-      // Falls noch überhaupt keine Schichten gespeichert sind, mit realen historischen Schichten vorinitialisieren
-      if ((!v3Raw && !legacyRaw) || (v3Shifts.length === 0 && legacyShifts.length === 0)) {
-        for (const s of DEFAULT_HISTORICAL_SHIFTS) {
-          shiftMap.set(s.datum, s);
-        }
-      }
-
-      if (Array.isArray(legacyShifts)) {
-        for (const s of legacyShifts) {
-          if (s && s.datum) shiftMap.set(s.datum, s);
-        }
-      }
-      if (Array.isArray(v3Shifts)) {
-        for (const s of v3Shifts) {
-          if (s && s.datum) shiftMap.set(s.datum, s);
-        }
-      }
-
-      const merged = Array.from(shiftMap.values()).sort((a, b) => a.datum.localeCompare(b.datum));
-
-      // Beide Keys synchron halten
-      localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(merged));
-      localStorage.setItem(STORAGE_KEYS.LEGACY_SHIFTS, JSON.stringify(merged));
-
-      return merged;
+  getShifts(): ShiftEntry[] {
+    if (!activeUserId) return [];
+    try {
+      const raw = localStorage.getItem(getUserKey('shifts_v3'));
+      if (!raw || raw === '[]') return [];
+      const parsed: ShiftEntry[] = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.warn("Fehler beim Laden/Fugieren der Schichten:", e);
-      return DEFAULT_HISTORICAL_SHIFTS;
+      console.warn('Fehler beim Laden der Schichten:', e);
+      return [];
     }
   },
 
   saveShifts(shifts: ShiftEntry[]): void {
+    if (!activeUserId) return;
     const sorted = [...shifts].sort((a, b) => a.datum.localeCompare(b.datum));
-    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(sorted));
-    localStorage.setItem(STORAGE_KEYS.LEGACY_SHIFTS, JSON.stringify(sorted));
+    localStorage.setItem(getUserKey('shifts_v3'), JSON.stringify(sorted));
   },
 
   upsertShift(newEntry: ShiftEntry): ShiftEntry[] {
@@ -281,9 +349,12 @@ export const storageService = {
     return shifts;
   },
 
+  // --- PRESETS (USER SCOPED) ---
+
   getPresets(): PresetShift[] {
+    if (!activeUserId) return DEFAULT_PRESETS;
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.PRESETS);
+      const stored = localStorage.getItem(getUserKey('presets_v3'));
       if (stored) return JSON.parse(stored);
       return DEFAULT_PRESETS;
     } catch {
@@ -292,27 +363,17 @@ export const storageService = {
   },
 
   savePresets(presets: PresetShift[]): void {
-    localStorage.setItem(STORAGE_KEYS.PRESETS, JSON.stringify(presets));
+    if (!activeUserId) return;
+    localStorage.setItem(getUserKey('presets_v3'), JSON.stringify(presets));
   },
 
-  getSalaryConfig(): SalaryConfig {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.SALARY);
-      if (stored) return { ...DEFAULT_SALARY_CONFIG, ...JSON.parse(stored) };
+  // --- TARIF & LOHNKONFIGURATION (USER SCOPED) ---
 
-      const legacyLohn = localStorage.getItem(STORAGE_KEYS.LEGACY_LOHN);
-      if (legacyLohn) {
-        const parsed = JSON.parse(legacyLohn);
-        return {
-          ...DEFAULT_SALARY_CONFIG,
-          baseOld: parsed.baseOld ?? DEFAULT_SALARY_CONFIG.baseOld,
-          baseMid: parsed.baseMid ?? DEFAULT_SALARY_CONFIG.baseMid,
-          baseNew: parsed.baseNew ?? DEFAULT_SALARY_CONFIG.baseNew,
-          vblPercent: parsed.vblPercent ?? DEFAULT_SALARY_CONFIG.vblPercent,
-          minijobLimit: parsed.limit ?? DEFAULT_SALARY_CONFIG.minijobLimit,
-          annualLimit: parsed.annualLimit ?? DEFAULT_SALARY_CONFIG.annualLimit
-        };
-      }
+  getSalaryConfig(): SalaryConfig {
+    if (!activeUserId) return DEFAULT_SALARY_CONFIG;
+    try {
+      const stored = localStorage.getItem(getUserKey('salary_v3'));
+      if (stored) return { ...DEFAULT_SALARY_CONFIG, ...JSON.parse(stored) };
       return DEFAULT_SALARY_CONFIG;
     } catch {
       return DEFAULT_SALARY_CONFIG;
@@ -320,21 +381,16 @@ export const storageService = {
   },
 
   saveSalaryConfig(config: SalaryConfig): void {
-    localStorage.setItem(STORAGE_KEYS.SALARY, JSON.stringify(config));
-    // Sync legacy format
-    localStorage.setItem(STORAGE_KEYS.LEGACY_LOHN, JSON.stringify({
-      baseOld: config.baseOld,
-      baseMid: config.baseMid,
-      baseNew: config.baseNew,
-      vblPercent: config.vblPercent,
-      limit: config.minijobLimit,
-      annualLimit: config.annualLimit
-    }));
+    if (!activeUserId) return;
+    localStorage.setItem(getUserKey('salary_v3'), JSON.stringify(config));
   },
 
+  // --- AUSZAHLUNGS-OVERRIDES & NACHFORERUNGEN (USER SCOPED) ---
+
   getPayoutOverrides(): Record<string, MonthPayoutOverride> {
+    if (!activeUserId) return {};
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.PAYOUT_OVERRIDES);
+      const stored = localStorage.getItem(getUserKey('payout_overrides_v3'));
       if (stored) return JSON.parse(stored);
       return {};
     } catch {
@@ -343,25 +399,28 @@ export const storageService = {
   },
 
   savePayoutOverride(override: MonthPayoutOverride): Record<string, MonthPayoutOverride> {
+    if (!activeUserId) return {};
     const current = this.getPayoutOverrides();
     current[override.yearMonth] = {
       ...current[override.yearMonth],
       ...override
     };
-    localStorage.setItem(STORAGE_KEYS.PAYOUT_OVERRIDES, JSON.stringify(current));
+    localStorage.setItem(getUserKey('payout_overrides_v3'), JSON.stringify(current));
     return current;
   },
 
   deletePayoutOverride(yearMonth: string): Record<string, MonthPayoutOverride> {
+    if (!activeUserId) return {};
     const current = this.getPayoutOverrides();
     delete current[yearMonth];
-    localStorage.setItem(STORAGE_KEYS.PAYOUT_OVERRIDES, JSON.stringify(current));
+    localStorage.setItem(getUserKey('payout_overrides_v3'), JSON.stringify(current));
     return current;
   },
 
   getResolvedClaims(): Record<string, ResolvedClaimStatus> {
+    if (!activeUserId) return {};
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.RESOLVED_CLAIMS);
+      const stored = localStorage.getItem(getUserKey('resolved_claims_v3'));
       if (stored) return JSON.parse(stored);
       return {};
     } catch {
@@ -370,6 +429,7 @@ export const storageService = {
   },
 
   setClaimResolved(claimId: string, isResolved: boolean): Record<string, ResolvedClaimStatus> {
+    if (!activeUserId) return {};
     const current = this.getResolvedClaims();
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
@@ -378,19 +438,23 @@ export const storageService = {
       resolvedDate: isResolved ? (current[claimId]?.resolvedDate || dateStr) : undefined,
       updatedAt: now.toISOString()
     };
-    localStorage.setItem(STORAGE_KEYS.RESOLVED_CLAIMS, JSON.stringify(current));
+    localStorage.setItem(getUserKey('resolved_claims_v3'), JSON.stringify(current));
     return current;
   },
 
   saveAllResolvedClaims(claims: Record<string, ResolvedClaimStatus>): Record<string, ResolvedClaimStatus> {
-    localStorage.setItem(STORAGE_KEYS.RESOLVED_CLAIMS, JSON.stringify(claims));
+    if (!activeUserId) return claims;
+    localStorage.setItem(getUserKey('resolved_claims_v3'), JSON.stringify(claims));
     return claims;
   },
 
   saveAllPayoutOverrides(overrides: Record<string, MonthPayoutOverride>): Record<string, MonthPayoutOverride> {
-    localStorage.setItem(STORAGE_KEYS.PAYOUT_OVERRIDES, JSON.stringify(overrides));
+    if (!activeUserId) return overrides;
+    localStorage.setItem(getUserKey('payout_overrides_v3'), JSON.stringify(overrides));
     return overrides;
   },
+
+  // --- BACKUP & EXPORT/IMPORT (USER SCOPED) ---
 
   createBackup(): AppBackup {
     const profile = this.getProfile();
@@ -401,37 +465,26 @@ export const storageService = {
     const resolvedClaims = this.getResolvedClaims();
 
     return {
-      version: '3.1.1',
+      version: '3.1.2',
       timestamp: new Date().toISOString(),
       userProfile: profile,
       salaryConfig: salary,
       presets,
       shifts,
       payoutOverrides,
-      resolvedClaims,
-      // Abwärtskompatibilität
-      ma_name: profile.name,
-      ma_vorname: profile.vorname,
-      ma_personalnummer: profile.personalnummer,
-      lohn_config_v2: {
-        baseOld: salary.baseOld,
-        baseMid: salary.baseMid,
-        baseNew: salary.baseNew,
-        vblPercent: salary.vblPercent,
-        limit: salary.minijobLimit,
-        annualLimit: salary.annualLimit
-      },
-      meine_arbeitszeiten: shifts
+      resolvedClaims
     };
   },
 
   restoreBackup(backupJson: any): { success: boolean; shiftCount: number; message: string } {
+    if (!activeUserId) {
+      return { success: false, shiftCount: 0, message: 'Kein aktiver Benutzer ausgewählt.' };
+    }
     try {
       if (!backupJson || typeof backupJson !== 'object') {
         return { success: false, shiftCount: 0, message: 'Ungültiges JSON-Format' };
       }
 
-      // Erkennung von Schichten (v3 oder v2 Format)
       const importedShifts: ShiftEntry[] = Array.isArray(backupJson.shifts)
         ? backupJson.shifts
         : (Array.isArray(backupJson.meine_arbeitszeiten) ? backupJson.meine_arbeitszeiten : []);
@@ -440,55 +493,29 @@ export const storageService = {
         return { success: false, shiftCount: 0, message: 'Keine gültigen Zeiterfassungsdaten in der Datei gefunden.' };
       }
 
-      // Profil wiederherstellen
       if (backupJson.userProfile) {
         this.saveProfile(backupJson.userProfile);
-      } else if (backupJson.ma_name || backupJson.ma_vorname) {
-        this.saveProfile({
-          ...DEFAULT_USER_PROFILE,
-          name: backupJson.ma_name || DEFAULT_USER_PROFILE.name,
-          vorname: backupJson.ma_vorname || DEFAULT_USER_PROFILE.vorname,
-          personalnummer: backupJson.ma_personalnummer || DEFAULT_USER_PROFILE.personalnummer
-        });
       }
-
-      // Presets wiederherstellen
       if (Array.isArray(backupJson.presets)) {
         this.savePresets(backupJson.presets);
       }
-
-      // Gehaltskonfiguration wiederherstellen
       if (backupJson.salaryConfig) {
         this.saveSalaryConfig(backupJson.salaryConfig);
-      } else if (backupJson.lohn_config_v2) {
-        const c = backupJson.lohn_config_v2;
-        this.saveSalaryConfig({
-          ...DEFAULT_SALARY_CONFIG,
-          baseOld: c.baseOld ?? DEFAULT_SALARY_CONFIG.baseOld,
-          baseNew: c.baseNew ?? DEFAULT_SALARY_CONFIG.baseNew,
-          sunPercent: c.sunPercent ?? DEFAULT_SALARY_CONFIG.sunPercent,
-          satPercent: c.satPercent ?? DEFAULT_SALARY_CONFIG.satPercent,
-          vblPercent: c.vblPercent ?? DEFAULT_SALARY_CONFIG.vblPercent,
-          minijobLimit: c.limit ?? DEFAULT_SALARY_CONFIG.minijobLimit,
-          annualLimit: c.annualLimit ?? DEFAULT_SALARY_CONFIG.annualLimit
-        });
       }
-
-      // Schichten wiederherstellen
-      this.saveShifts(importedShifts);
-
-      // Payout Overrides und erledigte Posten wiederherstellen
+      if (importedShifts.length > 0) {
+        this.saveShifts(importedShifts);
+      }
       if (backupJson.payoutOverrides && typeof backupJson.payoutOverrides === 'object') {
-        localStorage.setItem(STORAGE_KEYS.PAYOUT_OVERRIDES, JSON.stringify(backupJson.payoutOverrides));
+        this.saveAllPayoutOverrides(backupJson.payoutOverrides);
       }
       if (backupJson.resolvedClaims && typeof backupJson.resolvedClaims === 'object') {
-        localStorage.setItem(STORAGE_KEYS.RESOLVED_CLAIMS, JSON.stringify(backupJson.resolvedClaims));
+        this.saveAllResolvedClaims(backupJson.resolvedClaims);
       }
 
       return {
         success: true,
         shiftCount: importedShifts.length,
-        message: `Erfolgreich ${importedShifts.length} Schichten und Stammdaten wiederhergestellt!`
+        message: `Erfolgreich ${importedShifts.length} Schichten und Einstellungen wiederhergestellt!`
       };
     } catch (err: any) {
       return { success: false, shiftCount: 0, message: err?.message || 'Fehler beim Wiederherstellen des Backups' };
@@ -496,31 +523,28 @@ export const storageService = {
   },
 
   getEmailTemplate(): { recipient: string; subject: string; body: string } {
-    const recipient = localStorage.getItem('email_recipient') || '';
-    const subject = localStorage.getItem('email_subject') || 'Stundenübersicht {MONAT} {JAHR}';
-    const body = localStorage.getItem('email_body') ||
-      'Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}';
-
-    if (!localStorage.getItem('email_subject')) {
-      localStorage.setItem('email_subject', subject);
+    const key = getUserKey('email_tpl');
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try { return JSON.parse(raw); } catch {}
     }
-    if (!localStorage.getItem('email_body')) {
-      localStorage.setItem('email_body', body);
-    }
-
-    return { recipient, subject, body };
+    return {
+      recipient: '',
+      subject: 'Stundenübersicht {MONAT} {JAHR}',
+      body: 'Sehr geehrte Damen und Herren,\n\nanbei sende ich Ihnen meine Stundenübersicht für den Monat {MONAT} {JAHR}.\n\nMit freundlichen Grüßen,\n{VORNAME} {NAME}'
+    };
   },
 
   saveEmailTemplate(template: { recipient: string; subject: string; body: string }): void {
-    localStorage.setItem('email_recipient', template.recipient);
-    localStorage.setItem('email_subject', template.subject);
-    localStorage.setItem('email_body', template.body);
+    if (!activeUserId) return;
+    localStorage.setItem(getUserKey('email_tpl'), JSON.stringify(template));
   },
 
   getEmailHistory(): Array<{ id: string; zielMonat: string; datumGesendet: string }> {
+    if (!activeUserId) return [];
     try {
-      const stored = localStorage.getItem('email_history');
-      if (stored) return JSON.parse(stored);
+      const raw = localStorage.getItem(getUserKey('email_history'));
+      if (raw) return JSON.parse(raw);
       return [];
     } catch {
       return [];
@@ -528,6 +552,7 @@ export const storageService = {
   },
 
   addEmailHistory(zielMonat: string): Array<{ id: string; zielMonat: string; datumGesendet: string }> {
+    if (!activeUserId) return [];
     const list = this.getEmailHistory();
     const now = new Date();
     const dateFormatted = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()} um ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} Uhr`;
@@ -537,11 +562,12 @@ export const storageService = {
       datumGesendet: dateFormatted
     });
     if (list.length > 25) list.pop();
-    localStorage.setItem('email_history', JSON.stringify(list));
+    localStorage.setItem(getUserKey('email_history'), JSON.stringify(list));
     return list;
   },
 
   clearEmailHistory(): void {
-    localStorage.removeItem('email_history');
+    if (!activeUserId) return;
+    localStorage.removeItem(getUserKey('email_history'));
   }
 };
