@@ -209,12 +209,18 @@ export const App: React.FC = () => {
       setCloudShiftCount(cleanShifts.length);
     }
 
-    // 2. Profil 1:1 übernehmen
+    // 2. Profil übernehmen & auf offizielle Institutsbezeichnung normieren
     if (cloudData.profile && (cloudData.profile.name || cloudData.profile.personalnummer)) {
       const updatedProfile = {
         ...DEFAULT_USER_PROFILE,
         ...cloudData.profile
       } as UserProfile;
+      if (!updatedProfile.abteilung || updatedProfile.abteilung === 'Radiologie' || updatedProfile.abteilung === 'Radiologie & Nuklearmedizin') {
+        updatedProfile.abteilung = DEFAULT_USER_PROFILE.abteilung;
+      }
+      if (!updatedProfile.klinik || updatedProfile.klinik === 'Klinikum' || updatedProfile.klinik === 'Klinikum Minden' || updatedProfile.klinik === 'Universitätsklinikum') {
+        updatedProfile.klinik = DEFAULT_USER_PROFILE.klinik;
+      }
       storageService.saveProfile(updatedProfile);
       setUserProfile(updatedProfile);
     }

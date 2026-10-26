@@ -97,12 +97,16 @@ export const SheetPreview: React.FC<SheetPreviewProps> = ({
               {userProfile.personalnummer}
             </span>
           </div>
-          {userProfile.abteilung && (
-            <div className="flex gap-2 text-[10px] text-slate-600">
-              <span className="w-32">Abteilung:</span>
-              <span>{userProfile.abteilung}</span>
-            </div>
-          )}
+          <div className="flex gap-2 text-[10px] text-slate-600">
+            <span className="w-32 font-semibold">Institut / Klinik:</span>
+            <span>
+              {(userProfile.abteilung && userProfile.abteilung !== 'Radiologie' && userProfile.abteilung !== 'Radiologie & Nuklearmedizin')
+                ? userProfile.abteilung
+                : 'Universitätsinstitut für Radiologie, Neuroradiologie und Nuklearmedizin'} • {(userProfile.klinik && userProfile.klinik !== 'Klinikum' && userProfile.klinik !== 'Universitätsklinikum')
+                ? userProfile.klinik
+                : 'Mühlenkreiskliniken Minden'}
+            </span>
+          </div>
         </div>
 
         {/* Tabelle */}

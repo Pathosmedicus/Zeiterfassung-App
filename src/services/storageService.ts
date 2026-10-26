@@ -13,8 +13,8 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   name: '',
   vorname: '',
   personalnummer: '',
-  abteilung: 'Radiologie',
-  klinik: 'Klinikum'
+  abteilung: 'Universitätsinstitut für Radiologie, Neuroradiologie und Nuklearmedizin',
+  klinik: 'Mühlenkreiskliniken Minden'
 };
 
 export const DEFAULT_PRESETS: PresetShift[] = [
@@ -373,7 +373,16 @@ export const storageService = {
     if (!activeUserId) return DEFAULT_USER_PROFILE;
     try {
       const stored = localStorage.getItem(getUserKey('profile'));
-      if (stored) return { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
+      if (stored) {
+        const p = { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
+        if (!p.abteilung || p.abteilung === 'Radiologie' || p.abteilung === 'Radiologie & Nuklearmedizin') {
+          p.abteilung = DEFAULT_USER_PROFILE.abteilung;
+        }
+        if (!p.klinik || p.klinik === 'Klinikum' || p.klinik === 'Klinikum Minden' || p.klinik === 'Universitätsklinikum') {
+          p.klinik = DEFAULT_USER_PROFILE.klinik;
+        }
+        return p;
+      }
       return DEFAULT_USER_PROFILE;
     } catch {
       return DEFAULT_USER_PROFILE;

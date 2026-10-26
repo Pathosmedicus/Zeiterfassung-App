@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
               <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
                 <span className="text-cyan-300 font-semibold">{displayName}</span>
                 <span>•</span>
-                <span className="truncate">Klinikum</span>
+                <span className="truncate">Mühlenkreiskliniken Minden</span>
               </p>
             </div>
           </div>

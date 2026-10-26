@@ -19,8 +19,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [vorname, setVorname] = useState(defaultVorname);
   const [nachname, setNachname] = useState(defaultNachname);
   const [personalnummer, setPersonalnummer] = useState('');
-  const [abteilung, setAbteilung] = useState('Radiologie');
-  const [klinik, setKlinik] = useState('Klinikum Minden');
+  const [abteilung, setAbteilung] = useState('Universitätsinstitut für Radiologie, Neuroradiologie und Nuklearmedizin');
+  const [klinik, setKlinik] = useState('Mühlenkreiskliniken Minden');
 
   // Vergütungsmodell
   const [wageModel, setWageModel] = useState<'tvoed' | 'custom'>('tvoed');
@@ -35,8 +35,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       vorname: vorname.trim(),
       name: nachname.trim(),
       personalnummer: personalnummer.trim(),
-      abteilung: abteilung.trim() || 'Radiologie',
-      klinik: klinik.trim() || 'Klinikum Minden'
+      abteilung: abteilung.trim() || 'Universitätsinstitut für Radiologie, Neuroradiologie und Nuklearmedizin',
+      klinik: klinik.trim() || 'Mühlenkreiskliniken Minden'
     };
 
     let salaryConfig: SalaryConfig = { ...DEFAULT_SALARY_CONFIG };

@@ -50,16 +50,20 @@ export function generateTimesheetPDF(
     doc.line(marginL + 35, curY + 0.8, marginL + 35 + Math.max(nrW, 35), curY + 0.8);
   }
 
-  // Zusätzliche Klinik-/Abteilungszeile falls vorhanden
-  if (userProfile.abteilung) {
-    curY += 5;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(80, 80, 80);
-    const abtText = `${userProfile.abteilung} • ${userProfile.klinik}`;
-    doc.text(abtText, marginL, curY);
-    doc.setTextColor(0, 0, 0);
-  }
+  // Zusätzliche Klinik-/Abteilungszeile (offizieller Institutskopf)
+  curY += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  const abt = (userProfile.abteilung && userProfile.abteilung !== 'Radiologie' && userProfile.abteilung !== 'Radiologie & Nuklearmedizin')
+    ? userProfile.abteilung
+    : 'Universitätsinstitut für Radiologie, Neuroradiologie und Nuklearmedizin';
+  const kl = (userProfile.klinik && userProfile.klinik !== 'Klinikum' && userProfile.klinik !== 'Universitätsklinikum')
+    ? userProfile.klinik
+    : 'Mühlenkreiskliniken Minden';
+  const abtText = `${abt} • ${kl}`;
+  doc.text(abtText, marginL, curY);
+  doc.setTextColor(0, 0, 0);
 
   curY += 5;
 
