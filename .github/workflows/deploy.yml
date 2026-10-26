@@ -35,12 +35,12 @@ jobs:
 
       - name: Build PWA
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw' }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'zeiterfassung-app-56bfa.firebaseapp.com' }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'zeiterfassung-app-56bfa' }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'zeiterfassung-app-56bfa.firebasestorage.app' }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '48863732219' }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:48863732219:web:7202f1e35ffd4600e76b5e' }}
+          VITE_FIREBASE_API_KEY: 'AIzaSyAkqcW0nGb0bNgZZoV6mfdF-HAylwjeYtw'
+          VITE_FIREBASE_AUTH_DOMAIN: 'zeiterfassung-app-56bfa.firebaseapp.com'
+          VITE_FIREBASE_PROJECT_ID: 'zeiterfassung-app-56bfa'
+          VITE_FIREBASE_STORAGE_BUCKET: 'zeiterfassung-app-56bfa.firebasestorage.app'
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '48863732219'
+          VITE_FIREBASE_APP_ID: '1:48863732219:web:7202f1e35ffd4600e76b5e'
         run: npm run build
 
       - name: Setup Pages
