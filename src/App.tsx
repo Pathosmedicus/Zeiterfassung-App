@@ -129,6 +129,7 @@ export const App: React.FC = () => {
 
   // Daten initial aus dem Scoped Storage des aktuellen Nutzers laden
   const loadAllData = useCallback(() => {
+    storageService.purgeLegacyKeys();
     const loadedShifts = storageService.getShifts();
     const loadedProfile = storageService.getProfile();
     const loadedPresets = storageService.getPresets();
@@ -190,13 +191,20 @@ export const App: React.FC = () => {
   const applyCloudData = useCallback((cloudData: CloudUserData) => {
     if (!cloudData) return;
 
-    // 1. Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss)
+    // 0. Tombstones für gelöschte Schichten mergen (Zero-Zombie-Schutz)
+    const localDeleted = storageService.getDeletedShifts();
+    const mergedDeleted = cloudData.deletedShifts
+      ? firebaseService.smartMergeDeletedShifts(localDeleted, cloudData.deletedShifts)
+      : localDeleted;
+    storageService.saveDeletedShifts(mergedDeleted);
+
+    // 1. Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss & strikte Deduplizierung)
     if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
       const currentLocal = storageService.getShifts();
-      const merged = firebaseService.smartMergeShifts(currentLocal, cloudData.shifts);
+      const merged = firebaseService.smartMergeShifts(currentLocal, cloudData.shifts, mergedDeleted);
       storageService.saveShifts(merged);
       setShifts(merged);
-      setCloudShiftCount(cloudData.shifts.length);
+      setCloudShiftCount(merged.length);
 
       // Dynamischer Startmonat: Neuester Monat mit Diensten statt statischer Default
       const targetMonth = storageService.determineInitialMonth(merged);
@@ -213,7 +221,7 @@ export const App: React.FC = () => {
       setUserProfile(updatedProfile);
     }
 
-    // 3. Status erledigter Nachforderungen (resolvedClaims) mergen
+    // 3. Status erledigter Nachforderungen (resolvedClaims) mergen (Set-Union: true gewinnt immer)
     if (cloudData.resolvedClaims && typeof cloudData.resolvedClaims === 'object') {
       const localClaims = storageService.getResolvedClaims();
       const mergedClaims = firebaseService.smartMergeClaims(localClaims, cloudData.resolvedClaims);
@@ -267,6 +275,7 @@ export const App: React.FC = () => {
         const currentClaims = storageService.getResolvedClaims();
         const currentOverrides = storageService.getPayoutOverrides();
         const currentSalary = storageService.getSalaryConfig();
+        const currentDeleted = storageService.getDeletedShifts();
 
         await firebaseService.saveUserData(
           userIdentifier,
@@ -275,7 +284,9 @@ export const App: React.FC = () => {
           currentClaims,
           currentOverrides,
           currentSalary,
-          vaultKey
+          vaultKey,
+          false,
+          currentDeleted
         );
 
         if (showNotification) {
@@ -288,6 +299,7 @@ export const App: React.FC = () => {
         const currentClaims = storageService.getResolvedClaims();
         const currentOverrides = storageService.getPayoutOverrides();
         const currentSalary = storageService.getSalaryConfig();
+        const currentDeleted = storageService.getDeletedShifts();
 
         if (currentShifts.length > 0) {
           await firebaseService.saveUserData(
@@ -297,7 +309,9 @@ export const App: React.FC = () => {
             currentClaims,
             currentOverrides,
             currentSalary,
-            vaultKey
+            vaultKey,
+            false,
+            currentDeleted
           );
         }
         setLastSyncTime(new Date());
@@ -371,6 +385,7 @@ export const App: React.FC = () => {
             const mergedClaims = storageService.getResolvedClaims();
             const mergedOverrides = storageService.getPayoutOverrides();
             const mergedSalary = storageService.getSalaryConfig();
+            const currentDeleted = storageService.getDeletedShifts();
 
             await firebaseService.saveUserData(
               userIdentifier,
@@ -379,7 +394,9 @@ export const App: React.FC = () => {
               mergedClaims,
               mergedOverrides,
               mergedSalary,
-              vaultKey
+              vaultKey,
+              false,
+              currentDeleted
             );
           } else {
             // Falls Cloud leer ist und lokal Schichten vorliegen, in Cloud hochladen
@@ -392,7 +409,9 @@ export const App: React.FC = () => {
                 storageService.getResolvedClaims(),
                 storageService.getPayoutOverrides(),
                 storageService.getSalaryConfig(),
-                vaultKey
+                vaultKey,
+                false,
+                storageService.getDeletedShifts()
               );
             }
           }
@@ -501,7 +520,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         salaryConfig,
-        vaultKey
+        vaultKey,
+        false,
+        storageService.getDeletedShifts()
       );
 
       if (res.success) {
@@ -616,7 +637,9 @@ export const App: React.FC = () => {
         backup.resolvedClaims || resolvedClaims,
         backup.payoutOverrides || payoutOverrides,
         restoredSalary,
-        vaultKey
+        vaultKey,
+        false,
+        storageService.getDeletedShifts()
       );
     }
 
@@ -807,7 +830,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           payoutOverrides,
           salaryConfig,
-          vaultKey
+          vaultKey,
+          false,
+          storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -818,7 +843,42 @@ export const App: React.FC = () => {
     }
   };
 
-  // Schicht löschen
+  // Doppelte Schichten am selben Kalendertag bereinigen (Button im Monats-Stundenzettel)
+  const handleCleanDuplicates = async () => {
+    const res = storageService.cleanDuplicateShifts();
+    setShifts(res.remainingShifts);
+
+    const userIdentifier = getUserIdentifier();
+    if (userIdentifier && firebaseUser) {
+      try {
+        setIsSyncing(true);
+        await firebaseService.saveUserData(
+          userIdentifier,
+          res.remainingShifts,
+          userProfile,
+          resolvedClaims,
+          payoutOverrides,
+          salaryConfig,
+          vaultKey,
+          false,
+          storageService.getDeletedShifts()
+        );
+        setLastSyncTime(new Date());
+      } catch (e) {
+        console.warn("Cloud-Sync nach Bereinigung fehlgeschlagen:", e);
+      } finally {
+        setIsSyncing(false);
+      }
+    }
+
+    if (res.cleanedCount > 0) {
+      showToast(`🧹 ${res.cleanedCount} doppelte Schichten am selben Tag erfolgreich bereinigt!`, 'success');
+    } else {
+      showToast('✨ Keine doppelten Schichten am selben Tag gefunden (alle Tage sauber).', 'info');
+    }
+  };
+
+  // Schicht löschen (mit sofortigem Cloud-Tombstone & Zero-Zombie-Schutz)
   const handleDeleteShift = (datum: string) => {
     const shiftToDelete = shifts.find(s => s.datum === datum);
     if (!shiftToDelete) return;
@@ -834,7 +894,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         salaryConfig,
-        vaultKey
+        vaultKey,
+        false,
+        storageService.getDeletedShifts()
       ).catch(console.warn);
       setLastSyncTime(new Date());
     }
@@ -855,7 +917,9 @@ export const App: React.FC = () => {
               resolvedClaims,
               payoutOverrides,
               salaryConfig,
-              vaultKey
+              vaultKey,
+              false,
+              storageService.getDeletedShifts()
             ).catch(console.warn);
             setLastSyncTime(new Date());
           }
@@ -865,8 +929,8 @@ export const App: React.FC = () => {
     );
   };
 
-  // Posten abhaken / öffnen
-  const handleToggleClaim = async (claimId: string) => {
+  // Posten abhaken / öffnen (mit Millisekunden-Sofort-Speicherung in Firebase & Set-Union)
+  const handleToggleClaim = (claimId: string) => {
     const isCurrentlyResolved = Boolean(resolvedClaims[claimId]?.isResolved);
     const updated = storageService.setClaimResolved(claimId, !isCurrentlyResolved);
     setResolvedClaims({ ...updated });
@@ -878,23 +942,24 @@ export const App: React.FC = () => {
     }
 
     if (firebaseUser) {
-      try {
-        setIsSyncing(true);
-        await firebaseService.saveUserData(
-          getUserIdentifier(),
-          shifts,
-          userProfile,
-          updated,
-          payoutOverrides,
-          salaryConfig,
-          vaultKey
-        );
-        setLastSyncTime(new Date());
-      } catch (e) {
+      // In derselben Millisekunde sofort abfeuern
+      firebaseService.saveUserData(
+        getUserIdentifier(),
+        shifts,
+        userProfile,
+        updated,
+        payoutOverrides,
+        salaryConfig,
+        vaultKey,
+        false,
+        storageService.getDeletedShifts()
+      ).then(res => {
+        if (res.success) {
+          setLastSyncTime(new Date());
+        }
+      }).catch(e => {
         console.warn("Auto-Sync für Claim fehlgeschlagen:", e);
-      } finally {
-        setIsSyncing(false);
-      }
+      });
     }
   };
 
@@ -913,7 +978,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           updated,
           salaryConfig,
-          vaultKey
+          vaultKey,
+          false,
+          storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -938,7 +1005,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           updated,
           salaryConfig,
-          vaultKey
+          vaultKey,
+          false,
+          storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
       } catch (e) {
@@ -961,7 +1030,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         salaryConfig,
-        vaultKey
+        vaultKey,
+        false,
+        storageService.getDeletedShifts()
       ).catch(console.warn);
       setLastSyncTime(new Date());
     }
@@ -983,7 +1054,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         config,
-        vaultKey
+        vaultKey,
+        false,
+        storageService.getDeletedShifts()
       ).catch(console.warn);
       setLastSyncTime(new Date());
     }
@@ -1180,6 +1253,7 @@ export const App: React.FC = () => {
                   onDeleteShift={handleDeleteShift}
                   onSaveShift={handleSaveShift}
                   onSelectDateForQuickEntry={setSelectedDate}
+                  onCleanDuplicates={handleCleanDuplicates}
                 />
               </>
             )}

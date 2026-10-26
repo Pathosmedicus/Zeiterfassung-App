@@ -10,6 +10,7 @@ interface MonthTableProps {
   onSaveShift: (shift: ShiftEntry) => void;
   onDeleteShift: (datum: string) => void;
   onSelectDateForQuickEntry: (datum: string) => void;
+  onCleanDuplicates?: () => void;
 }
 
 const WOCHENTAGE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
@@ -19,7 +20,8 @@ export const MonthTable: React.FC<MonthTableProps> = ({
   shifts,
   onSaveShift,
   onDeleteShift,
-  onSelectDateForQuickEntry
+  onSelectDateForQuickEntry,
+  onCleanDuplicates
 }) => {
   const [jahrStr, monatStr] = currentYearMonth.split('-');
   const jahr = parseInt(jahrStr, 10);
@@ -112,7 +114,7 @@ export const MonthTable: React.FC<MonthTableProps> = ({
 
   return (
     <div className="bg-white/[0.04] backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+      <div className="p-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="font-display text-sm font-bold text-white">
             Monats-Stundenzettel
@@ -121,13 +123,27 @@ export const MonthTable: React.FC<MonthTableProps> = ({
             Klicke auf eine Zeile zum Bearbeiten
           </p>
         </div>
-        <div className="text-right">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-            Gesamt
-          </span>
-          <span className="font-display text-sm font-black text-cyan-300">
-            {summeStunden.toFixed(2)} h
-          </span>
+
+        <div className="flex items-center gap-3">
+          {onCleanDuplicates && (
+            <button
+              type="button"
+              onClick={onCleanDuplicates}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+              title="Entfernt doppelte Schichten am selben Tag und stellt exakte Monatsstunden sicher"
+            >
+              <span>🧹 Doppelte Einträge bereinigen</span>
+            </button>
+          )}
+
+          <div className="text-right">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              Gesamt
+            </span>
+            <span className="font-display text-sm font-black text-cyan-300">
+              {summeStunden.toFixed(2)} h
+            </span>
+          </div>
         </div>
       </div>
 

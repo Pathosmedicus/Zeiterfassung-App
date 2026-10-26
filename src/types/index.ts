@@ -146,10 +146,16 @@ export interface ClinicPayrollRecord {
   resolvedDate?: string;
 }
 
+export interface DeletedShiftItem {
+  datum: string;
+  deletedAt: string;
+}
+
 export interface ResolvedClaimStatus {
   isResolved: boolean;
   resolvedDate?: string;
   updatedAt?: string;
+  reopenedAt?: string;
 }
 
 export type TabType = 'erfassen' | 'tabelle' | 'jahresradar' | 'email' | 'export' | 'settings';
@@ -175,6 +181,7 @@ export interface CloudBackupItem {
   salaryConfig?: Partial<SalaryConfig>;
   resolvedClaims?: Record<string, ResolvedClaimStatus>;
   payoutOverrides?: Record<string, MonthPayoutOverride>;
+  deletedShifts?: Record<string, DeletedShiftItem>;
 }
 
 export interface CloudUserData {
@@ -186,6 +193,7 @@ export interface CloudUserData {
   payoutOverrides?: Record<string, MonthPayoutOverride>;
   salaryConfig?: Partial<SalaryConfig>;
   backupHistory?: CloudBackupItem[];
+  deletedShifts?: Record<string, DeletedShiftItem>;
   lastUpdated?: any;
   lastDevice?: string;
 }

@@ -162,6 +162,53 @@ export function determineInitialMonth(shifts: ShiftEntry[]): string {
   return shiftMonths[shiftMonths.length - 1];
 }
 
+/**
+ * Strikte 1-Schicht-pro-Tag Deduplizierung:
+ * Garantiert, dass am selben Datum (YYYY-MM-DD) niemals doppelte Dienste existieren.
+ */
+export function deduplicateShifts(shifts: ShiftEntry[]): ShiftEntry[] {
+  if (!shifts || shifts.length === 0) return [];
+  const dayMap = new Map<string, ShiftEntry>();
+
+  for (const s of shifts) {
+    if (!s || !s.datum) continue;
+    const existing = dayMap.get(s.datum);
+    if (!existing) {
+      dayMap.set(s.datum, s);
+      continue;
+    }
+
+    // 1. Wenn eine Schicht >0h hat und die andere 0h, gewinnt die mit >0h
+    if (s.nettoStunden > 0 && (!existing.nettoStunden || existing.nettoStunden === 0)) {
+      dayMap.set(s.datum, s);
+      continue;
+    }
+    if (existing.nettoStunden > 0 && (!s.nettoStunden || s.nettoStunden === 0)) {
+      continue;
+    }
+
+    // 2. Zeitstempel updatedAt vergleichen (neuerer gewinnt)
+    const tNew = s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
+    const tOld = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+    if (tNew > tOld) {
+      dayMap.set(s.datum, s);
+      continue;
+    }
+    if (tOld > tNew) {
+      continue;
+    }
+
+    // 3. Wenn Zeitstempel identisch: vollständigerer Eintrag gewinnt
+    const newScore = (s.kommen ? 1 : 0) + (s.gehen ? 1 : 0) + (s.notiz ? 1 : 0) + (s.schichtTyp ? 1 : 0);
+    const oldScore = (existing.kommen ? 1 : 0) + (existing.gehen ? 1 : 0) + (existing.notiz ? 1 : 0) + (existing.schichtTyp ? 1 : 0);
+    if (newScore >= oldScore) {
+      dayMap.set(s.datum, s);
+    }
+  }
+
+  return Array.from(dayMap.values()).sort((a, b) => a.datum.localeCompare(b.datum));
+}
+
 export const storageService = {
   // --- SITZUNGSVERWALTUNG (MULTI-USER ISOLATION) ---
 
@@ -290,52 +337,34 @@ export const storageService = {
   },
 
   /**
-   * Regel 3: Automatische Migration alter Bestandsdaten – EXKLUSIV für Mohammad!
-   * Für fremde Gmail-Adressen wird dies NIEMALS ausgeführt.
+   * Regel 3: Alte Legacy-Keys aus vorherigen Versionen restlos löschen,
+   * damit alte oder gelöschte Schichten niemals wieder als Zombies auferstehen!
    */
-  migrateMohammadLegacyIfPresent(): void {
-    const mohammadEmail = 'mohammadmattar1971@gmail.com';
-    const targetShiftsKey = getUserKey('shifts', mohammadEmail);
-    const existing = localStorage.getItem(targetShiftsKey);
-
-    if (!existing || existing === '[]') {
-      // 1. Suche nach Daten aus vorherigen Versionen
-      const prevScoped = localStorage.getItem('usr_mohammadmattar1971_gmail_com_shifts_v3');
-      const legacyV3 = localStorage.getItem(LEGACY_KEYS.SHIFTS);
-      const legacyOld = localStorage.getItem(LEGACY_KEYS.OLD_SHIFTS);
-      const candidate = (prevScoped && prevScoped !== '[]')
-        ? prevScoped
-        : ((legacyV3 && legacyV3 !== '[]') ? legacyV3 : ((legacyOld && legacyOld !== '[]') ? legacyOld : null));
-
-      if (candidate) {
-        localStorage.setItem(targetShiftsKey, candidate);
-      }
-
-      // Profil-Migration
-      const prevProfile = localStorage.getItem('usr_mohammadmattar1971_gmail_com_profile_v3') || localStorage.getItem(LEGACY_KEYS.PROFILE);
-      if (prevProfile) {
-        localStorage.setItem(getUserKey('profile', mohammadEmail), prevProfile);
-      }
-
-      // Overrides & Claims Migration
-      const prevOverrides = localStorage.getItem('usr_mohammadmattar1971_gmail_com_payout_overrides_v3') || localStorage.getItem(LEGACY_KEYS.PAYOUT_OVERRIDES);
-      if (prevOverrides) {
-        localStorage.setItem(getUserKey('payout_overrides', mohammadEmail), prevOverrides);
-      }
-
-      const prevClaims = localStorage.getItem('usr_mohammadmattar1971_gmail_com_resolved_claims_v3') || localStorage.getItem(LEGACY_KEYS.RESOLVED_CLAIMS);
-      if (prevClaims) {
-        localStorage.setItem(getUserKey('resolved_claims', mohammadEmail), prevClaims);
-      }
+  purgeLegacyKeys(): void {
+    const keysToRemove = [
+      'zeiterfassung_shifts_v3',
+      'meine_arbeitszeiten',
+      'usr_mohammadmattar1971_gmail_com_shifts_v3',
+      'usr_mohammadmattar1971_gmail_com_profile_v3',
+      'usr_mohammadmattar1971_gmail_com_payout_overrides_v3',
+      'usr_mohammadmattar1971_gmail_com_resolved_claims_v3',
+      'zeiterfassung_user_profile_v3',
+      'zeiterfassung_payout_overrides_v3',
+      'zeiterfassung_resolved_claims_v3',
+      'ma_name',
+      'ma_vorname',
+      'ma_personalnummer'
+    ];
+    for (const k of keysToRemove) {
+      try {
+        localStorage.removeItem(k);
+      } catch {}
     }
+  },
 
-    // Unbenannte Altdaten aus dem globalen Speicher entfernen
-    localStorage.removeItem(LEGACY_KEYS.SHIFTS);
-    localStorage.removeItem(LEGACY_KEYS.OLD_SHIFTS);
-    localStorage.removeItem(LEGACY_KEYS.PROFILE);
-    localStorage.removeItem(LEGACY_KEYS.OLD_NAME);
-    localStorage.removeItem(LEGACY_KEYS.OLD_VORNAME);
-    localStorage.removeItem(LEGACY_KEYS.OLD_PNR);
+  migrateMohammadLegacyIfPresent(): void {
+    // Altdaten-Migration dauerhaft ABGESCHALTET! Veraltete Keys bereinigen
+    this.purgeLegacyKeys();
   },
 
   // --- STAMMDATEN & PROFIL (USER SCOPED) ---
@@ -374,7 +403,8 @@ export const storageService = {
       console.warn('Seed-Import für Nicht-Owner abgewiesen (Datenschutz).');
       return;
     }
-    if (shifts && shifts.length > 0) {
+    // Nur importieren, wenn der Nutzer tatsächlich noch gar keine Schichten besitzt
+    if (!this.hasSavedShifts() && shifts && shifts.length > 0) {
       this.saveShifts(shifts);
     }
     if (profile && (profile.name || profile.vorname)) {
@@ -382,7 +412,42 @@ export const storageService = {
     }
   },
 
-  // --- SCHICHTEN (USER SCOPED) ---
+  // --- TOMBSTONES FÜR GELÖSCHTE SCHICHTEN (ZERO ZOMBIES) ---
+
+  getDeletedShifts(): Record<string, { datum: string; deletedAt: string }> {
+    if (!activeUserId) return {};
+    try {
+      const raw = localStorage.getItem(getUserKey('deleted_shifts'));
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  saveDeletedShifts(deletedMap: Record<string, { datum: string; deletedAt: string }>): void {
+    if (!activeUserId) return;
+    localStorage.setItem(getUserKey('deleted_shifts'), JSON.stringify(deletedMap));
+  },
+
+  markShiftDeleted(datum: string): Record<string, { datum: string; deletedAt: string }> {
+    const deleted = this.getDeletedShifts();
+    deleted[datum] = {
+      datum,
+      deletedAt: new Date().toISOString()
+    };
+    this.saveDeletedShifts(deleted);
+    return deleted;
+  },
+
+  clearShiftDeleted(datum: string): void {
+    const deleted = this.getDeletedShifts();
+    if (deleted[datum]) {
+      delete deleted[datum];
+      this.saveDeletedShifts(deleted);
+    }
+  },
+
+  // --- SCHICHTEN (USER SCOPED) & STRIKTE DEDUPLIZIERUNG PRO TAG ---
 
   getShifts(): ShiftEntry[] {
     if (!activeUserId) return [];
@@ -390,7 +455,14 @@ export const storageService = {
       const raw = localStorage.getItem(getUserKey('shifts'));
       if (!raw || raw === '[]') return [];
       const parsed: ShiftEntry[] = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+
+      // Strikte Deduplizierung pro Tag durchführen
+      const deduplicated = deduplicateShifts(parsed);
+      if (deduplicated.length !== parsed.length) {
+        localStorage.setItem(getUserKey('shifts'), JSON.stringify(deduplicated));
+      }
+      return deduplicated;
     } catch (e) {
       console.warn('Fehler beim Laden der Schichten:', e);
       return [];
@@ -405,11 +477,15 @@ export const storageService = {
       ...s,
       updatedAt: s.updatedAt || nowIso
     }));
-    const sorted = enriched.sort((a, b) => a.datum.localeCompare(b.datum));
-    localStorage.setItem(getUserKey('shifts'), JSON.stringify(sorted));
+    // Strikte Deduplizierung pro Kalendertag
+    const deduplicated = deduplicateShifts(enriched);
+    localStorage.setItem(getUserKey('shifts'), JSON.stringify(deduplicated));
   },
 
   upsertShift(newEntry: ShiftEntry): ShiftEntry[] {
+    // Falls für dieses Datum ein Lösch-Tombstone existierte, entfernen
+    this.clearShiftDeleted(newEntry.datum);
+
     const withTimestamp: ShiftEntry = {
       ...newEntry,
       updatedAt: new Date().toISOString()
@@ -417,16 +493,49 @@ export const storageService = {
     const shifts = this.getShifts().filter(s => s.datum !== newEntry.datum);
     shifts.push(withTimestamp);
     this.saveShifts(shifts);
-    return shifts;
+    return this.getShifts();
   },
 
   deleteShift(datum: string): ShiftEntry[] {
+    // 1. Tombstone setzen, damit der Dienst beim nächsten Sync nicht aus der Cloud zurückkommt!
+    this.markShiftDeleted(datum);
+
+    // 2. Lokal entfernen und dedupliziert speichern
     const shifts = this.getShifts().filter(s => s.datum !== datum);
     this.saveShifts(shifts);
     return shifts;
   },
 
+  cleanDuplicateShifts(): { cleanedCount: number; remainingShifts: ShiftEntry[] } {
+    if (!activeUserId) return { cleanedCount: 0, remainingShifts: [] };
+    const raw = this.getShifts();
+    const deletedMap = this.getDeletedShifts();
+
+    // 1. Entferne alle Dienste, die einen aktiven Lösch-Tombstone haben
+    const withoutDeleted = raw.filter(s => {
+      const tombstone = deletedMap[s.datum];
+      if (!tombstone) return true;
+      const tDel = new Date(tombstone.deletedAt).getTime();
+      const tShift = s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
+      return tShift > tDel;
+    });
+
+    // 2. Strikte Deduplizierung pro Tag
+    const deduplicated = deduplicateShifts(withoutDeleted);
+    const cleanedCount = raw.length - deduplicated.length;
+
+    this.saveShifts(deduplicated);
+    return {
+      cleanedCount: Math.max(0, cleanedCount),
+      remainingShifts: deduplicated
+    };
+  },
+
   deleteMonth(yearMonth: string): ShiftEntry[] {
+    const toDelete = this.getShifts().filter(s => s.datum.startsWith(yearMonth));
+    for (const s of toDelete) {
+      this.markShiftDeleted(s.datum);
+    }
     const shifts = this.getShifts().filter(s => !s.datum.startsWith(yearMonth));
     this.saveShifts(shifts);
     return shifts;
@@ -516,11 +625,13 @@ export const storageService = {
     if (!activeUserId) return {};
     const current = this.getResolvedClaims();
     const now = new Date();
+    const nowIso = now.toISOString();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
     current[claimId] = {
       isResolved,
       resolvedDate: isResolved ? (current[claimId]?.resolvedDate || dateStr) : undefined,
-      updatedAt: now.toISOString()
+      updatedAt: nowIso,
+      reopenedAt: !isResolved ? nowIso : undefined
     };
     localStorage.setItem(getUserKey('resolved_claims'), JSON.stringify(current));
     return current;

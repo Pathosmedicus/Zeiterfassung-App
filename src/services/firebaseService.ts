@@ -101,17 +101,33 @@ export function normalizeUserEmail(emailOrUid?: string | null): string {
 }
 
 /**
- * Regel 2: Intelligenter Smart-Merge auf Eintrags-Ebene
- * Führt lokale Schichten und Cloud-Schichten lückenlos zusammen.
+ * Regel 2: Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss & Zero Zombies)
+ * Führt lokale Schichten und Cloud-Schichten lückenlos zusammen,
+ * filtert gelöschte Schichten anhand von Tombstones aus und erzwingt
+ * eine strikte 1-Schicht-pro-Tag-Deduplizierung.
  */
-export function smartMergeShifts(localShifts: ShiftEntry[], cloudShifts: ShiftEntry[]): ShiftEntry[] {
-  if (!localShifts || localShifts.length === 0) return cloudShifts || [];
-  if (!cloudShifts || cloudShifts.length === 0) return localShifts || [];
-
+export function smartMergeShifts(
+  localShifts: ShiftEntry[] = [],
+  cloudShifts: ShiftEntry[] = [],
+  deletedShifts: Record<string, { datum: string; deletedAt: string }> = {}
+): ShiftEntry[] {
   const map = new Map<string, ShiftEntry>();
 
+  const isShiftDeleted = (shift: ShiftEntry): boolean => {
+    if (!shift || !shift.datum) return true;
+    const tombstone = deletedShifts[shift.datum];
+    if (!tombstone) return false;
+    const tDel = new Date(tombstone.deletedAt).getTime();
+    const tShift = shift.updatedAt ? new Date(shift.updatedAt).getTime() : 0;
+    return tDel >= tShift;
+  };
+
   const pickBestShift = (s1: ShiftEntry, s2: ShiftEntry): ShiftEntry => {
-    // 1. Wenn beide updatedAt haben, gewinnt das neuere
+    // 1. Schicht mit geleisteter Arbeitszeit (>0) gewinnt vor leeren 0h-Einträgen
+    if (s1.nettoStunden > 0 && (!s2.nettoStunden || s2.nettoStunden === 0)) return s1;
+    if (s2.nettoStunden > 0 && (!s1.nettoStunden || s1.nettoStunden === 0)) return s2;
+
+    // 2. Wenn beide updatedAt haben, gewinnt das neuere
     if (s1.updatedAt && s2.updatedAt) {
       const t1 = new Date(s1.updatedAt).getTime();
       const t2 = new Date(s2.updatedAt).getTime();
@@ -125,27 +141,28 @@ export function smartMergeShifts(localShifts: ShiftEntry[], cloudShifts: ShiftEn
       return s2;
     }
 
-    // 2. Schicht mit geleisteter Arbeitszeit (>0) gewinnt vor leeren 0h-Einträgen
-    if (s1.nettoStunden > 0 && (!s2.nettoStunden || s2.nettoStunden === 0)) return s1;
-    if (s2.nettoStunden > 0 && (!s1.nettoStunden || s1.nettoStunden === 0)) return s2;
-
-    // 3. Wenn Notizen vorhanden sind, übernehmen
-    if (s1.notiz && !s2.notiz) return { ...s2, notiz: s1.notiz };
-    if (s2.notiz && !s1.notiz) return { ...s1, notiz: s2.notiz };
-
-    return s1;
+    // 3. Vollständigerer Eintrag gewinnt
+    const score1 = (s1.kommen ? 1 : 0) + (s1.gehen ? 1 : 0) + (s1.notiz ? 1 : 0);
+    const score2 = (s2.kommen ? 1 : 0) + (s2.gehen ? 1 : 0) + (s2.notiz ? 1 : 0);
+    if (score1 >= score2) return s1;
+    return s2;
   };
 
-  // 1. Alle Cloud-Schichten einlesen
-  for (const cs of cloudShifts) {
-    if (cs && cs.datum) {
-      map.set(cs.datum, cs);
+  // 1. Alle Cloud-Schichten einlesen (nur wenn nicht durch Tombstone gelöscht)
+  for (const cs of cloudShifts || []) {
+    if (cs && cs.datum && !isShiftDeleted(cs)) {
+      const existing = map.get(cs.datum);
+      if (existing) {
+        map.set(cs.datum, pickBestShift(cs, existing));
+      } else {
+        map.set(cs.datum, cs);
+      }
     }
   }
 
-  // 2. Lokale Schichten einmischen / mergen
-  for (const ls of localShifts) {
-    if (ls && ls.datum) {
+  // 2. Lokale Schichten einmischen / mergen (nur wenn nicht gelöscht)
+  for (const ls of localShifts || []) {
+    if (ls && ls.datum && !isShiftDeleted(ls)) {
       const existing = map.get(ls.datum);
       if (existing) {
         map.set(ls.datum, pickBestShift(ls, existing));
@@ -158,25 +175,94 @@ export function smartMergeShifts(localShifts: ShiftEntry[], cloudShifts: ShiftEn
   return Array.from(map.values()).sort((a, b) => a.datum.localeCompare(b.datum));
 }
 
+/**
+ * Regel 2: Mengen-Vereinigung (Union / Set) für erledigte Nachforderungen:
+ * Ein Posten, der auf dem Gerät ODER in der Cloud als erledigt markiert wurde,
+ * BLEIBT dauerhaft erledigt (true gewinnt IMMER gegen false!).
+ * Ein Posten wird nur dann geöffnet, wenn er explizit nach dem Schließen wieder geöffnet wurde.
+ */
 export function smartMergeClaims(
   localClaims: Record<string, ResolvedClaimStatus> = {},
   cloudClaims: Record<string, ResolvedClaimStatus> = {}
 ): Record<string, ResolvedClaimStatus> {
-  const merged: Record<string, ResolvedClaimStatus> = { ...cloudClaims };
+  const allKeys = new Set([
+    ...Object.keys(localClaims || {}),
+    ...Object.keys(cloudClaims || {})
+  ]);
+  const merged: Record<string, ResolvedClaimStatus> = {};
 
-  for (const [key, lClaim] of Object.entries(localClaims || {})) {
-    const cClaim = merged[key];
-    if (!cClaim) {
-      merged[key] = lClaim;
-    } else {
-      const tLocal = lClaim.updatedAt ? new Date(lClaim.updatedAt).getTime() : 0;
-      const tCloud = cClaim.updatedAt ? new Date(cClaim.updatedAt).getTime() : 0;
-      if (tLocal >= tCloud) {
-        merged[key] = lClaim;
+  for (const key of allKeys) {
+    const lClaim = localClaims?.[key];
+    const cClaim = cloudClaims?.[key];
+
+    if (lClaim && !cClaim) {
+      merged[key] = { ...lClaim };
+      continue;
+    }
+    if (!lClaim && cClaim) {
+      merged[key] = { ...cClaim };
+      continue;
+    }
+    if (!lClaim && !cClaim) continue;
+
+    const lResolved = Boolean(lClaim?.isResolved);
+    const cResolved = Boolean(cClaim?.isResolved);
+
+    if (lResolved && !cResolved) {
+      // Prüfe, ob cloud explizit danach wiedereröffnet wurde
+      const cReopened = cClaim?.reopenedAt ? new Date(cClaim.reopenedAt).getTime() : 0;
+      const lUpdated = lClaim?.updatedAt ? new Date(lClaim.updatedAt).getTime() : 0;
+      if (cReopened > lUpdated) {
+        merged[key] = { ...cClaim, isResolved: false };
+      } else {
+        // MENGEN-VEREINIGUNG: true gewinnt immer gegen false!
+        merged[key] = { ...lClaim, isResolved: true };
       }
+    } else if (!lResolved && cResolved) {
+      const lReopened = lClaim?.reopenedAt ? new Date(lClaim.reopenedAt).getTime() : 0;
+      const cUpdated = cClaim?.updatedAt ? new Date(cClaim.updatedAt).getTime() : 0;
+      if (lReopened > cUpdated) {
+        merged[key] = { ...lClaim, isResolved: false };
+      } else {
+        // MENGEN-VEREINIGUNG: true gewinnt immer gegen false!
+        merged[key] = { ...cClaim, isResolved: true };
+      }
+    } else if (lResolved && cResolved) {
+      const tL = lClaim?.updatedAt ? new Date(lClaim.updatedAt).getTime() : 0;
+      const tC = cClaim?.updatedAt ? new Date(cClaim.updatedAt).getTime() : 0;
+      const base = tL >= tC ? lClaim : cClaim;
+      merged[key] = {
+        ...base,
+        isResolved: true,
+        resolvedDate: lClaim?.resolvedDate || cClaim?.resolvedDate
+      };
+    } else {
+      const tL = lClaim?.updatedAt ? new Date(lClaim.updatedAt).getTime() : 0;
+      const tC = cClaim?.updatedAt ? new Date(cClaim.updatedAt).getTime() : 0;
+      merged[key] = tL >= tC ? { ...lClaim } : { ...cClaim };
     }
   }
 
+  return merged;
+}
+
+export function smartMergeDeletedShifts(
+  localDeleted: Record<string, { datum: string; deletedAt: string }> = {},
+  cloudDeleted: Record<string, { datum: string; deletedAt: string }> = {}
+): Record<string, { datum: string; deletedAt: string }> {
+  const merged: Record<string, { datum: string; deletedAt: string }> = { ...(cloudDeleted || {}) };
+  for (const [datum, lItem] of Object.entries(localDeleted || {})) {
+    const cItem = merged[datum];
+    if (!cItem) {
+      merged[datum] = lItem;
+    } else {
+      const tL = lItem.deletedAt ? new Date(lItem.deletedAt).getTime() : 0;
+      const tC = cItem.deletedAt ? new Date(cItem.deletedAt).getTime() : 0;
+      if (tL >= tC) {
+        merged[datum] = lItem;
+      }
+    }
+  }
   return merged;
 }
 
@@ -255,6 +341,11 @@ function parseCloudUserData(data: any): CloudUserData {
     backupHistory = data.backupHistory;
   }
 
+  let deletedShifts: Record<string, { datum: string; deletedAt: string }> = {};
+  if (data.deletedShifts && typeof data.deletedShifts === 'object') {
+    deletedShifts = data.deletedShifts;
+  }
+
   return {
     email: data.email,
     uid: data.uid,
@@ -264,6 +355,7 @@ function parseCloudUserData(data: any): CloudUserData {
     payoutOverrides,
     salaryConfig,
     backupHistory,
+    deletedShifts,
     lastUpdated: data.lastUpdated,
     lastDevice: data.lastDevice
   };
@@ -378,7 +470,8 @@ export const firebaseService = {
     payoutOverrides: Record<string, MonthPayoutOverride> = {},
     salaryConfig?: SalaryConfig,
     vaultPassphrase?: string,
-    forceOverwrite: boolean = false
+    forceOverwrite: boolean = false,
+    deletedShifts: Record<string, { datum: string; deletedAt: string }> = {}
   ): Promise<{ success: boolean; message: string }> {
     if (!db || !emailOrUid) {
       return { success: false, message: 'Datenbank nicht initialisiert.' };
@@ -391,9 +484,19 @@ export const firebaseService = {
       // Vorherigen Cloud-Stand abfragen für Zero-Data-Loss-Prüfung & Backup
       const existingSnap = await getDoc(userRef);
       let backupHistory: CloudBackupItem[] = [];
+      let consolidatedClaims = { ...resolvedClaims };
+      let consolidatedDeleted = { ...deletedShifts };
 
       if (existingSnap.exists()) {
         const exData = existingSnap.data();
+
+        // Regel 2: Mengen-Vereinigung für resolvedClaims - geschlossener Posten darf NIEMALS durch ältere Daten wieder geöffnet werden!
+        const exResolved = exData.resolvedClaims && typeof exData.resolvedClaims === 'object' ? exData.resolvedClaims : {};
+        consolidatedClaims = smartMergeClaims(resolvedClaims, exResolved);
+
+        // Merge deletedShifts (Tombstones)
+        const exDeleted = exData.deletedShifts && typeof exData.deletedShifts === 'object' ? exData.deletedShifts : {};
+        consolidatedDeleted = smartMergeDeletedShifts(deletedShifts, exDeleted);
 
         // ZERO-DATA-LOSS SCHUTZ:
         // Wenn lokal 0 Schichten vorliegen, in der Cloud aber Schichten vorhanden sind und kein forceOverwrite vorliegt:
@@ -416,7 +519,8 @@ export const firebaseService = {
             profile: exData.profile || {},
             salaryConfig: exData.salaryConfig || {},
             resolvedClaims: exData.resolvedClaims || {},
-            payoutOverrides: exData.payoutOverrides || {}
+            payoutOverrides: exData.payoutOverrides || {},
+            deletedShifts: exData.deletedShifts || {}
           };
           backupHistory.unshift(snapshotItem);
           if (backupHistory.length > 3) {
@@ -425,16 +529,17 @@ export const firebaseService = {
         }
       }
 
-      // Reines Dokument ohne Datenverlust speichern
+      // Reines Dokument ohne Datenverlust speichern (mit deduplizierten Schichten)
       const cloudPayload: any = {
         email: norm,
         uid: auth?.currentUser?.uid || norm,
-        shifts,
+        shifts: smartMergeShifts(shifts, [], consolidatedDeleted),
         profile,
-        resolvedClaims,
+        resolvedClaims: consolidatedClaims,
         payoutOverrides,
         salaryConfig,
         backupHistory,
+        deletedShifts: consolidatedDeleted,
         clientVersion: '3.2.0',
         updatedAt: new Date().toISOString(),
         lastUpdated: serverTimestamp(),
@@ -445,7 +550,7 @@ export const firebaseService = {
 
       return {
         success: true,
-        message: `Erfolgreich ${shifts.length} Schichten in Gmail-Cloud gesichert!`
+        message: `Erfolgreich ${cloudPayload.shifts.length} Schichten in Gmail-Cloud gesichert!`
       };
     } catch (err: any) {
       console.warn("Cloud-Speicherung fehlgeschlagen:", err);
@@ -498,6 +603,7 @@ export const firebaseService = {
   smartMergeShifts,
   smartMergeClaims,
   smartMergeOverrides,
+  smartMergeDeletedShifts,
   normalizeUserEmail
 };
 
