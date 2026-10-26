@@ -158,7 +158,7 @@ export interface ResolvedClaimStatus {
   reopenedAt?: string;
 }
 
-export type TabType = 'erfassen' | 'tabelle' | 'jahresradar' | 'email' | 'export' | 'settings';
+export type TabType = 'stundenzettel' | 'tabelle' | 'jahresradar' | 'email' | 'export' | 'settings';
 
 export interface EmailTemplate {
   recipient: string;

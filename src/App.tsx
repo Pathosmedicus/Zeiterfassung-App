@@ -6,9 +6,7 @@ import { BottomNav } from './components/BottomNav';
 import { Toast, ToastMessage } from './components/Toast';
 import { RotateCcw } from 'lucide-react';
 
-// Tab 1: Erfassen
-import { QuickEntry } from './components/Erfassen/QuickEntry';
-import { MiniCalendar } from './components/Erfassen/MiniCalendar';
+// Tab 1: Stundenzettel
 
 // Tab 2: Tabelle & KPIs
 import { KpiCards } from './components/Tabelle/KpiCards';
@@ -62,7 +60,7 @@ import {
 } from './types';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('erfassen');
+  const [activeTab, setActiveTab] = useState<TabType>('stundenzettel');
   const [tableSubView, setTableSubView] = useState<'comparison' | 'radar' | 'month' | 'charts'>('comparison');
 
   // Multi-User Sitzung & Autorisierung
@@ -1184,23 +1182,16 @@ export const App: React.FC = () => {
       {/* Hauptinhalt */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 pt-4 pb-28">
 
-        {/* TAB 1: ⏱️ Erfassen */}
-        {activeTab === 'erfassen' && (
+        {/* TAB 1: 📅 Stundenzettel (direkt bearbeitbare Monatstabelle) */}
+        {activeTab === 'stundenzettel' && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            <QuickEntry
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-              shifts={shifts}
-              presets={presets}
-              onSaveShift={handleSaveShift}
-              onDeleteShift={handleDeleteShift}
-            />
-
-            <MiniCalendar
+            <KpiCards stats={stats} salaryConfig={salaryConfig} />
+            <MonthTable
               currentYearMonth={currentYearMonth}
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
               shifts={shifts}
+              onDeleteShift={handleDeleteShift}
+              onSaveShift={handleSaveShift}
+              onCleanDuplicates={handleCleanDuplicates}
             />
           </div>
         )}
@@ -1290,7 +1281,6 @@ export const App: React.FC = () => {
                   shifts={shifts}
                   onDeleteShift={handleDeleteShift}
                   onSaveShift={handleSaveShift}
-                  onSelectDateForQuickEntry={setSelectedDate}
                   onCleanDuplicates={handleCleanDuplicates}
                 />
               </>

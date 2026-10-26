@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Table, ShieldCheck, Mail, FileSpreadsheet, Settings } from 'lucide-react';
+import { CalendarDays, Table, ShieldCheck, Mail, FileSpreadsheet, Settings } from 'lucide-react';
 import { TabType } from '../types';
 
 interface BottomNavProps {
@@ -10,9 +10,9 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     {
-      id: 'erfassen' as TabType,
-      label: 'Erfassen',
-      icon: Clock,
+      id: 'stundenzettel' as TabType,
+      label: 'Stundenzettel',
+      icon: CalendarDays,
       badge: null
     },
     {
