@@ -44,7 +44,6 @@ interface PayrollComparisonCardProps {
   lastSyncTime?: Date | null;
   onManualSync?: () => void;
   isSyncing?: boolean;
-  onRestoreOriginalData?: () => void;
 }
 
 export const PayrollComparisonCard: React.FC<PayrollComparisonCardProps> = ({
@@ -61,8 +60,7 @@ export const PayrollComparisonCard: React.FC<PayrollComparisonCardProps> = ({
   onDeletePayoutOverride: propsOnDeletePayoutOverride,
   lastSyncTime,
   onManualSync,
-  isSyncing,
-  onRestoreOriginalData
+  isSyncing
 }) => {
   const [selectedYearFilter, setSelectedYearFilter] = useState<'all' | '2026' | '2025'>('all');
   const [expandedRow, setExpandedRow] = useState<string | null>('2026-09');
@@ -191,18 +189,6 @@ export const PayrollComparisonCard: React.FC<PayrollComparisonCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {onRestoreOriginalData && currentYearMonth === '2026-10' && (
-              <button
-                type="button"
-                onClick={onRestoreOriginalData}
-                disabled={isSyncing}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer"
-                title="Setzt Oktober 2026 exakt auf deine 30,42 Originalstunden (5 Dienste) zurück"
-              >
-                <span>🔄 Originale 30,42 h</span>
-              </button>
-            )}
-
             {onManualSync && (
               <button
                 onClick={onManualSync}

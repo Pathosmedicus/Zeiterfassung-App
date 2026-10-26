@@ -166,15 +166,10 @@ export const App: React.FC = () => {
     const activeKey = keyToUse || vaultKeyRef.current || '1971';
     try {
       const seed = await vaultService.unlockSeed(activeKey);
-      if (seed && seed.shifts) {
-        const currentShifts = storageService.getShifts();
-        const octShifts = currentShifts.filter(s => s.datum?.startsWith('2026-10'));
-        const octHours = octShifts.reduce((sum, s) => sum + (s.nettoStunden || 0), 0);
-        const isCorrupted = octShifts.length > 5 || Math.abs(octHours - 30.42) > 0.05;
-
-        if (!storageService.hasSavedShifts() || isCorrupted) {
-          console.info("[Vault] Stelle authentische Originaldaten wieder her (30,42 h im Okt 2026)...");
-          storageService.restoreCleanShifts(seed.shifts);
+      if (seed) {
+        // Bestehende Schichten NIEMALS automatisch überschreiben oder manipulieren!
+        if (!storageService.hasSavedShifts() && seed.shifts) {
+          storageService.saveShifts(seed.shifts);
           setShifts(seed.shifts);
           if (seed.profile) {
             storageService.saveProfile(seed.profile);
@@ -864,55 +859,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Originale Bestandsdaten (30,42 h im Oktober 2026) vollständig wiederherstellen
-  const handleRestoreOriginalData = async () => {
-    try {
-      setIsSyncing(true);
-      const activeKey = vaultKey || '1971';
-      const seed = await vaultService.unlockSeed(activeKey);
-      if (!seed || !seed.shifts || seed.shifts.length === 0) {
-        throw new Error("Konnte Originaldaten nicht aus dem Tresor laden.");
-      }
-
-      // 1. Lokale Schichten mit den sauberen 63 Schichten überschreiben
-      const restoredShifts = storageService.restoreCleanShifts(seed.shifts);
-      setShifts(restoredShifts);
-
-      if (seed.profile) {
-        storageService.saveProfile(seed.profile);
-        setUserProfile(seed.profile);
-      }
-
-      // 2. Monat fest auf Oktober 2026 setzen
-      setCurrentYearMonth('2026-10');
-
-      // 3. Sofort in die Firebase Cloud übertragen mit forceOverwrite: true!
-      const userIdentifier = getUserIdentifier();
-      if (userIdentifier && firebaseUser) {
-        const res = await firebaseService.saveUserData(
-          userIdentifier,
-          restoredShifts,
-          seed.profile || userProfile,
-          resolvedClaims,
-          payoutOverrides,
-          salaryConfig,
-          vaultKey,
-          true, // forceOverwrite = true überschreibt korrumpierten Cloud-Stand!
-          {}    // Tombstones leeren
-        );
-        if (res.success) {
-          setLastSyncTime(new Date());
-        }
-      }
-
-      showToast('✅ Originale Daten wiederhergestellt: Oktober 2026 hat jetzt exakt 30,42 Stunden (5 Dienste)!', 'success');
-    } catch (e: any) {
-      showToast(e?.message || 'Fehler beim Wiederherstellen der Originaldaten.', 'error');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   // Schicht löschen (mit sofortigem Cloud-Tombstone & Zero-Zombie-Schutz)
   const handleDeleteShift = (datum: string) => {
     const shiftToDelete = shifts.find(s => s.datum === datum);
@@ -1155,7 +1101,6 @@ export const App: React.FC = () => {
         onDownloadJsonBackup={handleDownloadJsonBackup}
         onRestoreJsonBackup={handleRestoreJsonBackup}
         onRestoreBackupVersion={handleRestoreBackupVersion}
-        onRestoreOriginalData={handleRestoreOriginalData}
         onOpenOfflineSyncModal={() => setIsSyncModalOpen(true)}
         showToast={showToast}
       />
@@ -1182,31 +1127,6 @@ export const App: React.FC = () => {
 
       {/* Hauptinhalt */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 pt-4 pb-28">
-        {/* WARN- UND WIEDERHERSTELLUNGS-BANNER FÜR OKTOBER 2026 */}
-        {currentYearMonth === '2026-10' && (Math.abs(stats.gesamtDezimal - 30.42) > 0.05 || stats.anzahlDienste !== 5) && (
-          <div className="mb-4 bg-gradient-to-r from-amber-950/80 via-rose-950/70 to-amber-950/80 border-2 border-amber-500/80 rounded-2xl p-4 shadow-2xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">⚠️</span>
-              <div>
-                <div className="font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2 flex-wrap">
-                  <span>Oktober 2026 Abweichung: {stats.gesamtDezimal.toFixed(2)} h ({stats.anzahlDienste} Dienste)</span>
-                  <span className="text-xs bg-rose-900/60 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/40">Soll: 30,42 h (5 Dienste)</span>
-                </div>
-                <div className="text-xs text-slate-300 mt-1">
-                  Durch frühere Synchronisationen sind zusätzliche oder doppelte Dienste im Oktober hinterlegt. Klicke hier, um deine exakten 30,42 Stunden (5 Dienste) sofort wiederherzustellen und die Cloud sauber zu überschreiben.
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={handleRestoreOriginalData}
-              disabled={isSyncing}
-              className="w-full md:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>🔄 Originale 30,42 h jetzt wiederherstellen</span>
-            </button>
-          </div>
-        )}
 
         {/* TAB 1: ⏱️ Erfassen */}
         {activeTab === 'erfassen' && (
@@ -1291,7 +1211,6 @@ export const App: React.FC = () => {
                 isSyncing={isSyncing}
                 lastSyncTime={lastSyncTime}
                 onManualSync={() => handleManualSync(true)}
-                onRestoreOriginalData={handleRestoreOriginalData}
               />
             )}
 
@@ -1317,7 +1236,6 @@ export const App: React.FC = () => {
                   onSaveShift={handleSaveShift}
                   onSelectDateForQuickEntry={setSelectedDate}
                   onCleanDuplicates={handleCleanDuplicates}
-                  onRestoreOriginalData={handleRestoreOriginalData}
                 />
               </>
             )}

@@ -35,7 +35,6 @@ interface CloudStatusModalProps {
   onDownloadJsonBackup: () => void;
   onRestoreJsonBackup: (file: File) => Promise<void>;
   onRestoreBackupVersion: (backup: CloudBackupItem) => Promise<void>;
-  onRestoreOriginalData?: () => Promise<void>;
   onOpenOfflineSyncModal?: () => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -56,7 +55,6 @@ export const CloudStatusModal: React.FC<CloudStatusModalProps> = ({
   onDownloadJsonBackup,
   onRestoreJsonBackup,
   onRestoreBackupVersion,
-  onRestoreOriginalData,
   onOpenOfflineSyncModal,
   showToast
 }) => {
@@ -248,18 +246,6 @@ export const CloudStatusModal: React.FC<CloudStatusModalProps> = ({
               <Upload className="w-4 h-4 text-cyan-400" />
               <span>📂 Backup einspielen</span>
             </button>
-
-            {onRestoreOriginalData && (
-              <button
-                type="button"
-                onClick={() => handleAction('restoreOriginal', onRestoreOriginalData)}
-                disabled={actionLoading !== null}
-                className="col-span-1 sm:col-span-2 flex items-center justify-center gap-2 p-3 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-              >
-                <RefreshCw className="w-4 h-4 text-emerald-400" />
-                <span>🔄 Originale Bestandsdaten wiederherstellen (30,42 h im Okt 2026)</span>
-              </button>
-            )}
             <input
               ref={fileInputRef}
               type="file"
