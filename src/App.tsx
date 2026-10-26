@@ -1133,7 +1133,6 @@ export const App: React.FC = () => {
       <>
         <AuthLockScreen
           onGoogleLogin={handleGoogleLogin}
-          onUnlockPin={handleUnlockWithPin}
           authError={authError}
           isSyncing={isSyncing}
           onClearError={() => setAuthError(null)}
