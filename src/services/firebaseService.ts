@@ -30,6 +30,7 @@ import {
   CloudBackupItem
 } from '../types';
 import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './vaultService';
+import { deduplicateShifts } from './storageService';
 
 // Fallback Firebase-Konfiguration für GitHub Pages (osmedicus.github.io)
 const FALLBACK_FIREBASE_CONFIG = {
@@ -101,78 +102,17 @@ export function normalizeUserEmail(emailOrUid?: string | null): string {
 }
 
 /**
- * Regel 2: Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss & Zero Zombies)
- * Führt lokale Schichten und Cloud-Schichten lückenlos zusammen,
- * filtert gelöschte Schichten anhand von Tombstones aus und erzwingt
- * eine strikte 1-Schicht-pro-Tag-Deduplizierung.
+ * Direkte 1-Schicht-pro-Tag Synchronisation:
+ * Gibt Schichten sauber dedupliziert zurück, ohne gelöschte oder veraltete Schichten
+ * additiv wiederzubeleben.
  */
 export function smartMergeShifts(
   localShifts: ShiftEntry[] = [],
-  cloudShifts: ShiftEntry[] = [],
-  deletedShifts: Record<string, { datum: string; deletedAt: string }> = {}
+  cloudShifts: ShiftEntry[] = []
 ): ShiftEntry[] {
-  const map = new Map<string, ShiftEntry>();
-
-  const isShiftDeleted = (shift: ShiftEntry): boolean => {
-    if (!shift || !shift.datum) return true;
-    const tombstone = deletedShifts[shift.datum];
-    if (!tombstone) return false;
-    const tDel = new Date(tombstone.deletedAt).getTime();
-    const tShift = shift.updatedAt ? new Date(shift.updatedAt).getTime() : 0;
-    return tDel >= tShift;
-  };
-
-  const pickBestShift = (s1: ShiftEntry, s2: ShiftEntry): ShiftEntry => {
-    // 1. Schicht mit geleisteter Arbeitszeit (>0) gewinnt vor leeren 0h-Einträgen
-    if (s1.nettoStunden > 0 && (!s2.nettoStunden || s2.nettoStunden === 0)) return s1;
-    if (s2.nettoStunden > 0 && (!s1.nettoStunden || s1.nettoStunden === 0)) return s2;
-
-    // 2. Wenn beide updatedAt haben, gewinnt das neuere
-    if (s1.updatedAt && s2.updatedAt) {
-      const t1 = new Date(s1.updatedAt).getTime();
-      const t2 = new Date(s2.updatedAt).getTime();
-      if (!isNaN(t1) && !isNaN(t2)) {
-        if (t1 > t2) return s1;
-        if (t2 > t1) return s2;
-      }
-    } else if (s1.updatedAt && !s2.updatedAt) {
-      return s1;
-    } else if (!s1.updatedAt && s2.updatedAt) {
-      return s2;
-    }
-
-    // 3. Vollständigerer Eintrag gewinnt
-    const score1 = (s1.kommen ? 1 : 0) + (s1.gehen ? 1 : 0) + (s1.notiz ? 1 : 0);
-    const score2 = (s2.kommen ? 1 : 0) + (s2.gehen ? 1 : 0) + (s2.notiz ? 1 : 0);
-    if (score1 >= score2) return s1;
-    return s2;
-  };
-
-  // 1. Alle Cloud-Schichten einlesen (nur wenn nicht durch Tombstone gelöscht)
-  for (const cs of cloudShifts || []) {
-    if (cs && cs.datum && !isShiftDeleted(cs)) {
-      const existing = map.get(cs.datum);
-      if (existing) {
-        map.set(cs.datum, pickBestShift(cs, existing));
-      } else {
-        map.set(cs.datum, cs);
-      }
-    }
-  }
-
-  // 2. Lokale Schichten einmischen / mergen (nur wenn nicht gelöscht)
-  for (const ls of localShifts || []) {
-    if (ls && ls.datum && !isShiftDeleted(ls)) {
-      const existing = map.get(ls.datum);
-      if (existing) {
-        map.set(ls.datum, pickBestShift(ls, existing));
-      } else {
-        map.set(ls.datum, ls);
-      }
-    }
-  }
-
-  return Array.from(map.values()).sort((a, b) => a.datum.localeCompare(b.datum));
+  // Bevorzuge aktuelle Cloud-Daten falls vorhanden, sonst lokale Daten
+  const source = (cloudShifts && cloudShifts.length > 0) ? cloudShifts : localShifts;
+  return deduplicateShifts(source || []);
 }
 
 /**
@@ -537,7 +477,7 @@ export const firebaseService = {
       const cloudPayload: any = {
         email: norm,
         uid: auth?.currentUser?.uid || norm,
-        shifts: forceOverwrite ? smartMergeShifts(shifts, [], {}) : smartMergeShifts(shifts, [], consolidatedDeleted),
+        shifts: deduplicateShifts(shifts || []),
         profile,
         resolvedClaims: consolidatedClaims,
         payoutOverrides,

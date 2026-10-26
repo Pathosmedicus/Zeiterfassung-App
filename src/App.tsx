@@ -41,6 +41,7 @@ import { setDecryptedHistoricalRecords, setDecryptedInitialClaims } from './serv
 
 import {
   storageService,
+  deduplicateShifts,
   DEFAULT_USER_PROFILE,
   DEFAULT_SALARY_CONFIG,
   DEFAULT_PRESETS
@@ -148,14 +149,44 @@ export const App: React.FC = () => {
     return { loadedShifts, loadedProfile, loadedClaims, loadedOverrides };
   }, []);
 
+  // Aktuelle User-Kennung für Cloud-Dokumentpfad (users/{email.toLowerCase().trim()})
+  const getUserIdentifier = useCallback(() => {
+    return firebaseUser?.email || activeSession?.email || firebaseUser?.uid || activeSession?.id || '';
+  }, [firebaseUser, activeSession]);
+
   // Exklusives Entschlüsseln von Mohammads Seed (nur bei Mohammads Konto!)
   const unlockMohammadData = useCallback(async (keyToUse?: string) => {
     const activeKey = keyToUse || vaultKey || '1971';
     try {
       const seed = await vaultService.unlockSeed(activeKey);
-      if (seed) {
-        if (!storageService.hasSavedShifts()) {
-          storageService.importDecryptedSeed(seed.shifts, seed.profile);
+      if (seed && seed.shifts) {
+        const currentShifts = storageService.getShifts();
+        const octShifts = currentShifts.filter(s => s.datum?.startsWith('2026-10'));
+        const octHours = octShifts.reduce((sum, s) => sum + (s.nettoStunden || 0), 0);
+        // Falls noch keine Schichten vorliegen ODER der Oktober durch den alten Smart-Merge korrumpiert war (>30.42h oder >5 Dienste)
+        const isCorrupted = octShifts.length > 5 || Math.abs(octHours - 30.42) > 0.05;
+
+        if (!storageService.hasSavedShifts() || isCorrupted) {
+          console.info("[Vault] Stelle authentische Originaldaten wieder her (30,42 h im Okt 2026)...");
+          storageService.restoreCleanShifts(seed.shifts);
+          setShifts(seed.shifts);
+          if (seed.profile) {
+            storageService.saveProfile(seed.profile);
+            setUserProfile(seed.profile);
+          }
+          const userIdentifier = getUserIdentifier();
+          if (userIdentifier && firebaseUser) {
+            firebaseService.saveUserData(
+              userIdentifier,
+              seed.shifts,
+              seed.profile || storageService.getProfile(),
+              storageService.getResolvedClaims(),
+              storageService.getPayoutOverrides(),
+              storageService.getSalaryConfig(),
+              vaultKey,
+              true
+            ).catch(console.warn);
+          }
         }
         setDecryptedHistoricalRecords(seed.payrollRecords || []);
         setDecryptedInitialClaims(seed.claims || []);
@@ -163,7 +194,7 @@ export const App: React.FC = () => {
     } catch (e) {
       console.warn("Konnte Mohammads Seed nicht entschlüsseln:", e);
     }
-  }, [vaultKey]);
+  }, [vaultKey, getUserIdentifier, firebaseUser]);
 
   // Initialisierung beim Start der App, wenn bereits eine Sitzung aktiv ist
   useEffect(() => {
@@ -183,73 +214,27 @@ export const App: React.FC = () => {
     }
   }, [loadAllData, unlockMohammadData]);
 
-  // Aktuelle User-Kennung für Cloud-Dokumentpfad (users/{email.toLowerCase().trim()})
-  const getUserIdentifier = useCallback(() => {
-    return firebaseUser?.email || activeSession?.email || firebaseUser?.uid || activeSession?.id || '';
-  }, [firebaseUser, activeSession]);
-
-  // Helper zum Anwenden von Daten aus der Google Cloud (Deduplizierung & Smart-Merge)
+  // Helper zum Anwenden von Daten aus der Google Cloud (Deduplizierung & direkter Snapshot-Sync)
   const applyCloudData = useCallback((cloudData: CloudUserData) => {
     if (!cloudData) return;
 
-    // 0. Tombstones für gelöschte Schichten mergen (Zero-Zombie-Schutz)
-    const localDeleted = storageService.getDeletedShifts();
-    const mergedDeleted = cloudData.deletedShifts
-      ? firebaseService.smartMergeDeletedShifts(localDeleted, cloudData.deletedShifts)
-      : { ...localDeleted };
-
-    // 1. Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss & strikte Deduplizierung)
-    if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
-      let incomingCloudShifts = cloudData.shifts;
-      let shouldAutoCleanCloud = false;
-      const currentUserId = getUserIdentifier();
-
-      // Wenn Mohammad eingeloggt ist: Geisterdienste im Oktober 2026 abfangen & bereinigen
-      if (storageService.isMohammadUser(currentUserId)) {
-        const { cleaned, hasGhostShifts, ghostDates } = storageService.sanitizeMohammadShifts(incomingCloudShifts);
-        if (hasGhostShifts) {
-          incomingCloudShifts = cleaned;
-          for (const gd of ghostDates) {
-            storageService.markShiftDeleted(gd);
-            mergedDeleted[gd] = { datum: gd, deletedAt: new Date().toISOString() };
-          }
-          shouldAutoCleanCloud = true;
-        }
-      }
-
+    // 0. Tombstones für gelöschte Schichten
+    if (cloudData.deletedShifts && typeof cloudData.deletedShifts === 'object') {
+      const localDeleted = storageService.getDeletedShifts();
+      const mergedDeleted = firebaseService.smartMergeDeletedShifts(localDeleted, cloudData.deletedShifts);
       storageService.saveDeletedShifts(mergedDeleted);
+    }
 
-      const currentLocal = storageService.getShifts();
-      const merged = firebaseService.smartMergeShifts(currentLocal, incomingCloudShifts, mergedDeleted);
-      const finalShifts = storageService.isMohammadUser(currentUserId)
-        ? storageService.sanitizeMohammadShifts(merged).cleaned
-        : merged;
-
-      storageService.saveShifts(finalShifts);
-      setShifts(finalShifts);
-      setCloudShiftCount(finalShifts.length);
+    // 1. Schichten aus der Cloud direkt als verlässlichen Snapshot übernehmen (ohne additiven Smart-Merge!)
+    if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
+      const cleanShifts = deduplicateShifts(cloudData.shifts);
+      storageService.saveShifts(cleanShifts);
+      setShifts(cleanShifts);
+      setCloudShiftCount(cleanShifts.length);
 
       // Dynamischer Startmonat: Neuester Monat mit Diensten statt statischer Default
-      const targetMonth = storageService.determineInitialMonth(finalShifts);
+      const targetMonth = storageService.determineInitialMonth(cleanShifts);
       setCurrentYearMonth(targetMonth);
-
-      // Falls Geisterschichten in der Cloud waren: Überschreibe Firestore sofort im Hintergrund mit sauberen 30.42h!
-      if (shouldAutoCleanCloud && firebaseUser && currentUserId) {
-        console.info('[Sync] Bereinige Cloud-Firestore automatisch mit sauberen 30.42h...');
-        firebaseService.saveUserData(
-          currentUserId,
-          finalShifts,
-          storageService.getProfile(),
-          storageService.getResolvedClaims(),
-          storageService.getPayoutOverrides(),
-          storageService.getSalaryConfig(),
-          vaultKey,
-          true, // forceOverwrite = true!
-          mergedDeleted
-        ).catch(err => console.warn('Konnte Cloud-Bereinigung nicht pushen:', err));
-      }
-    } else {
-      storageService.saveDeletedShifts(mergedDeleted);
     }
 
     // 2. Profil aktualisieren
@@ -331,7 +316,7 @@ export const App: React.FC = () => {
         );
 
         if (showNotification) {
-          showToast('☁️ Daten mit Gmail-Cloud synchronisiert (Smart-Merge aktiv)!', 'success');
+          showToast('☁️ Daten mit Gmail-Cloud synchronisiert!', 'success');
         }
       } else {
         // Erstinitialisierung für diesen Gmail-Nutzer
@@ -413,32 +398,12 @@ export const App: React.FC = () => {
         loadAllData();
 
         // REGEL 2: ZERO-DATA-LOSS SCHUTZ BEIM LOGIN
-        // Sofort Cloud-Stand prüfen und Smart-Merge ausführen
+        // Sofort Cloud-Stand prüfen und anwenden
         try {
           setIsSyncing(true);
           const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
           if (cloudData) {
             applyCloudData(cloudData);
-
-            // Zurückspiegeln falls lokale Schichten vorhanden waren
-            const mergedShifts = storageService.getShifts();
-            const mergedProfile = storageService.getProfile();
-            const mergedClaims = storageService.getResolvedClaims();
-            const mergedOverrides = storageService.getPayoutOverrides();
-            const mergedSalary = storageService.getSalaryConfig();
-            const currentDeleted = storageService.getDeletedShifts();
-
-            await firebaseService.saveUserData(
-              userIdentifier,
-              mergedShifts,
-              mergedProfile,
-              mergedClaims,
-              mergedOverrides,
-              mergedSalary,
-              vaultKey,
-              false,
-              currentDeleted
-            );
           } else {
             // Falls Cloud leer ist und lokal Schichten vorliegen, in Cloud hochladen
             const localShifts = storageService.getShifts();
@@ -451,8 +416,7 @@ export const App: React.FC = () => {
                 storageService.getPayoutOverrides(),
                 storageService.getSalaryConfig(),
                 vaultKey,
-                false,
-                storageService.getDeletedShifts()
+                false
               );
             }
           }

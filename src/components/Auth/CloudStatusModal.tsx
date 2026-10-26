@@ -175,10 +175,10 @@ export const CloudStatusModal: React.FC<CloudStatusModalProps> = ({
               </div>
               <div className="text-left">
                 <div className="font-bold text-white text-xs sm:text-sm">
-                  🔄 Jetzt mit Gmail-Cloud synchronisieren (Smart-Merge)
+                  🔄 Jetzt mit Gmail-Cloud synchronisieren
                 </div>
                 <div className="text-[10px] text-slate-300">
-                  Führt lokale & Cloud-Dienste intelligent zusammen – kein Dienst geht verloren
+                  Gleicht deine Schichten sauber mit der Cloud ab – ohne Duplikate oder Geisterdienste
                 </div>
               </div>
             </div>
