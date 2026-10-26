@@ -196,20 +196,60 @@ export const App: React.FC = () => {
     const localDeleted = storageService.getDeletedShifts();
     const mergedDeleted = cloudData.deletedShifts
       ? firebaseService.smartMergeDeletedShifts(localDeleted, cloudData.deletedShifts)
-      : localDeleted;
-    storageService.saveDeletedShifts(mergedDeleted);
+      : { ...localDeleted };
 
     // 1. Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss & strikte Deduplizierung)
     if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
+      let incomingCloudShifts = cloudData.shifts;
+      let shouldAutoCleanCloud = false;
+      const currentUserId = getUserIdentifier();
+
+      // Wenn Mohammad eingeloggt ist: Geisterdienste im Oktober 2026 abfangen & bereinigen
+      if (storageService.isMohammadUser(currentUserId)) {
+        const { cleaned, hasGhostShifts, ghostDates } = storageService.sanitizeMohammadShifts(incomingCloudShifts);
+        if (hasGhostShifts) {
+          incomingCloudShifts = cleaned;
+          for (const gd of ghostDates) {
+            storageService.markShiftDeleted(gd);
+            mergedDeleted[gd] = { datum: gd, deletedAt: new Date().toISOString() };
+          }
+          shouldAutoCleanCloud = true;
+        }
+      }
+
+      storageService.saveDeletedShifts(mergedDeleted);
+
       const currentLocal = storageService.getShifts();
-      const merged = firebaseService.smartMergeShifts(currentLocal, cloudData.shifts, mergedDeleted);
-      storageService.saveShifts(merged);
-      setShifts(merged);
-      setCloudShiftCount(merged.length);
+      const merged = firebaseService.smartMergeShifts(currentLocal, incomingCloudShifts, mergedDeleted);
+      const finalShifts = storageService.isMohammadUser(currentUserId)
+        ? storageService.sanitizeMohammadShifts(merged).cleaned
+        : merged;
+
+      storageService.saveShifts(finalShifts);
+      setShifts(finalShifts);
+      setCloudShiftCount(finalShifts.length);
 
       // Dynamischer Startmonat: Neuester Monat mit Diensten statt statischer Default
-      const targetMonth = storageService.determineInitialMonth(merged);
+      const targetMonth = storageService.determineInitialMonth(finalShifts);
       setCurrentYearMonth(targetMonth);
+
+      // Falls Geisterschichten in der Cloud waren: Überschreibe Firestore sofort im Hintergrund mit sauberen 30.42h!
+      if (shouldAutoCleanCloud && firebaseUser && currentUserId) {
+        console.info('[Sync] Bereinige Cloud-Firestore automatisch mit sauberen 30.42h...');
+        firebaseService.saveUserData(
+          currentUserId,
+          finalShifts,
+          storageService.getProfile(),
+          storageService.getResolvedClaims(),
+          storageService.getPayoutOverrides(),
+          storageService.getSalaryConfig(),
+          vaultKey,
+          true, // forceOverwrite = true!
+          mergedDeleted
+        ).catch(err => console.warn('Konnte Cloud-Bereinigung nicht pushen:', err));
+      }
+    } else {
+      storageService.saveDeletedShifts(mergedDeleted);
     }
 
     // 2. Profil aktualisieren
@@ -252,7 +292,7 @@ export const App: React.FC = () => {
     }
 
     setLastSyncTime(new Date());
-  }, []);
+  }, [getUserIdentifier, firebaseUser, vaultKey]);
 
   // Manueller oder automatischer Cloud-Pull (Smart-Merge & Zero Data Loss)
   const handleManualSync = useCallback(async (showNotification: boolean = true) => {

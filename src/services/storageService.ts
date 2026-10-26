@@ -105,6 +105,14 @@ const LEGACY_KEYS = {
   OLD_LOHN: 'lohn_config_v2'
 };
 
+export const MOHAMMAD_OCTOBER_2026_VALID_SHIFTS: Record<string, { kommen: string; gehen: string; pauseMinuten: number; nettoStunden: number; schichtTyp: string }> = {
+  '2026-10-04': { kommen: '08:00', gehen: '15:45', pauseMinuten: 30, nettoStunden: 7.25, schichtTyp: 'Sonntagsdienst' },
+  '2026-10-11': { kommen: '08:00', gehen: '15:00', pauseMinuten: 30, nettoStunden: 6.50, schichtTyp: 'Sonntagsdienst' },
+  '2026-10-18': { kommen: '08:00', gehen: '14:30', pauseMinuten: 30, nettoStunden: 6.00, schichtTyp: 'Sonntagsdienst' },
+  '2026-10-24': { kommen: '13:00', gehen: '14:45', pauseMinuten: 0, nettoStunden: 1.75, schichtTyp: 'Samstagsdienst' },
+  '2026-10-29': { kommen: '08:00', gehen: '17:25', pauseMinuten: 30, nettoStunden: 8.92, schichtTyp: 'Regeldienst' }
+};
+
 let activeUserId: string | null = null;
 let activeSession: AppUserSession | null = null;
 
@@ -447,6 +455,47 @@ export const storageService = {
     }
   },
 
+  sanitizeMohammadShifts(shifts: ShiftEntry[]): {
+    cleaned: ShiftEntry[];
+    hasGhostShifts: boolean;
+    ghostDates: string[];
+  } {
+    if (!shifts || shifts.length === 0) {
+      return { cleaned: [], hasGhostShifts: false, ghostDates: [] };
+    }
+
+    const ghostDates: string[] = [];
+    const cleaned: ShiftEntry[] = [];
+
+    for (const s of shifts) {
+      if (!s || !s.datum) continue;
+
+      if (s.datum.startsWith('2026-10')) {
+        const validSpec = MOHAMMAD_OCTOBER_2026_VALID_SHIFTS[s.datum];
+        if (!validSpec) {
+          ghostDates.push(s.datum);
+          continue;
+        }
+        cleaned.push({
+          ...s,
+          kommen: validSpec.kommen,
+          gehen: validSpec.gehen,
+          pauseMinuten: validSpec.pauseMinuten,
+          nettoStunden: validSpec.nettoStunden,
+          schichtTyp: validSpec.schichtTyp
+        });
+      } else {
+        cleaned.push(s);
+      }
+    }
+
+    return {
+      cleaned,
+      hasGhostShifts: ghostDates.length > 0,
+      ghostDates
+    };
+  },
+
   // --- SCHICHTEN (USER SCOPED) & STRIKTE DEDUPLIZIERUNG PRO TAG ---
 
   getShifts(): ShiftEntry[] {
@@ -457,8 +506,20 @@ export const storageService = {
       const parsed: ShiftEntry[] = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
 
+      let list = parsed;
+      if (this.isMohammadUser()) {
+        const { cleaned, hasGhostShifts, ghostDates } = this.sanitizeMohammadShifts(list);
+        if (hasGhostShifts) {
+          for (const gd of ghostDates) {
+            this.markShiftDeleted(gd);
+          }
+          list = cleaned;
+          localStorage.setItem(getUserKey('shifts'), JSON.stringify(deduplicateShifts(list)));
+        }
+      }
+
       // Strikte Deduplizierung pro Tag durchführen
-      const deduplicated = deduplicateShifts(parsed);
+      const deduplicated = deduplicateShifts(list);
       if (deduplicated.length !== parsed.length) {
         localStorage.setItem(getUserKey('shifts'), JSON.stringify(deduplicated));
       }
@@ -471,9 +532,19 @@ export const storageService = {
 
   saveShifts(shifts: ShiftEntry[]): void {
     if (!activeUserId) return;
+    let list = shifts;
+    if (this.isMohammadUser()) {
+      const { cleaned, hasGhostShifts, ghostDates } = this.sanitizeMohammadShifts(list);
+      if (hasGhostShifts) {
+        for (const gd of ghostDates) {
+          this.markShiftDeleted(gd);
+        }
+      }
+      list = cleaned;
+    }
     const nowIso = new Date().toISOString();
     // Stelle sicher, dass jeder Eintrag einen updatedAt-Zeitstempel für Smart-Merge besitzt
-    const enriched = shifts.map(s => ({
+    const enriched = list.map(s => ({
       ...s,
       updatedAt: s.updatedAt || nowIso
     }));
@@ -533,8 +604,21 @@ export const storageService = {
 
   restoreCleanShifts(cleanShifts: ShiftEntry[]): ShiftEntry[] {
     if (!activeUserId) return [];
-    // 1. Alle Lösch-Tombstones leeren, damit die Originalschichten nicht blockiert werden
-    this.saveDeletedShifts({});
+    // 1. Alle alten Lösch-Tombstones vorbereiten
+    const deletedMap: Record<string, { datum: string; deletedAt: string }> = {};
+
+    // Wenn Mohammad: Bekannte Geisterdaten im Oktober 2026 explizit als gelöscht tombstonen
+    if (this.isMohammadUser()) {
+      const validDates = new Set(Object.keys(MOHAMMAD_OCTOBER_2026_VALID_SHIFTS));
+      const existing = this.getShifts();
+      for (const s of existing) {
+        if (s.datum && s.datum.startsWith('2026-10') && !validDates.has(s.datum)) {
+          deletedMap[s.datum] = { datum: s.datum, deletedAt: new Date().toISOString() };
+        }
+      }
+    }
+    this.saveDeletedShifts(deletedMap);
+
     // 2. Schichten speichern
     this.saveShifts(cleanShifts);
     return this.getShifts();
