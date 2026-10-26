@@ -11,6 +11,8 @@ export interface ShiftEntry {
   schichtTyp?: string;  // Name des Presets / Typs
   notiz?: string;       // Optionale Notiz
   nachtStunden?: number; // Explizite Nachtstunden (z.B. 3.17h)
+  id?: string;          // Eindeutige ID für Smart-Merge
+  updatedAt?: string;   // ISO-Zeitstempel der letzten Änderung
 }
 
 export interface UserProfile {
@@ -105,6 +107,7 @@ export interface MonthPayoutOverride {
   isResolved?: boolean;       // Vom Mitarbeiter als beglichen markiert
   resolvedDate?: string;      // Datum der Erledigung
   notiz?: string;             // Eigene Notiz
+  updatedAt?: string;
 }
 
 export interface OpenClaimItem {
@@ -118,6 +121,7 @@ export interface OpenClaimItem {
   resolvedDate?: string;
   kurzBeschreibung: string;
   details: string[];
+  updatedAt?: string;
 }
 
 export interface ClinicPayrollRecord {
@@ -162,13 +166,28 @@ export interface EmailHistoryItem {
   datumGesendet: string;
 }
 
+export interface CloudBackupItem {
+  timestamp: string;
+  shiftCount: number;
+  note?: string;
+  shifts: ShiftEntry[];
+  profile: Partial<UserProfile>;
+  salaryConfig?: Partial<SalaryConfig>;
+  resolvedClaims?: Record<string, ResolvedClaimStatus>;
+  payoutOverrides?: Record<string, MonthPayoutOverride>;
+}
+
 export interface CloudUserData {
+  email?: string;
+  uid?: string;
   shifts: ShiftEntry[];
   profile: Partial<UserProfile>;
   resolvedClaims?: Record<string, ResolvedClaimStatus>;
   payoutOverrides?: Record<string, MonthPayoutOverride>;
   salaryConfig?: Partial<SalaryConfig>;
+  backupHistory?: CloudBackupItem[];
   lastUpdated?: any;
+  lastDevice?: string;
 }
 
 export interface AppBackup {

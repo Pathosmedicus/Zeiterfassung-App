@@ -31,6 +31,7 @@ interface HeaderProps {
   isSyncing?: boolean;
   onManualSync?: () => void;
   onOpenSyncModal?: () => void;
+  onOpenCloudModal?: () => void;
   lastSyncTime?: Date | null;
   onLockApp?: () => void;
 }
@@ -54,6 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing,
   onManualSync,
   onOpenSyncModal,
+  onOpenCloudModal,
   lastSyncTime,
   onLockApp
 }) => {
@@ -114,25 +116,21 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Steuerungsleiste rechts */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Sync-Status Badge & Button */}
+            {/* Cloud-Status Badge & Button (Cloud 🟢) */}
             <button
               type="button"
-              onClick={onOpenSyncModal || onManualSync}
+              onClick={onOpenCloudModal || onOpenSyncModal || onManualSync}
               disabled={isSyncing}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-cyan-500/30 rounded-full text-xs font-semibold shadow-sm transition-all active:scale-95"
-              title={firebaseUser ? "Google Cloud-Sync aktiv (Klicken für Optionen)" : "AES-256 Tresor (Klicken zum Synchronisieren mit Handy/PC)"}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-emerald-500/40 hover:border-emerald-500/70 rounded-full text-xs font-semibold shadow-sm shadow-emerald-500/10 transition-all active:scale-95 cursor-pointer"
+              title="Cloud 🟢 Status: Klicken für Gmail-Cloud Optionen, Smart-Merge & Backups"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-400' : 'text-cyan-400'}`} />
-              <span className="text-slate-300 hidden md:inline text-[11px]">
-                {firebaseUser ? 'Cloud' : 'Sync'}
-              </span>
+              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse text-amber-400' : 'text-emerald-400'}`} />
+              <span className="text-slate-200 text-xs font-bold">Cloud</span>
               <span
                 className={`w-2 h-2 rounded-full ${
                   isSyncing
                     ? 'bg-amber-400 animate-spin'
-                    : firebaseUser
-                    ? 'bg-emerald-400 animate-pulse'
-                    : 'bg-cyan-400'
+                    : 'bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50'
                 }`}
               />
             </button>

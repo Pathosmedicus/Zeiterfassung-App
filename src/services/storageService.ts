@@ -113,21 +113,53 @@ try {
   const sessionRaw = localStorage.getItem(GLOBAL_KEYS.ACTIVE_SESSION);
   if (sessionRaw) {
     activeSession = JSON.parse(sessionRaw);
-    activeUserId = activeSession?.id || null;
+    activeUserId = activeSession?.email || activeSession?.id || null;
   }
 } catch {
   activeSession = null;
   activeUserId = null;
 }
 
-function sanitizeId(id: string): string {
-  return id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+export function normalizeEmail(emailOrId?: string | null): string {
+  if (!emailOrId) return 'anon';
+  return emailOrId.toLowerCase().trim();
 }
 
+/**
+ * Regel 1: Striktes Präfix zeiterfassung_v2_${email}_ pro Account
+ */
 function getUserKey(baseKey: string, customUserId?: string): string {
-  const uid = customUserId || activeUserId;
-  if (!uid) return `anon_${baseKey}`;
-  return `usr_${sanitizeId(uid)}_${baseKey}`;
+  const target = customUserId || activeSession?.email || activeUserId || '';
+  const norm = normalizeEmail(target);
+  return `zeiterfassung_v2_${norm}_${baseKey}`;
+}
+
+/**
+ * Regel 5: Automatische Ermittlung des passenden Start-Monats
+ * Springt auf den neuesten Schichtmonat (z. B. 2026-10) statt auf einen statischen alten Monat
+ */
+export function determineInitialMonth(shifts: ShiftEntry[]): string {
+  const currentCalendarMonth = new Date().toISOString().substring(0, 7);
+
+  if (!shifts || shifts.length === 0) {
+    return currentCalendarMonth;
+  }
+
+  const shiftMonths = Array.from(
+    new Set(shifts.map(s => s.datum?.substring(0, 7)).filter(Boolean))
+  ).sort();
+
+  if (shiftMonths.length === 0) {
+    return currentCalendarMonth;
+  }
+
+  // Falls der aktuelle Kalendermonat Schichten hat, nimm diesen
+  if (shiftMonths.includes(currentCalendarMonth)) {
+    return currentCalendarMonth;
+  }
+
+  // Ansonsten den neuesten Monat mit Schichten (z. B. 2026-10)
+  return shiftMonths[shiftMonths.length - 1];
 }
 
 export const storageService = {
@@ -139,7 +171,7 @@ export const storageService = {
       const raw = localStorage.getItem(GLOBAL_KEYS.ACTIVE_SESSION);
       if (raw) {
         activeSession = JSON.parse(raw);
-        activeUserId = activeSession?.id || null;
+        activeUserId = activeSession?.email || activeSession?.id || null;
         return activeSession;
       }
     } catch {}
@@ -148,13 +180,13 @@ export const storageService = {
 
   setActiveSession(session: AppUserSession): void {
     activeSession = session;
-    activeUserId = session.id;
+    activeUserId = session.email || session.id;
     try {
       localStorage.setItem(GLOBAL_KEYS.ACTIVE_SESSION, JSON.stringify(session));
       this.registerUserInIndex(session);
 
-      // Falls Mohammad sich anmeldet, migriere vorhandene Altdaten in seinen exklusiven Speicher
-      if (this.isMohammadUser(session.id)) {
+      // Regel 3: Nur wenn Mohammad sich anmeldet, Altdaten migrieren
+      if (this.isMohammadUser(session.email || session.id)) {
         this.migrateMohammadLegacyIfPresent();
       }
     } catch (e) {
@@ -162,6 +194,9 @@ export const storageService = {
     }
   },
 
+  /**
+   * Regel 1: Beim Logout wird NUR die Sitzung im Speicher geleert, NIEMALS Daten gelöscht!
+   */
   clearActiveSession(): void {
     activeSession = null;
     activeUserId = null;
@@ -170,8 +205,33 @@ export const storageService = {
     } catch {}
   },
 
-  isMohammadUser(userId?: string | null): boolean {
-    const id = (userId || activeUserId || '').toLowerCase().trim();
+  switchUser(userIdOrEmail: string): void {
+    activeUserId = userIdOrEmail ? normalizeEmail(userIdOrEmail) : null;
+  },
+
+  migrateLegacyMohammadDataIfNeeded(emailOrId?: string): void {
+    if (this.isMohammadUser(emailOrId || activeUserId)) {
+      this.migrateMohammadLegacyIfPresent();
+    }
+  },
+
+  determineInitialMonth(shifts?: ShiftEntry[]): string {
+    const list = shifts || this.getShifts();
+    if (list && list.length > 0) {
+      const validMonths = list
+        .map(s => s.datum ? s.datum.substring(0, 7) : '')
+        .filter(m => /^\d{4}-\d{2}$/.test(m));
+      if (validMonths.length > 0) {
+        validMonths.sort((a, b) => b.localeCompare(a));
+        return validMonths[0];
+      }
+    }
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  },
+
+  isMohammadUser(userIdOrEmail?: string | null): boolean {
+    const id = normalizeEmail(userIdOrEmail || activeSession?.email || activeUserId);
     return id === 'mohammadmattar1971@gmail.com' || id === 'mohammad';
   },
 
@@ -188,7 +248,9 @@ export const storageService = {
   registerUserInIndex(user: AppUserSession): void {
     try {
       const users = this.getRegisteredUsers();
-      const existingIdx = users.findIndex(u => u.id.toLowerCase() === user.id.toLowerCase());
+      const existingIdx = users.findIndex(u =>
+        normalizeEmail(u.email || u.id) === normalizeEmail(user.email || user.id)
+      );
       const updatedUser: AppUserSession = {
         ...user,
         lastLogin: new Date().toISOString()
@@ -206,56 +268,68 @@ export const storageService = {
 
   removeUserFromIndex(userId: string): void {
     try {
-      const users = this.getRegisteredUsers().filter(u => u.id.toLowerCase() !== userId.toLowerCase());
+      const users = this.getRegisteredUsers().filter(u =>
+        normalizeEmail(u.email || u.id) !== normalizeEmail(userId)
+      );
       localStorage.setItem(GLOBAL_KEYS.USERS_INDEX, JSON.stringify(users));
     } catch {}
   },
 
   isUserOnboarded(userId?: string): boolean {
-    const uid = userId || activeUserId;
+    const uid = userId || activeSession?.email || activeUserId;
     if (!uid) return false;
     // Mohammad ist standardmäßig onboarded
     if (this.isMohammadUser(uid)) return true;
-    return localStorage.getItem(getUserKey('onboarded_v3', uid)) === 'true';
+    return localStorage.getItem(getUserKey('onboarded', uid)) === 'true';
   },
 
   setUserOnboarded(onboarded: boolean = true, userId?: string): void {
-    const uid = userId || activeUserId;
+    const uid = userId || activeSession?.email || activeUserId;
     if (!uid) return;
-    localStorage.setItem(getUserKey('onboarded_v3', uid), onboarded ? 'true' : 'false');
+    localStorage.setItem(getUserKey('onboarded', uid), onboarded ? 'true' : 'false');
   },
 
+  /**
+   * Regel 3: Automatische Migration alter Bestandsdaten – EXKLUSIV für Mohammad!
+   * Für fremde Gmail-Adressen wird dies NIEMALS ausgeführt.
+   */
   migrateMohammadLegacyIfPresent(): void {
-    const mohammadId = 'mohammadmattar1971@gmail.com';
-    const scopedShiftsKey = getUserKey('shifts_v3', mohammadId);
-    const existingScoped = localStorage.getItem(scopedShiftsKey);
+    const mohammadEmail = 'mohammadmattar1971@gmail.com';
+    const targetShiftsKey = getUserKey('shifts', mohammadEmail);
+    const existing = localStorage.getItem(targetShiftsKey);
 
-    if (!existingScoped || existingScoped === '[]') {
+    if (!existing || existing === '[]') {
+      // 1. Suche nach Daten aus vorherigen Versionen
+      const prevScoped = localStorage.getItem('usr_mohammadmattar1971_gmail_com_shifts_v3');
       const legacyV3 = localStorage.getItem(LEGACY_KEYS.SHIFTS);
       const legacyOld = localStorage.getItem(LEGACY_KEYS.OLD_SHIFTS);
-      const candidate = (legacyV3 && legacyV3 !== '[]') ? legacyV3 : ((legacyOld && legacyOld !== '[]') ? legacyOld : null);
+      const candidate = (prevScoped && prevScoped !== '[]')
+        ? prevScoped
+        : ((legacyV3 && legacyV3 !== '[]') ? legacyV3 : ((legacyOld && legacyOld !== '[]') ? legacyOld : null));
 
       if (candidate) {
-        localStorage.setItem(scopedShiftsKey, candidate);
+        localStorage.setItem(targetShiftsKey, candidate);
       }
 
-      const legacyProfile = localStorage.getItem(LEGACY_KEYS.PROFILE);
-      if (legacyProfile) {
-        localStorage.setItem(getUserKey('profile_v3', mohammadId), legacyProfile);
+      // Profil-Migration
+      const prevProfile = localStorage.getItem('usr_mohammadmattar1971_gmail_com_profile_v3') || localStorage.getItem(LEGACY_KEYS.PROFILE);
+      if (prevProfile) {
+        localStorage.setItem(getUserKey('profile', mohammadEmail), prevProfile);
       }
 
-      const legacyOverrides = localStorage.getItem(LEGACY_KEYS.PAYOUT_OVERRIDES);
-      if (legacyOverrides) {
-        localStorage.setItem(getUserKey('payout_overrides_v3', mohammadId), legacyOverrides);
+      // Overrides & Claims Migration
+      const prevOverrides = localStorage.getItem('usr_mohammadmattar1971_gmail_com_payout_overrides_v3') || localStorage.getItem(LEGACY_KEYS.PAYOUT_OVERRIDES);
+      if (prevOverrides) {
+        localStorage.setItem(getUserKey('payout_overrides', mohammadEmail), prevOverrides);
       }
 
-      const legacyClaims = localStorage.getItem(LEGACY_KEYS.RESOLVED_CLAIMS);
-      if (legacyClaims) {
-        localStorage.setItem(getUserKey('resolved_claims_v3', mohammadId), legacyClaims);
+      const prevClaims = localStorage.getItem('usr_mohammadmattar1971_gmail_com_resolved_claims_v3') || localStorage.getItem(LEGACY_KEYS.RESOLVED_CLAIMS);
+      if (prevClaims) {
+        localStorage.setItem(getUserKey('resolved_claims', mohammadEmail), prevClaims);
       }
     }
 
-    // Lösche globale Altdaten, damit fremde Nutzer 0 Bytes vorfinden
+    // Unbenannte Altdaten aus dem globalen Speicher entfernen
     localStorage.removeItem(LEGACY_KEYS.SHIFTS);
     localStorage.removeItem(LEGACY_KEYS.OLD_SHIFTS);
     localStorage.removeItem(LEGACY_KEYS.PROFILE);
@@ -269,7 +343,7 @@ export const storageService = {
   getProfile(): UserProfile {
     if (!activeUserId) return DEFAULT_USER_PROFILE;
     try {
-      const stored = localStorage.getItem(getUserKey('profile_v3'));
+      const stored = localStorage.getItem(getUserKey('profile'));
       if (stored) return { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
       return DEFAULT_USER_PROFILE;
     } catch {
@@ -279,12 +353,12 @@ export const storageService = {
 
   saveProfile(profile: UserProfile): void {
     if (!activeUserId) return;
-    localStorage.setItem(getUserKey('profile_v3'), JSON.stringify(profile));
+    localStorage.setItem(getUserKey('profile'), JSON.stringify(profile));
   },
 
   hasSavedShifts(): boolean {
     if (!activeUserId) return false;
-    const raw = localStorage.getItem(getUserKey('shifts_v3'));
+    const raw = localStorage.getItem(getUserKey('shifts'));
     if (!raw || raw === '[]') return false;
     try {
       const parsed = JSON.parse(raw);
@@ -296,7 +370,6 @@ export const storageService = {
 
   importDecryptedSeed(shifts: ShiftEntry[], profile?: UserProfile): void {
     if (!activeUserId) return;
-    // Schutzregel: Der Seed gehört exklusiv Mohammad
     if (!this.isMohammadUser()) {
       console.warn('Seed-Import für Nicht-Owner abgewiesen (Datenschutz).');
       return;
@@ -314,7 +387,7 @@ export const storageService = {
   getShifts(): ShiftEntry[] {
     if (!activeUserId) return [];
     try {
-      const raw = localStorage.getItem(getUserKey('shifts_v3'));
+      const raw = localStorage.getItem(getUserKey('shifts'));
       if (!raw || raw === '[]') return [];
       const parsed: ShiftEntry[] = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : [];
@@ -326,13 +399,23 @@ export const storageService = {
 
   saveShifts(shifts: ShiftEntry[]): void {
     if (!activeUserId) return;
-    const sorted = [...shifts].sort((a, b) => a.datum.localeCompare(b.datum));
-    localStorage.setItem(getUserKey('shifts_v3'), JSON.stringify(sorted));
+    const nowIso = new Date().toISOString();
+    // Stelle sicher, dass jeder Eintrag einen updatedAt-Zeitstempel für Smart-Merge besitzt
+    const enriched = shifts.map(s => ({
+      ...s,
+      updatedAt: s.updatedAt || nowIso
+    }));
+    const sorted = enriched.sort((a, b) => a.datum.localeCompare(b.datum));
+    localStorage.setItem(getUserKey('shifts'), JSON.stringify(sorted));
   },
 
   upsertShift(newEntry: ShiftEntry): ShiftEntry[] {
+    const withTimestamp: ShiftEntry = {
+      ...newEntry,
+      updatedAt: new Date().toISOString()
+    };
     const shifts = this.getShifts().filter(s => s.datum !== newEntry.datum);
-    shifts.push(newEntry);
+    shifts.push(withTimestamp);
     this.saveShifts(shifts);
     return shifts;
   },
@@ -354,7 +437,7 @@ export const storageService = {
   getPresets(): PresetShift[] {
     if (!activeUserId) return DEFAULT_PRESETS;
     try {
-      const stored = localStorage.getItem(getUserKey('presets_v3'));
+      const stored = localStorage.getItem(getUserKey('presets'));
       if (stored) return JSON.parse(stored);
       return DEFAULT_PRESETS;
     } catch {
@@ -364,7 +447,7 @@ export const storageService = {
 
   savePresets(presets: PresetShift[]): void {
     if (!activeUserId) return;
-    localStorage.setItem(getUserKey('presets_v3'), JSON.stringify(presets));
+    localStorage.setItem(getUserKey('presets'), JSON.stringify(presets));
   },
 
   // --- TARIF & LOHNKONFIGURATION (USER SCOPED) ---
@@ -372,7 +455,7 @@ export const storageService = {
   getSalaryConfig(): SalaryConfig {
     if (!activeUserId) return DEFAULT_SALARY_CONFIG;
     try {
-      const stored = localStorage.getItem(getUserKey('salary_v3'));
+      const stored = localStorage.getItem(getUserKey('salary'));
       if (stored) return { ...DEFAULT_SALARY_CONFIG, ...JSON.parse(stored) };
       return DEFAULT_SALARY_CONFIG;
     } catch {
@@ -382,7 +465,7 @@ export const storageService = {
 
   saveSalaryConfig(config: SalaryConfig): void {
     if (!activeUserId) return;
-    localStorage.setItem(getUserKey('salary_v3'), JSON.stringify(config));
+    localStorage.setItem(getUserKey('salary'), JSON.stringify(config));
   },
 
   // --- AUSZAHLUNGS-OVERRIDES & NACHFORERUNGEN (USER SCOPED) ---
@@ -390,7 +473,7 @@ export const storageService = {
   getPayoutOverrides(): Record<string, MonthPayoutOverride> {
     if (!activeUserId) return {};
     try {
-      const stored = localStorage.getItem(getUserKey('payout_overrides_v3'));
+      const stored = localStorage.getItem(getUserKey('payout_overrides'));
       if (stored) return JSON.parse(stored);
       return {};
     } catch {
@@ -403,9 +486,10 @@ export const storageService = {
     const current = this.getPayoutOverrides();
     current[override.yearMonth] = {
       ...current[override.yearMonth],
-      ...override
+      ...override,
+      updatedAt: new Date().toISOString()
     };
-    localStorage.setItem(getUserKey('payout_overrides_v3'), JSON.stringify(current));
+    localStorage.setItem(getUserKey('payout_overrides'), JSON.stringify(current));
     return current;
   },
 
@@ -413,14 +497,14 @@ export const storageService = {
     if (!activeUserId) return {};
     const current = this.getPayoutOverrides();
     delete current[yearMonth];
-    localStorage.setItem(getUserKey('payout_overrides_v3'), JSON.stringify(current));
+    localStorage.setItem(getUserKey('payout_overrides'), JSON.stringify(current));
     return current;
   },
 
   getResolvedClaims(): Record<string, ResolvedClaimStatus> {
     if (!activeUserId) return {};
     try {
-      const stored = localStorage.getItem(getUserKey('resolved_claims_v3'));
+      const stored = localStorage.getItem(getUserKey('resolved_claims'));
       if (stored) return JSON.parse(stored);
       return {};
     } catch {
@@ -438,19 +522,19 @@ export const storageService = {
       resolvedDate: isResolved ? (current[claimId]?.resolvedDate || dateStr) : undefined,
       updatedAt: now.toISOString()
     };
-    localStorage.setItem(getUserKey('resolved_claims_v3'), JSON.stringify(current));
+    localStorage.setItem(getUserKey('resolved_claims'), JSON.stringify(current));
     return current;
   },
 
   saveAllResolvedClaims(claims: Record<string, ResolvedClaimStatus>): Record<string, ResolvedClaimStatus> {
     if (!activeUserId) return claims;
-    localStorage.setItem(getUserKey('resolved_claims_v3'), JSON.stringify(claims));
+    localStorage.setItem(getUserKey('resolved_claims'), JSON.stringify(claims));
     return claims;
   },
 
   saveAllPayoutOverrides(overrides: Record<string, MonthPayoutOverride>): Record<string, MonthPayoutOverride> {
     if (!activeUserId) return overrides;
-    localStorage.setItem(getUserKey('payout_overrides_v3'), JSON.stringify(overrides));
+    localStorage.setItem(getUserKey('payout_overrides'), JSON.stringify(overrides));
     return overrides;
   },
 
@@ -465,7 +549,7 @@ export const storageService = {
     const resolvedClaims = this.getResolvedClaims();
 
     return {
-      version: '3.1.2',
+      version: '3.2.0',
       timestamp: new Date().toISOString(),
       userProfile: profile,
       salaryConfig: salary,
@@ -478,7 +562,7 @@ export const storageService = {
 
   restoreBackup(backupJson: any): { success: boolean; shiftCount: number; message: string } {
     if (!activeUserId) {
-      return { success: false, shiftCount: 0, message: 'Kein aktiver Benutzer ausgewählt.' };
+      return { success: false, shiftCount: 0, message: 'Kein aktiver Benutzer angemeldet.' };
     }
     try {
       if (!backupJson || typeof backupJson !== 'object') {

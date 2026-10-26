@@ -34,6 +34,7 @@ import { VaultConfig } from './components/Settings/VaultConfig';
 import { AuthLockScreen } from './components/Auth/AuthLockScreen';
 import { OnboardingModal } from './components/Auth/OnboardingModal';
 import { SyncModal } from './components/Auth/SyncModal';
+import { CloudStatusModal } from './components/Auth/CloudStatusModal';
 import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './services/vaultService';
 import { setDecryptedHistoricalRecords, setDecryptedInitialClaims } from './services/clinicPayrollEngine';
 
@@ -54,6 +55,7 @@ import {
   MonthPayoutOverride,
   ResolvedClaimStatus,
   CloudUserData,
+  CloudBackupItem,
   AppUserSession
 } from './types';
 
@@ -65,19 +67,24 @@ export const App: React.FC = () => {
   const [activeSession, setActiveSession] = useState<AppUserSession | null>(() => storageService.getActiveSession());
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState<boolean>(false);
+  const [cloudShiftCount, setCloudShiftCount] = useState<number | null>(null);
+  const [backupHistory, setBackupHistory] = useState<CloudBackupItem[]>([]);
   const [vaultKey, setVaultKey] = useState<string>(() => vaultService.getDefaultPass());
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Aktuelles Datum für Default-Werte
+  // Aktuelles Datum für Default-Werte & Dynamischer Startmonat
   const now = new Date();
-  const defaultYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const defaultDate = now.toISOString().split('T')[0];
 
-  const [currentYearMonth, setCurrentYearMonth] = useState<string>(defaultYearMonth);
+  const [shifts, setShifts] = useState<ShiftEntry[]>([]);
+  const [currentYearMonth, setCurrentYearMonth] = useState<string>(() => {
+    const savedShifts = storageService.getShifts();
+    return storageService.determineInitialMonth(savedShifts);
+  });
   const [selectedDate, setSelectedDate] = useState<string>(defaultDate);
 
   // App Daten (im unautorisierten Zustand: 0 Schichten im Speicher!)
-  const [shifts, setShifts] = useState<ShiftEntry[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE);
   const [presets, setPresets] = useState<PresetShift[]>(DEFAULT_PRESETS);
   const [salaryConfig, setSalaryConfig] = useState<SalaryConfig>(DEFAULT_SALARY_CONFIG);
@@ -174,23 +181,26 @@ export const App: React.FC = () => {
     }
   }, [loadAllData, unlockMohammadData]);
 
-  // Helper zum Anwenden von Daten aus der Google Cloud (Deduplizierung & Timestamp-Merge)
+  // Aktuelle User-Kennung für Cloud-Dokumentpfad (users/{email.toLowerCase().trim()})
+  const getUserIdentifier = useCallback(() => {
+    return firebaseUser?.email || activeSession?.email || firebaseUser?.uid || activeSession?.id || '';
+  }, [firebaseUser, activeSession]);
+
+  // Helper zum Anwenden von Daten aus der Google Cloud (Deduplizierung & Smart-Merge)
   const applyCloudData = useCallback((cloudData: CloudUserData) => {
     if (!cloudData) return;
 
-    // 1. Schichten zusammenführen
+    // 1. Intelligenter Smart-Merge auf Eintrags-Ebene (Zero Data Loss)
     if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
       const currentLocal = storageService.getShifts();
-      const shiftMap = new Map<string, ShiftEntry>();
-      for (const s of currentLocal) {
-        if (s && s.datum) shiftMap.set(s.datum, s);
-      }
-      for (const s of cloudData.shifts) {
-        if (s && s.datum) shiftMap.set(s.datum, s);
-      }
-      const merged = Array.from(shiftMap.values()).sort((a, b) => a.datum.localeCompare(b.datum));
+      const merged = firebaseService.smartMergeShifts(currentLocal, cloudData.shifts);
       storageService.saveShifts(merged);
       setShifts(merged);
+      setCloudShiftCount(cloudData.shifts.length);
+
+      // Dynamischer Startmonat: Neuester Monat mit Diensten statt statischer Default
+      const targetMonth = storageService.determineInitialMonth(merged);
+      setCurrentYearMonth(targetMonth);
     }
 
     // 2. Profil aktualisieren
@@ -206,29 +216,17 @@ export const App: React.FC = () => {
     // 3. Status erledigter Nachforderungen (resolvedClaims) mergen
     if (cloudData.resolvedClaims && typeof cloudData.resolvedClaims === 'object') {
       const localClaims = storageService.getResolvedClaims();
-      const mergedClaims: Record<string, ResolvedClaimStatus> = { ...localClaims };
-
-      for (const [k, cloudClaim] of Object.entries(cloudData.resolvedClaims)) {
-        const localClaim = mergedClaims[k];
-        if (!localClaim || !localClaim.updatedAt || !cloudClaim.updatedAt) {
-          mergedClaims[k] = cloudClaim;
-        } else {
-          if (new Date(cloudClaim.updatedAt) >= new Date(localClaim.updatedAt)) {
-            mergedClaims[k] = cloudClaim;
-          }
-        }
-      }
-
+      const mergedClaims = firebaseService.smartMergeClaims(localClaims, cloudData.resolvedClaims);
       storageService.saveAllResolvedClaims(mergedClaims);
-      setResolvedClaims({ ...mergedClaims });
+      setResolvedClaims(mergedClaims);
     }
 
     // 4. Bank-Ist Auszahlungs-Overrides mergen
     if (cloudData.payoutOverrides && typeof cloudData.payoutOverrides === 'object') {
       const localOverrides = storageService.getPayoutOverrides();
-      const mergedOverrides = { ...localOverrides, ...cloudData.payoutOverrides };
+      const mergedOverrides = firebaseService.smartMergeOverrides(localOverrides, cloudData.payoutOverrides);
       storageService.saveAllPayoutOverrides(mergedOverrides);
-      setPayoutOverrides({ ...mergedOverrides });
+      setPayoutOverrides(mergedOverrides);
     }
 
     // 5. Gehaltskonfiguration
@@ -239,25 +237,31 @@ export const App: React.FC = () => {
       setSalaryConfig(mergedSalary);
     }
 
+    // 6. Rollback-Backups aktualisieren
+    if (cloudData.backupHistory && Array.isArray(cloudData.backupHistory)) {
+      setBackupHistory(cloudData.backupHistory);
+    }
+
     setLastSyncTime(new Date());
   }, []);
 
-  // Manueller oder automatischer Cloud-Pull (mit AES-256-GCM Verschlüsselung)
+  // Manueller oder automatischer Cloud-Pull (Smart-Merge & Zero Data Loss)
   const handleManualSync = useCallback(async (showNotification: boolean = true) => {
-    if (!firebaseUser) {
+    const userIdentifier = getUserIdentifier();
+    if (!userIdentifier || !firebaseUser) {
       if (showNotification) {
-        setIsSyncModalOpen(true);
+        setIsCloudModalOpen(true);
       }
       return;
     }
 
     setIsSyncing(true);
     try {
-      const cloudData = await firebaseService.loadUserData(firebaseUser.uid, vaultKey);
+      const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
       if (cloudData) {
         applyCloudData(cloudData);
 
-        // Aktuellen Stand auch verschlüsselt in die Cloud spiegeln
+        // Aktuellen konsolidierten Stand verschlüsselt zurück spiegeln
         const currentShifts = storageService.getShifts();
         const currentProfile = storageService.getProfile();
         const currentClaims = storageService.getResolvedClaims();
@@ -265,7 +269,7 @@ export const App: React.FC = () => {
         const currentSalary = storageService.getSalaryConfig();
 
         await firebaseService.saveUserData(
-          firebaseUser.uid,
+          userIdentifier,
           currentShifts,
           currentProfile,
           currentClaims,
@@ -275,29 +279,31 @@ export const App: React.FC = () => {
         );
 
         if (showNotification) {
-          showToast('☁️ Daten mit AES-256-GCM erfolgreich synchronisiert!', 'success');
+          showToast('☁️ Daten mit Gmail-Cloud synchronisiert (Smart-Merge aktiv)!', 'success');
         }
       } else {
-        // Erste Initialisierung in Firestore
+        // Erstinitialisierung für diesen Gmail-Nutzer
         const currentShifts = storageService.getShifts();
         const currentProfile = storageService.getProfile();
         const currentClaims = storageService.getResolvedClaims();
         const currentOverrides = storageService.getPayoutOverrides();
         const currentSalary = storageService.getSalaryConfig();
 
-        await firebaseService.saveUserData(
-          firebaseUser.uid,
-          currentShifts,
-          currentProfile,
-          currentClaims,
-          currentOverrides,
-          currentSalary,
-          vaultKey
-        );
+        if (currentShifts.length > 0) {
+          await firebaseService.saveUserData(
+            userIdentifier,
+            currentShifts,
+            currentProfile,
+            currentClaims,
+            currentOverrides,
+            currentSalary,
+            vaultKey
+          );
+        }
         setLastSyncTime(new Date());
 
         if (showNotification) {
-          showToast('☁️ Cloud-Konto verbunden! Daten AES-256-GCM verschlüsselt.', 'success');
+          showToast('☁️ Gmail-Cloud verbunden! Dein Account ist sicher eingerichtet.', 'success');
         }
       }
     } catch (err: any) {
@@ -308,21 +314,27 @@ export const App: React.FC = () => {
     } finally {
       setIsSyncing(false);
     }
-  }, [firebaseUser, vaultKey, applyCloudData, showToast]);
+  }, [getUserIdentifier, firebaseUser, vaultKey, applyCloudData, showToast]);
 
-  // Firebase Auth Listener
+  // Firebase Auth Listener mit strikter Nutzer-Isolation & Smart-Merge beim Login
   useEffect(() => {
     const unsubscribe = firebaseService.onAuthChanged(async (user) => {
       setFirebaseUser(user);
       if (user) {
-        const isOwner = isMohammad(user.email);
+        const userEmail = user.email ? user.email.toLowerCase().trim() : '';
+        const isOwner = isMohammad(userEmail);
+        const userIdentifier = userEmail || user.uid;
+
+        // Scoped LocalStorage umschalten
+        storageService.switchUser(userIdentifier);
+
         const session: AppUserSession = {
           id: user.uid,
-          name: user.displayName || user.email?.split('@')[0] || 'Mitarbeiter',
+          name: user.displayName || userEmail.split('@')[0] || 'Mitarbeiter',
           email: user.email || undefined,
           authProvider: 'google',
           isOwner,
-          isOnboarded: isOwner || storageService.isUserOnboarded(user.uid),
+          isOnboarded: isOwner || storageService.isUserOnboarded(userIdentifier),
           avatarUrl: user.photoURL || undefined,
           lastLogin: new Date().toISOString()
         };
@@ -330,32 +342,80 @@ export const App: React.FC = () => {
         storageService.setActiveSession(session);
         setActiveSession(session);
 
-        if (isOwner) {
+        // REGEL 3: AUTOMATISCHE RETTUNG MEINER ALTEN BESTANDSDATEN (NUR FÜR MOHAMMAD)
+        if (isOwner && userEmail) {
+          storageService.migrateLegacyMohammadDataIfNeeded(userEmail);
           await unlockMohammadData();
         } else {
           setDecryptedHistoricalRecords([]);
           setDecryptedInitialClaims([]);
-          if (!storageService.isUserOnboarded(user.uid)) {
+          if (!storageService.isUserOnboarded(userIdentifier)) {
             setShowOnboarding(true);
           }
         }
 
+        // Lokalen Stand laden
         loadAllData();
-        handleManualSync(false);
+
+        // REGEL 2: ZERO-DATA-LOSS SCHUTZ BEIM LOGIN
+        // Sofort Cloud-Stand prüfen und Smart-Merge ausführen
+        try {
+          setIsSyncing(true);
+          const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+          if (cloudData) {
+            applyCloudData(cloudData);
+
+            // Zurückspiegeln falls lokale Schichten vorhanden waren
+            const mergedShifts = storageService.getShifts();
+            const mergedProfile = storageService.getProfile();
+            const mergedClaims = storageService.getResolvedClaims();
+            const mergedOverrides = storageService.getPayoutOverrides();
+            const mergedSalary = storageService.getSalaryConfig();
+
+            await firebaseService.saveUserData(
+              userIdentifier,
+              mergedShifts,
+              mergedProfile,
+              mergedClaims,
+              mergedOverrides,
+              mergedSalary,
+              vaultKey
+            );
+          } else {
+            // Falls Cloud leer ist und lokal Schichten vorliegen, in Cloud hochladen
+            const localShifts = storageService.getShifts();
+            if (localShifts.length > 0) {
+              await firebaseService.saveUserData(
+                userIdentifier,
+                localShifts,
+                storageService.getProfile(),
+                storageService.getResolvedClaims(),
+                storageService.getPayoutOverrides(),
+                storageService.getSalaryConfig(),
+                vaultKey
+              );
+            }
+          }
+        } catch (e) {
+          console.warn("Initialer Cloud-Abgleich fehlgeschlagen:", e);
+        } finally {
+          setIsSyncing(false);
+        }
       }
     });
 
     return () => unsubscribe();
-  }, [handleManualSync, unlockMohammadData, loadAllData]);
+  }, [vaultKey, applyCloudData, unlockMohammadData, loadAllData]);
 
-  // Firestore Realtime-Listener (AES-256-GCM verschlüsselt)
+  // Firestore Realtime-Listener für das spezifische Gmail-Konto
   useEffect(() => {
     if (!firebaseUser) return;
-    const unsubscribe = firebaseService.subscribeUserData(firebaseUser.uid, (cloudData) => {
+    const userIdentifier = firebaseUser.email || firebaseUser.uid;
+    const unsubscribe = firebaseService.subscribeUserData(userIdentifier, (cloudData) => {
       applyCloudData(cloudData);
-    }, vaultKey);
+    });
     return () => unsubscribe();
-  }, [firebaseUser, applyCloudData, vaultKey]);
+  }, [firebaseUser, applyCloudData]);
 
   // Automatischer Pull bei Tab-Wechsel / Smartphone-Reaktivierung
   useEffect(() => {
@@ -373,6 +433,196 @@ export const App: React.FC = () => {
       window.removeEventListener('focus', handleVisibilityOrFocus);
     };
   }, [firebaseUser, handleManualSync]);
+
+  // ==========================================
+  // CLOUD STATUS MENÜ AKTIONEN (REGEL 4)
+  // ==========================================
+
+  // Button 2: Daten aus Gmail-Cloud neu laden (1:1 Stand aus Cloud übernehmen)
+  const handlePullFromCloud = async () => {
+    const userIdentifier = getUserIdentifier();
+    if (!userIdentifier) throw new Error("Kein Benutzer angemeldet");
+
+    setIsSyncing(true);
+    try {
+      const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+      if (!cloudData || !cloudData.shifts || cloudData.shifts.length === 0) {
+        showToast("Keine Dienste in der Gmail-Cloud gefunden.", "info");
+        return;
+      }
+
+      storageService.saveShifts(cloudData.shifts);
+      setShifts(cloudData.shifts);
+      setCloudShiftCount(cloudData.shifts.length);
+
+      if (cloudData.profile) {
+        const mergedProfile = { ...storageService.getProfile(), ...cloudData.profile } as UserProfile;
+        storageService.saveProfile(mergedProfile);
+        setUserProfile(mergedProfile);
+      }
+      if (cloudData.resolvedClaims) {
+        storageService.saveAllResolvedClaims(cloudData.resolvedClaims);
+        setResolvedClaims(cloudData.resolvedClaims);
+      }
+      if (cloudData.payoutOverrides) {
+        storageService.saveAllPayoutOverrides(cloudData.payoutOverrides);
+        setPayoutOverrides(cloudData.payoutOverrides);
+      }
+      if (cloudData.salaryConfig) {
+        const mergedSalary = { ...storageService.getSalaryConfig(), ...cloudData.salaryConfig } as SalaryConfig;
+        storageService.saveSalaryConfig(mergedSalary);
+        setSalaryConfig(mergedSalary);
+      }
+      if (cloudData.backupHistory) {
+        setBackupHistory(cloudData.backupHistory);
+      }
+
+      const initialMonth = storageService.determineInitialMonth(cloudData.shifts);
+      setCurrentYearMonth(initialMonth);
+      setLastSyncTime(new Date());
+
+      showToast(`⬇️ ${cloudData.shifts.length} Dienste aus Gmail-Cloud neu geladen!`, 'success');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Button 3: Lokalen Gerätestand in Gmail-Cloud sichern (mit Backup-Historie)
+  const handlePushToCloud = async () => {
+    const userIdentifier = getUserIdentifier();
+    if (!userIdentifier) throw new Error("Kein Benutzer angemeldet");
+
+    setIsSyncing(true);
+    try {
+      const res = await firebaseService.saveUserData(
+        userIdentifier,
+        shifts,
+        userProfile,
+        resolvedClaims,
+        payoutOverrides,
+        salaryConfig,
+        vaultKey
+      );
+
+      if (res.success) {
+        setLastSyncTime(new Date());
+        setCloudShiftCount(shifts.length);
+        showToast(`⬆️ ${shifts.length} Dienste erfolgreich in Gmail-Cloud gesichert!`, 'success');
+
+        const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+        if (cloudData?.backupHistory) {
+          setBackupHistory(cloudData.backupHistory);
+        }
+      } else {
+        showToast(res.message, 'error');
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Button 4a: Lokale Backup-Datei (JSON) herunterladen
+  const handleDownloadJsonBackup = () => {
+    try {
+      const backup = storageService.createBackup();
+      const jsonStr = JSON.stringify(backup, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().split('T')[0];
+      const namePart = (userProfile.name || activeSession?.name || 'Mitarbeiter').replace(/\s+/g, '_');
+      a.href = url;
+      a.download = `Zeiterfassung_${namePart}_Backup_${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('📥 Lokale JSON-Backup-Datei erfolgreich gespeichert!', 'success');
+    } catch (e: any) {
+      showToast(e.message || 'Fehler beim Erstellen der Backup-Datei', 'error');
+    }
+  };
+
+  // Button 4b: Lokale Backup-Datei (JSON) wiederherstellen
+  const handleRestoreJsonBackup = async (file: File) => {
+    return new Promise<void>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const text = event.target?.result as string;
+          const parsed = JSON.parse(text);
+          const result = storageService.restoreBackup(parsed);
+          if (result.success) {
+            loadAllData();
+            showToast(result.message, 'success');
+            // Bei Bedarf in Cloud spiegeln
+            const userIdentifier = getUserIdentifier();
+            if (userIdentifier && firebaseUser) {
+              await handlePushToCloud();
+            }
+            resolve();
+          } else {
+            showToast(result.message, 'error');
+            reject(new Error(result.message));
+          }
+        } catch (e: any) {
+          showToast('Ungültige Backup-Datei.', 'error');
+          reject(e);
+        }
+      };
+      reader.onerror = () => reject(new Error('Fehler beim Lesen der Datei'));
+      reader.readAsText(file);
+    });
+  };
+
+  // Rollback auf eine frühere Cloud-Version
+  const handleRestoreBackupVersion = async (backup: CloudBackupItem) => {
+    if (!backup || !backup.shifts) return;
+    const confirmRestore = window.confirm(
+      `Möchtest du wirklich den Datenstand vom ${new Date(backup.timestamp).toLocaleString('de-DE')} (${backup.shiftCount} Dienste) wiederherstellen?`
+    );
+    if (!confirmRestore) return;
+
+    storageService.saveShifts(backup.shifts);
+    setShifts(backup.shifts);
+
+    let restoredProfile: UserProfile = userProfile;
+    if (backup.profile) {
+      restoredProfile = { ...storageService.getProfile(), ...backup.profile } as UserProfile;
+      storageService.saveProfile(restoredProfile);
+      setUserProfile(restoredProfile);
+    }
+    if (backup.resolvedClaims) {
+      storageService.saveAllResolvedClaims(backup.resolvedClaims);
+      setResolvedClaims(backup.resolvedClaims);
+    }
+    if (backup.payoutOverrides) {
+      storageService.saveAllPayoutOverrides(backup.payoutOverrides);
+      setPayoutOverrides(backup.payoutOverrides);
+    }
+    let restoredSalary: SalaryConfig = salaryConfig;
+    if (backup.salaryConfig) {
+      restoredSalary = { ...storageService.getSalaryConfig(), ...backup.salaryConfig } as SalaryConfig;
+      storageService.saveSalaryConfig(restoredSalary);
+      setSalaryConfig(restoredSalary);
+    }
+
+    const userIdentifier = getUserIdentifier();
+    if (userIdentifier) {
+      await firebaseService.saveUserData(
+        userIdentifier,
+        backup.shifts,
+        restoredProfile,
+        backup.resolvedClaims || resolvedClaims,
+        backup.payoutOverrides || payoutOverrides,
+        restoredSalary,
+        vaultKey
+      );
+    }
+
+    setLastSyncTime(new Date());
+    showToast(`↩️ Version vom ${new Date(backup.timestamp).toLocaleTimeString('de-DE')} erfolgreich wiederhergestellt!`, 'success');
+  };
 
   // Theme Sync
   useEffect(() => {
@@ -395,15 +645,19 @@ export const App: React.FC = () => {
       setIsSyncing(true);
       setAuthError(null);
       const user = await firebaseService.loginWithGoogle();
-      const isOwner = isMohammad(user.email);
+      const userEmail = user.email ? user.email.toLowerCase().trim() : '';
+      const isOwner = isMohammad(userEmail);
+      const userIdentifier = userEmail || user.uid;
+
+      storageService.switchUser(userIdentifier);
 
       const session: AppUserSession = {
         id: user.uid,
-        name: user.displayName || user.email?.split('@')[0] || 'Mitarbeiter',
+        name: user.displayName || userEmail.split('@')[0] || 'Mitarbeiter',
         email: user.email || undefined,
         authProvider: 'google',
         isOwner,
-        isOnboarded: isOwner || storageService.isUserOnboarded(user.uid),
+        isOnboarded: isOwner || storageService.isUserOnboarded(userIdentifier),
         avatarUrl: user.photoURL || undefined,
         lastLogin: new Date().toISOString()
       };
@@ -412,12 +666,13 @@ export const App: React.FC = () => {
       setActiveSession(session);
       setFirebaseUser(user);
 
-      if (isOwner) {
+      if (isOwner && userEmail) {
+        storageService.migrateLegacyMohammadDataIfNeeded(userEmail);
         await unlockMohammadData();
       } else {
         setDecryptedHistoricalRecords([]);
         setDecryptedInitialClaims([]);
-        if (!storageService.isUserOnboarded(user.uid)) {
+        if (!storageService.isUserOnboarded(userIdentifier)) {
           setShowOnboarding(true);
         }
       }
@@ -546,7 +801,7 @@ export const App: React.FC = () => {
       try {
         setIsSyncing(true);
         await firebaseService.saveUserData(
-          firebaseUser.uid,
+          getUserIdentifier(),
           updated,
           userProfile,
           resolvedClaims,
@@ -573,7 +828,7 @@ export const App: React.FC = () => {
 
     if (firebaseUser) {
       firebaseService.saveUserData(
-        firebaseUser.uid,
+        getUserIdentifier(),
         updated,
         userProfile,
         resolvedClaims,
@@ -594,7 +849,7 @@ export const App: React.FC = () => {
           setShifts(restored);
           if (firebaseUser) {
             firebaseService.saveUserData(
-              firebaseUser.uid,
+              getUserIdentifier(),
               restored,
               userProfile,
               resolvedClaims,
@@ -626,7 +881,7 @@ export const App: React.FC = () => {
       try {
         setIsSyncing(true);
         await firebaseService.saveUserData(
-          firebaseUser.uid,
+          getUserIdentifier(),
           shifts,
           userProfile,
           updated,
@@ -652,7 +907,7 @@ export const App: React.FC = () => {
       try {
         setIsSyncing(true);
         await firebaseService.saveUserData(
-          firebaseUser.uid,
+          getUserIdentifier(),
           shifts,
           userProfile,
           resolvedClaims,
@@ -677,7 +932,7 @@ export const App: React.FC = () => {
       try {
         setIsSyncing(true);
         await firebaseService.saveUserData(
-          firebaseUser.uid,
+          getUserIdentifier(),
           shifts,
           userProfile,
           resolvedClaims,
@@ -700,7 +955,7 @@ export const App: React.FC = () => {
     setUserProfile(profile);
     if (firebaseUser) {
       firebaseService.saveUserData(
-        firebaseUser.uid,
+        getUserIdentifier(),
         shifts,
         profile,
         resolvedClaims,
@@ -722,7 +977,7 @@ export const App: React.FC = () => {
     setSalaryConfig(config);
     if (firebaseUser) {
       firebaseService.saveUserData(
-        firebaseUser.uid,
+        getUserIdentifier(),
         shifts,
         userProfile,
         resolvedClaims,
@@ -775,6 +1030,27 @@ export const App: React.FC = () => {
         showToast={showToast}
       />
 
+      {/* Gmail-Cloud Status Menü (Regel 4: Zero Data Loss, Smart-Merge & Rollback) */}
+      <CloudStatusModal
+        isOpen={isCloudModalOpen}
+        onClose={() => setIsCloudModalOpen(false)}
+        firebaseUser={firebaseUser}
+        activeSession={activeSession}
+        localShiftCount={shifts.length}
+        cloudShiftCount={cloudShiftCount}
+        lastSyncTime={lastSyncTime}
+        backupHistory={backupHistory}
+        isSyncing={isSyncing}
+        onSmartMergeSync={async () => { await handleManualSync(true); }}
+        onPullFromCloud={handlePullFromCloud}
+        onPushToCloud={handlePushToCloud}
+        onDownloadJsonBackup={handleDownloadJsonBackup}
+        onRestoreJsonBackup={handleRestoreJsonBackup}
+        onRestoreBackupVersion={handleRestoreBackupVersion}
+        onOpenOfflineSyncModal={() => setIsSyncModalOpen(true)}
+        showToast={showToast}
+      />
+
       {/* Sticky Header mit Name, Blue-Logout-Button, Sync-Trigger und Monatsnavigation */}
       <Header
         currentYearMonth={currentYearMonth}
@@ -789,7 +1065,8 @@ export const App: React.FC = () => {
         onLogout={handleLogout}
         isSyncing={isSyncing}
         onManualSync={() => handleManualSync(true)}
-        onOpenSyncModal={() => setIsSyncModalOpen(true)}
+        onOpenSyncModal={() => setIsCloudModalOpen(true)}
+        onOpenCloudModal={() => setIsCloudModalOpen(true)}
         lastSyncTime={lastSyncTime}
         onLockApp={handleLogout}
       />
@@ -995,20 +1272,17 @@ export const App: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => setIsCloudModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600/30 to-blue-600/30 hover:from-cyan-600/40 hover:to-blue-600/40 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                  >
+                    Gmail-Cloud Menü 🟢
+                  </button>
+                  <button
                     onClick={() => setIsSyncModalOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all active:scale-95"
+                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold"
                   >
                     Sync-Code (PC ↔ Handy)
                   </button>
-                  {firebaseUser && (
-                    <button
-                      onClick={() => handleManualSync(true)}
-                      disabled={isSyncing}
-                      className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-semibold"
-                    >
-                      Jetzt synchronisieren
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
