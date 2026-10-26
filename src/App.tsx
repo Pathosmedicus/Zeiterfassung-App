@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { User } from 'firebase/auth';
 import { Header } from './components/Header';
@@ -99,6 +99,12 @@ export const App: React.FC = () => {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const vaultKeyRef = useRef<string>(vaultKey);
+  useEffect(() => {
+    vaultKeyRef.current = vaultKey;
+  }, [vaultKey]);
+  const hasUnlockedRef = useRef<boolean>(false);
+  const lastFocusSyncRef = useRef<number>(0);
 
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -155,15 +161,15 @@ export const App: React.FC = () => {
   }, [firebaseUser, activeSession]);
 
   // Exklusives Entschlüsseln von Mohammads Seed (nur bei Mohammads Konto!)
-  const unlockMohammadData = useCallback(async (keyToUse?: string) => {
-    const activeKey = keyToUse || vaultKey || '1971';
+  const unlockMohammadData = useCallback(async (keyToUse?: string, force: boolean = false) => {
+    if (hasUnlockedRef.current && !force) return;
+    const activeKey = keyToUse || vaultKeyRef.current || '1971';
     try {
       const seed = await vaultService.unlockSeed(activeKey);
       if (seed && seed.shifts) {
         const currentShifts = storageService.getShifts();
         const octShifts = currentShifts.filter(s => s.datum?.startsWith('2026-10'));
         const octHours = octShifts.reduce((sum, s) => sum + (s.nettoStunden || 0), 0);
-        // Falls noch keine Schichten vorliegen ODER der Oktober durch den alten Smart-Merge korrumpiert war (>30.42h oder >5 Dienste)
         const isCorrupted = octShifts.length > 5 || Math.abs(octHours - 30.42) > 0.05;
 
         if (!storageService.hasSavedShifts() || isCorrupted) {
@@ -174,27 +180,15 @@ export const App: React.FC = () => {
             storageService.saveProfile(seed.profile);
             setUserProfile(seed.profile);
           }
-          const userIdentifier = getUserIdentifier();
-          if (userIdentifier && firebaseUser) {
-            firebaseService.saveUserData(
-              userIdentifier,
-              seed.shifts,
-              seed.profile || storageService.getProfile(),
-              storageService.getResolvedClaims(),
-              storageService.getPayoutOverrides(),
-              storageService.getSalaryConfig(),
-              vaultKey,
-              true
-            ).catch(console.warn);
-          }
         }
         setDecryptedHistoricalRecords(seed.payrollRecords || []);
         setDecryptedInitialClaims(seed.claims || []);
+        hasUnlockedRef.current = true;
       }
     } catch (e) {
       console.warn("Konnte Mohammads Seed nicht entschlüsseln:", e);
     }
-  }, [vaultKey, getUserIdentifier, firebaseUser]);
+  }, []);
 
   // Initialisierung beim Start der App, wenn bereits eine Sitzung aktiv ist
   useEffect(() => {
@@ -275,7 +269,7 @@ export const App: React.FC = () => {
     }
 
     setLastSyncTime(new Date());
-  }, [getUserIdentifier, firebaseUser, vaultKey]);
+  }, []);
 
   // Manueller oder automatischer Cloud-Pull (Smart-Merge & Zero Data Loss)
   const handleManualSync = useCallback(async (showNotification: boolean = true) => {
@@ -287,31 +281,13 @@ export const App: React.FC = () => {
       return;
     }
 
-    setIsSyncing(true);
+    if (showNotification) {
+      setIsSyncing(true);
+    }
     try {
-      const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+      const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
       if (cloudData) {
         applyCloudData(cloudData);
-
-        // Aktuellen konsolidierten Stand verschlüsselt zurück spiegeln
-        const currentShifts = storageService.getShifts();
-        const currentProfile = storageService.getProfile();
-        const currentClaims = storageService.getResolvedClaims();
-        const currentOverrides = storageService.getPayoutOverrides();
-        const currentSalary = storageService.getSalaryConfig();
-        const currentDeleted = storageService.getDeletedShifts();
-
-        await firebaseService.saveUserData(
-          userIdentifier,
-          currentShifts,
-          currentProfile,
-          currentClaims,
-          currentOverrides,
-          currentSalary,
-          vaultKey,
-          false,
-          currentDeleted
-        );
 
         if (showNotification) {
           showToast('☁️ Daten mit Gmail-Cloud synchronisiert!', 'success');
@@ -333,7 +309,7 @@ export const App: React.FC = () => {
             currentClaims,
             currentOverrides,
             currentSalary,
-            vaultKey,
+            vaultKeyRef.current,
             false,
             currentDeleted
           );
@@ -350,9 +326,11 @@ export const App: React.FC = () => {
         showToast(err.message || 'Fehler bei der Cloud-Synchronisation.', 'error');
       }
     } finally {
-      setIsSyncing(false);
+      if (showNotification) {
+        setIsSyncing(false);
+      }
     }
-  }, [getUserIdentifier, firebaseUser, vaultKey, applyCloudData, showToast]);
+  }, [getUserIdentifier, firebaseUser, applyCloudData, showToast]);
 
   // Firebase Auth Listener mit strikter Nutzer-Isolation & Smart-Merge beim Login
   useEffect(() => {
@@ -399,7 +377,7 @@ export const App: React.FC = () => {
         // Sofort Cloud-Stand prüfen und anwenden
         try {
           setIsSyncing(true);
-          const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+          const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
           if (cloudData) {
             applyCloudData(cloudData);
           } else {
@@ -413,7 +391,7 @@ export const App: React.FC = () => {
                 storageService.getResolvedClaims(),
                 storageService.getPayoutOverrides(),
                 storageService.getSalaryConfig(),
-                vaultKey,
+                vaultKeyRef.current,
                 false
               );
             }
@@ -427,22 +405,26 @@ export const App: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, [vaultKey, applyCloudData, unlockMohammadData, loadAllData]);
+  }, [applyCloudData, unlockMohammadData, loadAllData]);
 
   // Firestore Realtime-Listener für das spezifische Gmail-Konto
+  const activeUserUid = firebaseUser?.uid;
   useEffect(() => {
-    if (!firebaseUser) return;
-    const userIdentifier = firebaseUser.email || firebaseUser.uid;
+    if (!activeUserUid || !firebaseUser) return;
+    const userIdentifier = firebaseUser.email || activeUserUid;
     const unsubscribe = firebaseService.subscribeUserData(userIdentifier, (cloudData) => {
       applyCloudData(cloudData);
     });
     return () => unsubscribe();
-  }, [firebaseUser, applyCloudData]);
+  }, [activeUserUid, applyCloudData]);
 
-  // Automatischer Pull bei Tab-Wechsel / Smartphone-Reaktivierung
+  // Automatischer Pull bei Tab-Wechsel / Smartphone-Reaktivierung (mit 30s Drosselung)
   useEffect(() => {
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible' && firebaseUser) {
+        const now = Date.now();
+        if (now - lastFocusSyncRef.current < 30000) return;
+        lastFocusSyncRef.current = now;
         handleManualSync(false);
       }
     };
@@ -454,7 +436,7 @@ export const App: React.FC = () => {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       window.removeEventListener('focus', handleVisibilityOrFocus);
     };
-  }, [firebaseUser, handleManualSync]);
+  }, [activeUserUid, handleManualSync]);
 
   // ==========================================
   // CLOUD STATUS MENÜ AKTIONEN (REGEL 4)
@@ -467,7 +449,7 @@ export const App: React.FC = () => {
 
     setIsSyncing(true);
     try {
-      const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+      const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
       if (!cloudData || !cloudData.shifts || cloudData.shifts.length === 0) {
         showToast("Keine Dienste in der Gmail-Cloud gefunden.", "info");
         return;
@@ -523,7 +505,7 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         salaryConfig,
-        vaultKey,
+        vaultKeyRef.current,
         false,
         storageService.getDeletedShifts()
       );
@@ -533,7 +515,7 @@ export const App: React.FC = () => {
         setCloudShiftCount(shifts.length);
         showToast(`⬆️ ${shifts.length} Dienste erfolgreich in Gmail-Cloud gesichert!`, 'success');
 
-        const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKey);
+        const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
         if (cloudData?.backupHistory) {
           setBackupHistory(cloudData.backupHistory);
         }
@@ -762,6 +744,7 @@ export const App: React.FC = () => {
 
   // BLAUER LOGOUT-BUTTON / PROFIL-WECHSEL: Dashboard leeren & zurück zum Anmeldebildschirm
   const handleLogout = useCallback(async () => {
+    hasUnlockedRef.current = false;
     storageService.clearActiveSession();
     vaultService.clearSession();
     await firebaseService.logout();
