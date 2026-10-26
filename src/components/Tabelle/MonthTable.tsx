@@ -11,6 +11,7 @@ interface MonthTableProps {
   onDeleteShift: (datum: string) => void;
   onSelectDateForQuickEntry: (datum: string) => void;
   onCleanDuplicates?: () => void;
+  onRestoreOriginalData?: () => void;
 }
 
 const WOCHENTAGE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
@@ -21,7 +22,8 @@ export const MonthTable: React.FC<MonthTableProps> = ({
   onSaveShift,
   onDeleteShift,
   onSelectDateForQuickEntry,
-  onCleanDuplicates
+  onCleanDuplicates,
+  onRestoreOriginalData
 }) => {
   const [jahrStr, monatStr] = currentYearMonth.split('-');
   const jahr = parseInt(jahrStr, 10);
@@ -124,7 +126,7 @@ export const MonthTable: React.FC<MonthTableProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {onCleanDuplicates && (
             <button
               type="button"
@@ -133,6 +135,17 @@ export const MonthTable: React.FC<MonthTableProps> = ({
               title="Entfernt doppelte Schichten am selben Tag und stellt exakte Monatsstunden sicher"
             >
               <span>🧹 Doppelte Einträge bereinigen</span>
+            </button>
+          )}
+
+          {onRestoreOriginalData && currentYearMonth === '2026-10' && (
+            <button
+              type="button"
+              onClick={onRestoreOriginalData}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+              title="Setzt Oktober 2026 exakt auf deine 30,42 Originalstunden (5 Dienste) zurück"
+            >
+              <span>🔄 Originaldaten (30,42 h)</span>
             </button>
           )}
 

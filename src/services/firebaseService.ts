@@ -494,9 +494,13 @@ export const firebaseService = {
         const exResolved = exData.resolvedClaims && typeof exData.resolvedClaims === 'object' ? exData.resolvedClaims : {};
         consolidatedClaims = smartMergeClaims(resolvedClaims, exResolved);
 
-        // Merge deletedShifts (Tombstones)
-        const exDeleted = exData.deletedShifts && typeof exData.deletedShifts === 'object' ? exData.deletedShifts : {};
-        consolidatedDeleted = smartMergeDeletedShifts(deletedShifts, exDeleted);
+        if (forceOverwrite) {
+          consolidatedDeleted = { ...deletedShifts };
+        } else {
+          // Merge deletedShifts (Tombstones)
+          const exDeleted = exData.deletedShifts && typeof exData.deletedShifts === 'object' ? exData.deletedShifts : {};
+          consolidatedDeleted = smartMergeDeletedShifts(deletedShifts, exDeleted);
+        }
 
         // ZERO-DATA-LOSS SCHUTZ:
         // Wenn lokal 0 Schichten vorliegen, in der Cloud aber Schichten vorhanden sind und kein forceOverwrite vorliegt:
@@ -533,7 +537,7 @@ export const firebaseService = {
       const cloudPayload: any = {
         email: norm,
         uid: auth?.currentUser?.uid || norm,
-        shifts: smartMergeShifts(shifts, [], consolidatedDeleted),
+        shifts: forceOverwrite ? smartMergeShifts(shifts, [], {}) : smartMergeShifts(shifts, [], consolidatedDeleted),
         profile,
         resolvedClaims: consolidatedClaims,
         payoutOverrides,

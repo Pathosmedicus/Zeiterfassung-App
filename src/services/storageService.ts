@@ -531,6 +531,15 @@ export const storageService = {
     };
   },
 
+  restoreCleanShifts(cleanShifts: ShiftEntry[]): ShiftEntry[] {
+    if (!activeUserId) return [];
+    // 1. Alle Lösch-Tombstones leeren, damit die Originalschichten nicht blockiert werden
+    this.saveDeletedShifts({});
+    // 2. Schichten speichern
+    this.saveShifts(cleanShifts);
+    return this.getShifts();
+  },
+
   deleteMonth(yearMonth: string): ShiftEntry[] {
     const toDelete = this.getShifts().filter(s => s.datum.startsWith(yearMonth));
     for (const s of toDelete) {
