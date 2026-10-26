@@ -184,7 +184,8 @@ export const App: React.FC = () => {
       } else {
         setDecryptedHistoricalRecords([]);
         setDecryptedInitialClaims([]);
-        if (!storageService.isUserOnboarded(session.id)) {
+        // WICHTIG: Der Onboarding-Status wird unter der E-Mail gespeichert (nicht unter der Firebase-UID)
+        if (!storageService.isUserOnboarded(session.email || session.id)) {
           setShowOnboarding(true);
         }
       }
@@ -355,6 +356,14 @@ export const App: React.FC = () => {
           if (cloudData) {
             // Firebase hat gespeicherte Daten -> 1:1 direkt anwenden
             applyCloudData(cloudData);
+
+            // Wer bereits ein ausgefülltes Profil oder Schichten in der Cloud hat, ist kein Neuling mehr
+            const hasCloudProfile = Boolean(cloudData.profile?.vorname);
+            const hasCloudShifts = Array.isArray(cloudData.shifts) && cloudData.shifts.length > 0;
+            if (!isOwner && (hasCloudProfile || hasCloudShifts)) {
+              storageService.setUserOnboarded(true, userIdentifier);
+              setShowOnboarding(false);
+            }
           } else {
             // Firebase ist komplett leer (null) für diesen Nutzer
             // Sauberes, leeres Profil anlegen
@@ -792,10 +801,10 @@ export const App: React.FC = () => {
   }, [showToast]);
 
   // Onboarding für neue Kollegen abschließen
-  const handleOnboardingComplete = (profile: UserProfile, config: SalaryConfig) => {
+  const handleOnboardingComplete = async (profile: UserProfile, config: SalaryConfig) => {
     storageService.saveProfile(profile);
     storageService.saveSalaryConfig(config);
-    storageService.setUserOnboarded(true);
+    storageService.setUserOnboarded(true, getUserIdentifier() || undefined);
 
     setUserProfile(profile);
     setSalaryConfig(config);
@@ -806,6 +815,28 @@ export const App: React.FC = () => {
     storageService.saveShifts([]);
 
     showToast(`🎉 Willkommen, ${profile.vorname || profile.name}! Dein Arbeitsbereich ist bereit (0 Stunden).`, 'success');
+
+    // Profil sofort per set() in die Cloud sichern, damit der Nutzer auf jedem Gerät automatisch erkannt wird
+    const userIdentifier = getUserIdentifier();
+    if (userIdentifier && firebaseUser) {
+      try {
+        await firebaseService.saveUserData(
+          userIdentifier,
+          [],
+          profile,
+          {},
+          {},
+          config,
+          presets,
+          vaultKeyRef.current,
+          true,
+          storageService.getDeletedShifts()
+        );
+        setLastSyncTime(new Date());
+      } catch (e) {
+        console.warn('Onboarding-Daten konnten nicht in die Cloud gesichert werden:', e);
+      }
+    }
   };
 
   // Monatswechsel

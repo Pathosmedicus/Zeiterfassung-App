@@ -205,32 +205,11 @@ export function getDynamicOpenClaims(
 
   // 2. Dynamisch erkannte Abrechnungsfehler aus den Monatsdatensätzen
   for (const r of records) {
-    if (r.yearMonth === '2026-09') {
-      if (!claims.some(c => c.id === 'claim_2026_09_abrechnungsfehler')) {
-        const sepResolution = lookupResolution(resolvedClaims, 'claim_2026_09_abrechnungsfehler', '2026-09', 'claim_2026-09');
-        const isResolved = Boolean(r.isResolved || sepResolution?.isResolved);
-        const diffBetrag = Math.abs(r.differenz) > 0.05 ? Math.abs(r.differenz) : 317.98;
-        claims.push({
-          id: 'claim_2026_09_abrechnungsfehler',
-          yearMonth: '2026-09',
-          titel: 'Abrechnungsfehler Personalabteilung September 2026',
-          zeitraum: 'Abrechnungsmonat September 2026',
-          betragNetto: diffBetrag,
-          kategorie: 'nachforderung_2026',
-          isResolved,
-          resolvedDate: r.resolvedDate || sepResolution?.resolvedDate,
-          kurzBeschreibung: 'Gravierender HR-Berechnungsfehler: Netto-Nachforderungsanspruch von 317,98 €.',
-          details: [
-            'Fehler 1: Sozialversicherungstage (SV-Tage) fälschlicherweise auf 0 gesetzt',
-            'Fehler 2: August-Grundvergütung (-94,51 €) und August-Zuschlag (-64,80 €) unberechtigt storniert/abgezogen',
-            'Fehler 3: Regulärer September-Grundlohn (5,00 Std. LA 200 = 94,51 €) gar nicht vergütet (0,00 €)',
-            'Fehler 4: August-Mehrstunden (24,33 Std.) nur mit 17,64 € statt 18,90 € (Stufe 2 ab 01.08.2026) abgerechnet (-30,66 €)',
-            `Tatsächliche Überweisung Bank 09/26: ${r.bankIst.toFixed(2)} € (Soll wäre ${r.bankSollRegulaer.toFixed(2)} €)`,
-            `Netto-Differenz / Nachforderungsanspruch: ${diffBetrag.toFixed(2)} € netto`
-          ]
-        });
-      }
-    } else if (r.status === 'claim' || (r.differenz < -0.05 && r.yearMonth !== '2025-10')) {
+    // Monate, für die bereits eine (entschlüsselte) Nachforderung des Owners existiert, nicht doppelt erzeugen
+    const alreadyCoveredBySeed = claims.some(c => c.yearMonth === r.yearMonth);
+    if (alreadyCoveredBySeed) continue;
+
+    if (r.status === 'claim' || (r.differenz < -0.05 && r.yearMonth !== '2025-10')) {
       const claimId = `claim_${r.yearMonth}`;
       const res = lookupResolution(resolvedClaims, claimId, r.yearMonth);
       const isResolved = Boolean(r.isResolved || res?.isResolved);
