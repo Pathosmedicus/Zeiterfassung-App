@@ -372,17 +372,6 @@ export const PayrollComparisonCard: React.FC<PayrollComparisonCardProps> = ({
           </div>
         )}
 
-        {/* Prognose-Hinweis für Oktober 2026 */}
-        <div className="bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/50 p-3 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-brand-500 shrink-0" />
-            <div className="text-slate-700 dark:text-zinc-300">
-              <strong>Prognose Auszahlung Ende Oktober 2026:</strong> Regulär fällig:{' '}
-              <span className="font-bold text-slate-900 dark:text-white">592,02 €</span> • Mit September-Korrektur fällig:{' '}
-              <strong className="text-brand-600 dark:text-brand-400">910,00 €</strong> (zzgl. 181,14 € für 2025).
-            </div>
-          </div>
-        </div>
 
         {/* Aktions-Leiste: Schreiben kopieren, E-Mail öffnen, Vorschau */}
         <div className="flex flex-wrap items-center gap-2 pt-1">

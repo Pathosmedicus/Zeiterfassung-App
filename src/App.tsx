@@ -61,7 +61,6 @@ import {
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('stundenzettel');
-  const [tableSubView, setTableSubView] = useState<'comparison' | 'radar' | 'month' | 'charts'>('comparison');
 
   // Multi-User Sitzung & Autorisierung
   const [activeSession, setActiveSession] = useState<AppUserSession | null>(() => storageService.getActiveSession());
@@ -1227,104 +1226,37 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: 📊 Monatsübersicht & Abrechnungsabgleich */}
-        {activeTab === 'tabelle' && (
+        {/* TAB 2: ⚡ Abrechnungsabgleich */}
+        {activeTab === 'abgleich' && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="flex p-1 rounded-2xl bg-slate-200/80 dark:bg-zinc-800/80 border border-slate-300/60 dark:border-zinc-700/60 text-xs gap-1 flex-wrap sm:flex-nowrap">
-              <button
-                onClick={() => setTableSubView('comparison')}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 ${
-                  tableSubView === 'comparison'
-                    ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <span>⚡ Abrechnungsabgleich</span>
-              </button>
-              <button
-                onClick={() => setTableSubView('radar')}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 ${
-                  tableSubView === 'radar'
-                    ? 'bg-white dark:bg-zinc-900 text-cyan-600 dark:text-cyan-400 shadow-sm'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <span>🎯 7.230€ Jahresradar</span>
-              </button>
-              <button
-                onClick={() => setTableSubView('month')}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 ${
-                  tableSubView === 'month'
-                    ? 'bg-white dark:bg-zinc-900 text-brand-600 dark:text-brand-400 shadow-sm'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <span>📅 Stundenzettel</span>
-              </button>
-              <button
-                onClick={() => setTableSubView('charts')}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 ${
-                  tableSubView === 'charts'
-                    ? 'bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <span>📈 Statistiken</span>
-              </button>
-            </div>
+            <PayrollComparisonCard
+              userProfile={userProfile}
+              currentYearMonth={currentYearMonth}
+              shifts={shifts}
+              salaryConfig={salaryConfig}
+              payoutOverrides={payoutOverrides}
+              onSavePayoutOverride={handleSavePayoutOverride}
+              onDeletePayoutOverride={handleDeletePayoutOverride}
+              resolvedClaims={resolvedClaims}
+              onToggleClaim={handleToggleClaim}
+              onShowToast={showToast}
+              onSelectMonth={handleMonthChange}
+              isSyncing={isSyncing}
+              lastSyncTime={lastSyncTime}
+              onManualSync={() => handleManualSync(true)}
+            />
+          </div>
+        )}
 
-            {tableSubView === 'comparison' && (
-              <PayrollComparisonCard
-                userProfile={userProfile}
-                currentYearMonth={currentYearMonth}
-                shifts={shifts}
-                salaryConfig={salaryConfig}
-                payoutOverrides={payoutOverrides}
-                onSavePayoutOverride={handleSavePayoutOverride}
-                onDeletePayoutOverride={handleDeletePayoutOverride}
-                resolvedClaims={resolvedClaims}
-                onToggleClaim={handleToggleClaim}
-                onShowToast={showToast}
-                onSelectMonth={handleMonthChange}
-                isSyncing={isSyncing}
-                lastSyncTime={lastSyncTime}
-                onManualSync={() => handleManualSync(true)}
-              />
-            )}
-
-            {tableSubView === 'radar' && (
-              <MinijobJahresradar
-                shifts={shifts}
-                salaryConfig={salaryConfig}
-                userProfile={userProfile}
-                currentYearMonth={currentYearMonth}
-                onSaveSalaryConfig={handleSaveSalaryConfig}
-                onSelectMonth={handleMonthChange}
-                onShowToast={showToast}
-              />
-            )}
-
-            {tableSubView === 'month' && (
-              <>
-                <KpiCards stats={stats} salaryConfig={salaryConfig} />
-                <MonthTable
-                  currentYearMonth={currentYearMonth}
-                  shifts={shifts}
-                  onDeleteShift={handleDeleteShift}
-                  onSaveShift={handleSaveShift}
-                  onCleanDuplicates={handleCleanDuplicates}
-                />
-              </>
-            )}
-
-            {tableSubView === 'charts' && (
-              <SalaryCharts
-                currentYearMonth={currentYearMonth}
-                shifts={shifts}
-                salaryConfig={salaryConfig}
-                isDarkMode={isDarkMode}
-              />
-            )}
+        {/* TAB 4: 📈 Statistik */}
+        {activeTab === 'statistik' && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <SalaryCharts
+              currentYearMonth={currentYearMonth}
+              shifts={shifts}
+              salaryConfig={salaryConfig}
+              isDarkMode={isDarkMode}
+            />
           </div>
         )}
 
