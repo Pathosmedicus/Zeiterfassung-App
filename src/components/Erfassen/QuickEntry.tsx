@@ -3,6 +3,8 @@ import { Clock, Plus, Trash2, Sparkles, Moon, Sun, AlertTriangle } from 'lucide-
 import { ShiftEntry, PresetShift } from '../../types';
 import { berechneNetto, berechneMinuten } from '../../services/salaryEngine';
 import { getDayInfo } from '../../services/holidayEngine';
+import { TimeInputField } from '../Common/TimeInputField';
+import { PauseInputField } from '../Common/PauseInputField';
 
 interface QuickEntryProps {
   selectedDate: string; // YYYY-MM-DD
@@ -145,56 +147,40 @@ export const QuickEntry: React.FC<QuickEntryProps> = ({
           </div>
         </div>
 
-        {/* Zeiteingabe Kommen & Gehen */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-              Kommen
-            </label>
-            <input
-              type="time"
-              value={kommen}
-              onChange={e => setKommen(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-black/40 border border-white/10 text-white font-bold text-base focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-              Gehen
-            </label>
-            <input
-              type="time"
-              value={gehen}
-              onChange={e => setGehen(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-black/40 border border-white/10 text-white font-bold text-base focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all"
-              required
-            />
-          </div>
+        {/* Zeiteingabe Kommen & Gehen mit mobiler Ziffern-Tastatur */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TimeInputField
+            label="Kommen"
+            value={kommen}
+            onChange={setKommen}
+            quickChips={['07:30', '08:00', '10:00', '11:20', '12:00', '13:00', '14:00', '18:30', '00:00']}
+          />
+          <TimeInputField
+            label="Gehen"
+            value={gehen}
+            onChange={setGehen}
+            quickChips={['14:00', '14:45', '16:00', '17:15', '19:00', '20:00', '00:00', '01:30']}
+          />
         </div>
 
         {/* Pause & Live-Netto Vorschau */}
-        <div className="grid grid-cols-2 gap-3 items-end">
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-              Pause (Minuten)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="5"
-              value={pauseMinuten}
-              onChange={e => setPauseMinuten(parseInt(e.target.value, 10) || 0)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-black/40 border border-white/10 text-white font-bold text-base focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all"
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <PauseInputField
+            label="Pause"
+            value={pauseMinuten}
+            onChange={setPauseMinuten}
+          />
 
-          <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Netto-Arbeitszeit
-            </span>
-            <span className="font-display text-base font-black text-cyan-300">
+          <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                Netto-Arbeitszeit
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                (inkl. Pausenabzug)
+              </span>
+            </div>
+            <span className="font-display text-xl font-black text-cyan-300">
               {nettoStunden.toFixed(2)} h
             </span>
           </div>

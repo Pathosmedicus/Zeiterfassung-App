@@ -3,6 +3,8 @@ import { Edit2, Trash2, Check, X, Plus } from 'lucide-react';
 import { ShiftEntry } from '../../types';
 import { berechneNetto } from '../../services/salaryEngine';
 import { getFeiertageFuerJahr } from '../../services/holidayEngine';
+import { TimeInputField } from '../Common/TimeInputField';
+import { PauseInputField } from '../Common/PauseInputField';
 
 interface MonthTableProps {
   currentYearMonth: string; // YYYY-MM
@@ -225,33 +227,36 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                     </td>
                     <td className="py-1 px-1">
                       <input
-                        type="time"
+                        type="text"
                         inputMode="numeric"
+                        pattern="[0-9:]*"
+                        placeholder="07:30"
                         autoFocus
                         value={editKommen}
                         onChange={e => setEditKommen(e.target.value)}
-                        className="w-full px-2 py-1 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
+                        className="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
                       />
                     </td>
                     <td className="py-1 px-1">
                       <input
-                        type="time"
+                        type="text"
                         inputMode="numeric"
+                        pattern="[0-9:]*"
+                        placeholder="16:00"
                         value={editGehen}
                         onChange={e => setEditGehen(e.target.value)}
-                        className="w-full px-2 py-1 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
+                        className="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
                       />
                     </td>
                     <td className="py-1 px-1">
                       <input
-                        type="number"
+                        type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        min="0"
-                        step="5"
+                        placeholder="0"
                         value={editPause}
-                        onChange={e => setEditPause(parseInt(e.target.value, 10) || 0)}
-                        className="w-full px-1.5 py-1 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
+                        onChange={e => setEditPause(parseInt(e.target.value.replace(/\D/g, ''), 10) || 0)}
+                        className="w-full px-1.5 py-1.5 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
                       />
                     </td>
                     <td className="py-2 px-2 text-center font-black text-cyan-300 font-display">
@@ -430,75 +435,41 @@ export const MonthTable: React.FC<MonthTableProps> = ({
               </button>
             </div>
 
-            {/* Eingabefelder mit nativer Smartphone-Tastatur & inputMode */}
-            <div className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Kommen (Uhrzeit)
-                  </label>
-                  <input
-                    type="time"
-                    inputMode="numeric"
-                    value={modalKommen}
-                    onChange={e => setModalKommen(e.target.value)}
-                    className="w-full px-3.5 py-3 rounded-xl bg-black/60 border border-white/20 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 text-white font-mono text-base font-bold outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Gehen (Uhrzeit)
-                  </label>
-                  <input
-                    type="time"
-                    inputMode="numeric"
-                    value={modalGehen}
-                    onChange={e => setModalGehen(e.target.value)}
-                    className="w-full px-3.5 py-3 rounded-xl bg-black/60 border border-white/20 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 text-white font-mono text-base font-bold outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Pause (Minuten)
-                  </label>
-                  <div className="flex gap-1.5">
-                    {[0, 15, 30, 45, 60].map(p => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setModalPause(p)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
-                          modalPause === p
-                            ? 'bg-cyan-500 text-black'
-                            : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        {p}m
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  min="0"
-                  step="5"
-                  value={modalPause}
-                  onChange={e => setModalPause(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                  className="w-full px-3.5 py-3 rounded-xl bg-black/60 border border-white/20 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 text-white font-mono text-base font-bold outline-none"
+            {/* Eingabefelder mit garantierter mobiler Zifferntastatur */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <TimeInputField
+                  label="Kommen"
+                  value={modalKommen}
+                  onChange={setModalKommen}
+                  quickChips={['07:30', '08:00', '10:00', '11:20', '12:00', '13:00', '14:00', '18:30', '00:00']}
+                  autoFocus
+                />
+                <TimeInputField
+                  label="Gehen"
+                  value={modalGehen}
+                  onChange={setModalGehen}
+                  quickChips={['14:00', '14:45', '16:00', '17:15', '19:00', '20:00', '00:00', '01:30']}
                 />
               </div>
 
+              <PauseInputField
+                label="Pause"
+                value={modalPause}
+                onChange={setModalPause}
+              />
+
               {/* Live-Berechnung der Netto-Arbeitszeit */}
-              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300">
-                  Berechnete Arbeitszeit:
-                </span>
-                <span className="text-base font-black text-cyan-300 font-display">
+              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-300 block">
+                    Berechnete Arbeitszeit:
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    (Arbeitszeit minus Pause)
+                  </span>
+                </div>
+                <span className="text-xl font-black text-cyan-300 font-display">
                   {berechneNetto(modalKommen, modalGehen, modalPause).toFixed(2)} h
                 </span>
               </div>

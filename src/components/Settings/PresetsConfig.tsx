@@ -138,7 +138,10 @@ export const PresetsConfig: React.FC<PresetsConfigProps> = ({
               Kommen
             </label>
             <input
-              type="time"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9:]*"
+              placeholder="08:00"
               value={kommen}
               onChange={e => setKommen(e.target.value)}
               className="w-full px-2 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-bold text-center focus:outline-none focus:border-cyan-400/60"
@@ -151,7 +154,10 @@ export const PresetsConfig: React.FC<PresetsConfigProps> = ({
               Gehen
             </label>
             <input
-              type="time"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9:]*"
+              placeholder="16:30"
               value={gehen}
               onChange={e => setGehen(e.target.value)}
               className="w-full px-2 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-bold text-center focus:outline-none focus:border-cyan-400/60"
@@ -164,11 +170,12 @@ export const PresetsConfig: React.FC<PresetsConfigProps> = ({
               Pause (m)
             </label>
             <input
-              type="number"
-              min="0"
-              step="5"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="30"
               value={pauseMinuten}
-              onChange={e => setPauseMinuten(parseInt(e.target.value, 10) || 0)}
+              onChange={e => setPauseMinuten(parseInt(e.target.value.replace(/\D/g, ''), 10) || 0)}
               className="w-full px-2 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-bold text-center focus:outline-none focus:border-cyan-400/60"
             />
           </div>
