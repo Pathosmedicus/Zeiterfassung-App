@@ -178,7 +178,9 @@ export interface CloudBackupItem {
   note?: string;
   shifts: ShiftEntry[];
   profile: Partial<UserProfile>;
+  userProfile?: Partial<UserProfile>;
   salaryConfig?: Partial<SalaryConfig>;
+  presets?: PresetShift[];
   resolvedClaims?: Record<string, ResolvedClaimStatus>;
   payoutOverrides?: Record<string, MonthPayoutOverride>;
   deletedShifts?: Record<string, DeletedShiftItem>;
@@ -189,6 +191,8 @@ export interface CloudUserData {
   uid?: string;
   shifts: ShiftEntry[];
   profile: Partial<UserProfile>;
+  userProfile?: Partial<UserProfile>;
+  presets?: PresetShift[];
   resolvedClaims?: Record<string, ResolvedClaimStatus>;
   payoutOverrides?: Record<string, MonthPayoutOverride>;
   salaryConfig?: Partial<SalaryConfig>;

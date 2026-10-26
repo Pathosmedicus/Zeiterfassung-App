@@ -26,6 +26,7 @@ import {
   ResolvedClaimStatus,
   MonthPayoutOverride,
   SalaryConfig,
+  PresetShift,
   CloudUserData,
   CloudBackupItem
 } from '../types';
@@ -276,6 +277,11 @@ function parseCloudUserData(data: any): CloudUserData {
     salaryConfig = data.salaryConfig;
   }
 
+  let presets: PresetShift[] = [];
+  if (Array.isArray(data.presets)) {
+    presets = data.presets;
+  }
+
   let backupHistory: CloudBackupItem[] = [];
   if (Array.isArray(data.backupHistory)) {
     backupHistory = data.backupHistory;
@@ -291,6 +297,8 @@ function parseCloudUserData(data: any): CloudUserData {
     uid: data.uid,
     shifts,
     profile,
+    userProfile: profile,
+    presets,
     resolvedClaims,
     payoutOverrides,
     salaryConfig,
@@ -355,7 +363,7 @@ export const firebaseService = {
   },
 
   /**
-   * Regel 1: Lädt Daten primär aus users/{normalizedEmail}, mit Fallback auf users/{uid}
+   * Regel 1: Lädt Daten isoliert aus users/{normalizedEmail} bzw. users/{uid}
    */
   async loadUserData(emailOrUid: string, vaultPassphrase?: string): Promise<CloudUserData | null> {
     if (!db || !emailOrUid) return null;
@@ -366,13 +374,23 @@ export const firebaseService = {
       let userRef = doc(db, 'users', norm);
       let snapshot = await getDoc(userRef);
 
-      // 2. Fallback: Suche nach UID (für Altbestände)
+      // 2. Fallback: Suche nach UID (für Google Login / Altbestände)
       if (!snapshot.exists() && auth?.currentUser?.uid && auth.currentUser.uid !== norm) {
         const altRef = doc(db, 'users', auth.currentUser.uid);
         const altSnap = await getDoc(altRef);
         if (altSnap.exists()) {
           snapshot = altSnap;
           userRef = altRef;
+        }
+      }
+
+      // 3. Fallback: Suche nach sanierter E-Mail (z. B. mit Unterstrichen statt Punkten)
+      if (!snapshot.exists() && norm.includes('.')) {
+        const sanitizedRef = doc(db, 'users', norm.replace(/[.#$[\]]/g, '_'));
+        const sanitizedSnap = await getDoc(sanitizedRef);
+        if (sanitizedSnap.exists()) {
+          snapshot = sanitizedSnap;
+          userRef = sanitizedRef;
         }
       }
 
@@ -386,7 +404,6 @@ export const firebaseService = {
           const decrypted = await vaultService.decryptData<CloudUserData>(data.encryptedPayload, vaultPassphrase);
           return decrypted;
         } catch {
-          // Falls Entschlüsselung fehlschlägt, versuche plain zu parsen
           return parseCloudUserData(data);
         }
       }
@@ -399,8 +416,8 @@ export const firebaseService = {
   },
 
   /**
-   * Regel 2 & 4: Zero-Data-Loss Schutz & 3-Versionen-Backup-History
-   * Ein leerer lokaler Zustand (0.00h) darf NIEMALS einen vorhandenen Cloud-Stand überschreiben!
+   * Regel 3: Saubere Speicherung via set() (ohne fehlerhaftes Merge-Chaos!)
+   * Jede Änderung überschreibt sofort per set() den kompletten Datensatz.
    */
   async saveUserData(
     emailOrUid: string,
@@ -409,6 +426,7 @@ export const firebaseService = {
     resolvedClaims: Record<string, ResolvedClaimStatus> = {},
     payoutOverrides: Record<string, MonthPayoutOverride> = {},
     salaryConfig?: SalaryConfig,
+    presets?: PresetShift[],
     vaultPassphrase?: string,
     forceOverwrite: boolean = false,
     deletedShifts: Record<string, { datum: string; deletedAt: string }> = {}
@@ -421,80 +439,69 @@ export const firebaseService = {
       const norm = normalizeUserEmail(emailOrUid);
       const userRef = doc(db, 'users', norm);
 
-      // Vorherigen Cloud-Stand abfragen für Zero-Data-Loss-Prüfung & Backup
-      const existingSnap = await getDoc(userRef);
+      // Vorherigen Stand in Rollback-History sichern (max. 3 Versionen)
       let backupHistory: CloudBackupItem[] = [];
-      let consolidatedClaims = { ...resolvedClaims };
-      let consolidatedDeleted = { ...deletedShifts };
-
-      if (existingSnap.exists()) {
-        const exData = existingSnap.data();
-
-        // Regel 2: Mengen-Vereinigung für resolvedClaims - geschlossener Posten darf NIEMALS durch ältere Daten wieder geöffnet werden!
-        const exResolved = exData.resolvedClaims && typeof exData.resolvedClaims === 'object' ? exData.resolvedClaims : {};
-        consolidatedClaims = smartMergeClaims(resolvedClaims, exResolved);
-
-        if (forceOverwrite) {
-          consolidatedDeleted = { ...deletedShifts };
-        } else {
-          // Merge deletedShifts (Tombstones)
-          const exDeleted = exData.deletedShifts && typeof exData.deletedShifts === 'object' ? exData.deletedShifts : {};
-          consolidatedDeleted = smartMergeDeletedShifts(deletedShifts, exDeleted);
-        }
-
-        // ZERO-DATA-LOSS SCHUTZ:
-        // Wenn lokal 0 Schichten vorliegen, in der Cloud aber Schichten vorhanden sind und kein forceOverwrite vorliegt:
-        if (!forceOverwrite && shifts.length === 0 && Array.isArray(exData.shifts) && exData.shifts.length > 0) {
-          console.warn("ZERO-DATA-LOSS SCHUTZ AKTIV: Lokaler Leerstand (0.00h) blockiert! Cloud-Stand mit", exData.shifts.length, "Schichten bleibt geschützt.");
-          return {
-            success: false,
-            message: `Zero-Data-Loss Schutz: Cloud enthält bereits ${exData.shifts.length} Schichten. Überschreiben mit leerem Zustand abgelehnt.`
-          };
-        }
-
-        // Regel 4: Vorherigen Zustand als Sicherheitskopie in backupHistory archivieren (max. 3)
-        backupHistory = Array.isArray(exData.backupHistory) ? exData.backupHistory : [];
-        if (Array.isArray(exData.shifts) && exData.shifts.length > 0) {
-          const snapshotItem: CloudBackupItem = {
-            timestamp: exData.updatedAt || new Date().toISOString(),
-            shiftCount: exData.shifts.length,
-            note: `Automatisches Backup vor Änderung am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} Uhr`,
-            shifts: exData.shifts,
-            profile: exData.profile || {},
-            salaryConfig: exData.salaryConfig || {},
-            resolvedClaims: exData.resolvedClaims || {},
-            payoutOverrides: exData.payoutOverrides || {},
-            deletedShifts: exData.deletedShifts || {}
-          };
-          backupHistory.unshift(snapshotItem);
-          if (backupHistory.length > 3) {
-            backupHistory = backupHistory.slice(0, 3);
+      try {
+        const existingSnap = await getDoc(userRef);
+        if (existingSnap.exists()) {
+          const exData = existingSnap.data();
+          backupHistory = Array.isArray(exData.backupHistory) ? exData.backupHistory : [];
+          if (Array.isArray(exData.shifts) && exData.shifts.length > 0) {
+            const snapshotItem: CloudBackupItem = {
+              timestamp: exData.updatedAt || new Date().toISOString(),
+              shiftCount: exData.shifts.length,
+              note: `Automatisches Backup vor Änderung am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} Uhr`,
+              shifts: exData.shifts,
+              profile: exData.profile || exData.userProfile || {},
+              salaryConfig: exData.salaryConfig || {},
+              presets: exData.presets || [],
+              resolvedClaims: exData.resolvedClaims || {},
+              payoutOverrides: exData.payoutOverrides || {},
+              deletedShifts: exData.deletedShifts || {}
+            };
+            backupHistory.unshift(snapshotItem);
+            if (backupHistory.length > 3) {
+              backupHistory = backupHistory.slice(0, 3);
+            }
           }
         }
+      } catch (e) {
+        console.warn('Backup-History Erstellung übersprungen:', e);
       }
 
-      // Reines Dokument ohne Datenverlust speichern (mit deduplizierten Schichten)
+      // Reines Dokument ohne Datenverlust und ohne fehlerhaften Merge
       const cloudPayload: any = {
         email: norm,
         uid: auth?.currentUser?.uid || norm,
         shifts: deduplicateShifts(shifts || []),
+        userProfile: profile,
         profile,
-        resolvedClaims: consolidatedClaims,
-        payoutOverrides,
-        salaryConfig,
+        resolvedClaims: resolvedClaims || {},
+        payoutOverrides: payoutOverrides || {},
+        salaryConfig: salaryConfig || {},
+        presets: presets || [],
         backupHistory,
-        deletedShifts: consolidatedDeleted,
+        deletedShifts: deletedShifts || {},
         clientVersion: '3.2.0',
         updatedAt: new Date().toISOString(),
         lastUpdated: serverTimestamp(),
         lastDevice: navigator.userAgent
       };
 
-      await setDoc(userRef, cloudPayload, { merge: true });
+      // Echtes set() ohne { merge: true } für saubere Konsistenz
+      await setDoc(userRef, cloudPayload);
+
+      // Falls auth.currentUser.uid existiert und abweicht, auch dort sichern
+      if (auth?.currentUser?.uid && auth.currentUser.uid !== norm) {
+        try {
+          const uidRef = doc(db, 'users', auth.currentUser.uid);
+          await setDoc(uidRef, cloudPayload);
+        } catch {}
+      }
 
       return {
         success: true,
-        message: `Erfolgreich ${cloudPayload.shifts.length} Schichten in Gmail-Cloud gesichert!`
+        message: `Erfolgreich ${cloudPayload.shifts.length} Schichten in Cloud gesichert!`
       };
     } catch (err: any) {
       console.warn("Cloud-Speicherung fehlgeschlagen:", err);

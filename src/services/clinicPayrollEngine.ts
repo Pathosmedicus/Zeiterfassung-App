@@ -105,7 +105,7 @@ export function getClinicPayrollRecords(
 
     // Erledigungsstatus (vom Mitarbeiter geschlossen)
     const claimKey = yearMonth === '2026-09' ? 'claim_2026_09_abrechnungsfehler' : `claim_${yearMonth}`;
-    const claimResolution = resolvedClaims[claimKey] || resolvedClaims[yearMonth];
+    const claimResolution = lookupResolution(resolvedClaims, claimKey, yearMonth);
     const isResolved = Boolean(override?.isResolved || claimResolution?.isResolved);
     const resolvedDate = override?.resolvedDate || claimResolution?.resolvedDate;
 
@@ -162,6 +162,28 @@ export function getClinicPayrollRecords(
   });
 }
 
+function lookupResolution(
+  resolvedClaims: Record<string, { isResolved: boolean; resolvedDate?: string }> = {},
+  ...keys: (string | undefined)[]
+): { isResolved: boolean; resolvedDate?: string } | undefined {
+  for (const k of keys) {
+    if (!k) continue;
+    if (resolvedClaims[k]?.isResolved) return resolvedClaims[k];
+    const withUnderscore = k.replace(/-/g, '_');
+    if (resolvedClaims[withUnderscore]?.isResolved) return resolvedClaims[withUnderscore];
+    const withHyphen = k.replace(/_/g, '-');
+    if (resolvedClaims[withHyphen]?.isResolved) return resolvedClaims[withHyphen];
+    const noPrefix = k.replace(/^claim_/, '');
+    if (resolvedClaims[noPrefix]?.isResolved) return resolvedClaims[noPrefix];
+    if (resolvedClaims[noPrefix.replace(/-/g, '_')]?.isResolved) return resolvedClaims[noPrefix.replace(/-/g, '_')];
+    if (resolvedClaims[noPrefix.replace(/_/g, '-')]?.isResolved) return resolvedClaims[noPrefix.replace(/_/g, '-')];
+    const withClaimPrefix = `claim_${noPrefix}`;
+    if (resolvedClaims[withClaimPrefix]?.isResolved) return resolvedClaims[withClaimPrefix];
+    if (resolvedClaims[withClaimPrefix.replace(/-/g, '_')]?.isResolved) return resolvedClaims[withClaimPrefix.replace(/-/g, '_')];
+  }
+  return undefined;
+}
+
 /**
  * Ermittelt alle offenen und erledigten Nachforderungen dynamisch
  */
@@ -173,7 +195,7 @@ export function getDynamicOpenClaims(
 
   // 1. Entschlüsselte initiale Nachforderungen (nur vorhanden, wenn autorisiert entsperrt - Zero Data Leak)
   for (const baseClaim of decryptedInitialClaims) {
-    const res = resolvedClaims[baseClaim.id];
+    const res = lookupResolution(resolvedClaims, baseClaim.id, baseClaim.yearMonth);
     claims.push({
       ...baseClaim,
       isResolved: Boolean(baseClaim.isResolved || res?.isResolved),
@@ -185,7 +207,7 @@ export function getDynamicOpenClaims(
   for (const r of records) {
     if (r.yearMonth === '2026-09') {
       if (!claims.some(c => c.id === 'claim_2026_09_abrechnungsfehler')) {
-        const sepResolution = resolvedClaims['claim_2026_09_abrechnungsfehler'] || resolvedClaims['2026-09'];
+        const sepResolution = lookupResolution(resolvedClaims, 'claim_2026_09_abrechnungsfehler', '2026-09', 'claim_2026-09');
         const isResolved = Boolean(r.isResolved || sepResolution?.isResolved);
         const diffBetrag = Math.abs(r.differenz) > 0.05 ? Math.abs(r.differenz) : 317.98;
         claims.push({
@@ -210,7 +232,7 @@ export function getDynamicOpenClaims(
       }
     } else if (r.status === 'claim' || (r.differenz < -0.05 && r.yearMonth !== '2025-10')) {
       const claimId = `claim_${r.yearMonth}`;
-      const res = resolvedClaims[claimId] || resolvedClaims[r.yearMonth];
+      const res = lookupResolution(resolvedClaims, claimId, r.yearMonth);
       const isResolved = Boolean(r.isResolved || res?.isResolved);
       const diffBetrag = Math.abs(r.differenz);
       claims.push({

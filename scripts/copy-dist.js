@@ -30,11 +30,19 @@ if (fs.existsSync(distDir)) {
   const distAssetsDir = path.join(distDir, 'assets');
   const rootAssetsDir = path.join(rootDir, 'assets');
   if (fs.existsSync(distAssetsDir)) {
-    if (fs.existsSync(rootAssetsDir)) {
-      // Entferne veraltete Hashes, damit nur aktive Bundles existieren
-      fs.rmSync(rootAssetsDir, { recursive: true, force: true });
+    if (!fs.existsSync(rootAssetsDir)) {
+      fs.mkdirSync(rootAssetsDir, { recursive: true });
     }
-    fs.mkdirSync(rootAssetsDir, { recursive: true });
+    // Entferne alte Dateien einzeln (Windows / Sciebo safe)
+    try {
+      const oldFiles = fs.readdirSync(rootAssetsDir);
+      for (const f of oldFiles) {
+        try {
+          fs.unlinkSync(path.join(rootAssetsDir, f));
+        } catch {}
+      }
+    } catch {}
+
     const files = fs.readdirSync(distAssetsDir);
     for (const file of files) {
       fs.copyFileSync(path.join(distAssetsDir, file), path.join(rootAssetsDir, file));

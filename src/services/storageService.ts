@@ -696,21 +696,34 @@ export const storageService = {
 
       if (backupJson.userProfile) {
         this.saveProfile(backupJson.userProfile);
+      } else if (backupJson.ma_name || backupJson.ma_vorname) {
+        this.saveProfile({
+          name: backupJson.ma_name || '',
+          vorname: backupJson.ma_vorname || '',
+          personalnummer: backupJson.ma_personalnummer || '',
+          abteilung: backupJson.abteilung || '',
+          klinik: backupJson.klinik || ''
+        });
       }
-      if (Array.isArray(backupJson.presets)) {
+      if (Array.isArray(backupJson.presets) && backupJson.presets.length > 0) {
         this.savePresets(backupJson.presets);
       }
       if (backupJson.salaryConfig) {
         this.saveSalaryConfig(backupJson.salaryConfig);
       }
-      if (importedShifts.length > 0) {
-        this.saveShifts(importedShifts);
-      }
+      // Tombstones zurücksetzen, da Backup die neue absolute Wahrheit darstellt
+      this.saveDeletedShifts({});
+      this.saveShifts(importedShifts);
+
       if (backupJson.payoutOverrides && typeof backupJson.payoutOverrides === 'object') {
         this.saveAllPayoutOverrides(backupJson.payoutOverrides);
+      } else {
+        this.saveAllPayoutOverrides({});
       }
       if (backupJson.resolvedClaims && typeof backupJson.resolvedClaims === 'object') {
         this.saveAllResolvedClaims(backupJson.resolvedClaims);
+      } else {
+        this.saveAllResolvedClaims({});
       }
 
       return {

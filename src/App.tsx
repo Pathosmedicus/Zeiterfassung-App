@@ -160,22 +160,13 @@ export const App: React.FC = () => {
     return firebaseUser?.email || activeSession?.email || firebaseUser?.uid || activeSession?.id || '';
   }, [firebaseUser, activeSession]);
 
-  // Exklusives Entschlüsseln von Mohammads Seed (nur bei Mohammads Konto!)
+  // Exklusives Entschlüsseln von Mohammads Seed (nur historische Abrechnungen & Nachforderungen für Minijob-Radar)
   const unlockMohammadData = useCallback(async (keyToUse?: string, force: boolean = false) => {
     if (hasUnlockedRef.current && !force) return;
     const activeKey = keyToUse || vaultKeyRef.current || '1971';
     try {
       const seed = await vaultService.unlockSeed(activeKey);
       if (seed) {
-        // Bestehende Schichten NIEMALS automatisch überschreiben oder manipulieren!
-        if (!storageService.hasSavedShifts() && seed.shifts) {
-          storageService.saveShifts(seed.shifts);
-          setShifts(seed.shifts);
-          if (seed.profile) {
-            storageService.saveProfile(seed.profile);
-            setUserProfile(seed.profile);
-          }
-        }
         setDecryptedHistoricalRecords(seed.payrollRecords || []);
         setDecryptedInitialClaims(seed.claims || []);
         hasUnlockedRef.current = true;
@@ -203,62 +194,59 @@ export const App: React.FC = () => {
     }
   }, [loadAllData, unlockMohammadData]);
 
-  // Helper zum Anwenden von Daten aus der Google Cloud (Deduplizierung & direkter Snapshot-Sync)
+  // Helper zum Anwenden von Daten aus der Google Cloud (1:1 Snapshot ohne fehlerhaftes Merge-Chaos)
   const applyCloudData = useCallback((cloudData: CloudUserData) => {
     if (!cloudData) return;
 
     // 0. Tombstones für gelöschte Schichten
     if (cloudData.deletedShifts && typeof cloudData.deletedShifts === 'object') {
-      const localDeleted = storageService.getDeletedShifts();
-      const mergedDeleted = firebaseService.smartMergeDeletedShifts(localDeleted, cloudData.deletedShifts);
-      storageService.saveDeletedShifts(mergedDeleted);
+      storageService.saveDeletedShifts(cloudData.deletedShifts);
     }
 
-    // 1. Schichten aus der Cloud direkt als verlässlichen Snapshot übernehmen (ohne additiven Smart-Merge!)
+    // 1. Schichten aus der Cloud direkt als verlässlichen Snapshot 1:1 übernehmen
     if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
       const cleanShifts = deduplicateShifts(cloudData.shifts);
       storageService.saveShifts(cleanShifts);
       setShifts(cleanShifts);
       setCloudShiftCount(cleanShifts.length);
-
-      // Schichten gespeichert & gezählt (Monatsnavigation bleibt frei durch den Nutzer steuerbar)
     }
 
-    // 2. Profil aktualisieren
+    // 2. Profil 1:1 übernehmen
     if (cloudData.profile && (cloudData.profile.name || cloudData.profile.personalnummer)) {
       const updatedProfile = {
-        ...storageService.getProfile(),
+        ...DEFAULT_USER_PROFILE,
         ...cloudData.profile
       } as UserProfile;
       storageService.saveProfile(updatedProfile);
       setUserProfile(updatedProfile);
     }
 
-    // 3. Status erledigter Nachforderungen (resolvedClaims) mergen (Set-Union: true gewinnt immer)
+    // 3. Status erledigter Nachforderungen (resolvedClaims) 1:1 übernehmen
     if (cloudData.resolvedClaims && typeof cloudData.resolvedClaims === 'object') {
-      const localClaims = storageService.getResolvedClaims();
-      const mergedClaims = firebaseService.smartMergeClaims(localClaims, cloudData.resolvedClaims);
-      storageService.saveAllResolvedClaims(mergedClaims);
-      setResolvedClaims(mergedClaims);
+      storageService.saveAllResolvedClaims(cloudData.resolvedClaims);
+      setResolvedClaims(cloudData.resolvedClaims);
     }
 
-    // 4. Bank-Ist Auszahlungs-Overrides mergen
+    // 4. Bank-Ist Auszahlungs-Overrides 1:1 übernehmen
     if (cloudData.payoutOverrides && typeof cloudData.payoutOverrides === 'object') {
-      const localOverrides = storageService.getPayoutOverrides();
-      const mergedOverrides = firebaseService.smartMergeOverrides(localOverrides, cloudData.payoutOverrides);
-      storageService.saveAllPayoutOverrides(mergedOverrides);
-      setPayoutOverrides(mergedOverrides);
+      storageService.saveAllPayoutOverrides(cloudData.payoutOverrides);
+      setPayoutOverrides(cloudData.payoutOverrides);
     }
 
-    // 5. Gehaltskonfiguration
+    // 5. Gehaltskonfiguration 1:1 übernehmen
     if (cloudData.salaryConfig && typeof cloudData.salaryConfig === 'object') {
-      const currentSalary = storageService.getSalaryConfig();
-      const mergedSalary = { ...currentSalary, ...cloudData.salaryConfig };
+      const mergedSalary = { ...DEFAULT_SALARY_CONFIG, ...cloudData.salaryConfig };
       storageService.saveSalaryConfig(mergedSalary);
       setSalaryConfig(mergedSalary);
     }
 
-    // 6. Rollback-Backups aktualisieren
+    // 6. Presets 1:1 übernehmen
+    if (cloudData.presets && Array.isArray(cloudData.presets) && cloudData.presets.length > 0) {
+      storageService.savePresets(cloudData.presets);
+      setPresets(cloudData.presets);
+    }
+
+    // 7. Rollback-Backups aktualisieren
     if (cloudData.backupHistory && Array.isArray(cloudData.backupHistory)) {
       setBackupHistory(cloudData.backupHistory);
     }
@@ -304,8 +292,9 @@ export const App: React.FC = () => {
             currentClaims,
             currentOverrides,
             currentSalary,
+            storageService.getPresets(),
             vaultKeyRef.current,
-            false,
+            true,
             currentDeleted
           );
         }
@@ -353,43 +342,58 @@ export const App: React.FC = () => {
         storageService.setActiveSession(session);
         setActiveSession(session);
 
-        // REGEL 3: AUTOMATISCHE RETTUNG MEINER ALTEN BESTANDSDATEN (NUR FÜR MOHAMMAD)
-        if (isOwner && userEmail) {
-          storageService.migrateLegacyMohammadDataIfNeeded(userEmail);
+        // Autorisierte historische Abrechnungsdaten für Minijob-Radar bereitstellen
+        if (isOwner) {
           await unlockMohammadData();
         } else {
           setDecryptedHistoricalRecords([]);
           setDecryptedInitialClaims([]);
-          if (!storageService.isUserOnboarded(userIdentifier)) {
-            setShowOnboarding(true);
-          }
         }
 
-        // Lokalen Stand laden
-        loadAllData();
-
-        // REGEL 2: ZERO-DATA-LOSS SCHUTZ BEIM LOGIN
-        // Sofort Cloud-Stand prüfen und anwenden
+        // Exakten Stand aus Firebase (users/{userKey}) abrufen
         try {
           setIsSyncing(true);
           const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
           if (cloudData) {
+            // Firebase hat gespeicherte Daten -> 1:1 direkt anwenden
             applyCloudData(cloudData);
           } else {
-            // Falls Cloud leer ist und lokal Schichten vorliegen, in Cloud hochladen
-            const localShifts = storageService.getShifts();
-            if (localShifts.length > 0) {
-              await firebaseService.saveUserData(
-                userIdentifier,
-                localShifts,
-                storageService.getProfile(),
-                storageService.getResolvedClaims(),
-                storageService.getPayoutOverrides(),
-                storageService.getSalaryConfig(),
-                vaultKeyRef.current,
-                false
-              );
+            // Firebase ist komplett leer (null) für diesen Nutzer
+            // Sauberes, leeres Profil anlegen
+            const initialProfile: UserProfile = {
+              ...DEFAULT_USER_PROFILE,
+              name: session.name || '',
+              vorname: ''
+            };
+            storageService.saveProfile(initialProfile);
+            setUserProfile(initialProfile);
+            storageService.saveShifts([]);
+            setShifts([]);
+            storageService.savePresets(DEFAULT_PRESETS);
+            setPresets(DEFAULT_PRESETS);
+            storageService.saveSalaryConfig(DEFAULT_SALARY_CONFIG);
+            setSalaryConfig(DEFAULT_SALARY_CONFIG);
+            storageService.saveAllPayoutOverrides({});
+            setPayoutOverrides({});
+            storageService.saveAllResolvedClaims({});
+            setResolvedClaims({});
+
+            if (!isOwner) {
+              setShowOnboarding(true);
             }
+
+            // Sofort als initialer Stand in Firebase via set() sichern
+            await firebaseService.saveUserData(
+              userIdentifier,
+              [],
+              initialProfile,
+              {},
+              {},
+              DEFAULT_SALARY_CONFIG,
+              DEFAULT_PRESETS,
+              vaultKeyRef.current,
+              true
+            );
           }
         } catch (e) {
           console.warn("Initialer Cloud-Abgleich fehlgeschlagen:", e);
@@ -487,28 +491,31 @@ export const App: React.FC = () => {
   };
 
   // Button 3: Lokalen Gerätestand in Gmail-Cloud sichern (mit Backup-Historie)
+  // Manueller Push in die Cloud
   const handlePushToCloud = async () => {
     const userIdentifier = getUserIdentifier();
     if (!userIdentifier) throw new Error("Kein Benutzer angemeldet");
 
     setIsSyncing(true);
     try {
+      const currentShifts = storageService.getShifts();
       const res = await firebaseService.saveUserData(
         userIdentifier,
-        shifts,
-        userProfile,
-        resolvedClaims,
-        payoutOverrides,
-        salaryConfig,
+        currentShifts,
+        storageService.getProfile(),
+        storageService.getResolvedClaims(),
+        storageService.getPayoutOverrides(),
+        storageService.getSalaryConfig(),
+        storageService.getPresets(),
         vaultKeyRef.current,
-        false,
+        true,
         storageService.getDeletedShifts()
       );
 
       if (res.success) {
         setLastSyncTime(new Date());
-        setCloudShiftCount(shifts.length);
-        showToast(`⬆️ ${shifts.length} Dienste erfolgreich in Gmail-Cloud gesichert!`, 'success');
+        setCloudShiftCount(currentShifts.length);
+        showToast(`⬆️ ${currentShifts.length} Dienste erfolgreich in Cloud gesichert!`, 'success');
 
         const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
         if (cloudData?.backupHistory) {
@@ -556,10 +563,28 @@ export const App: React.FC = () => {
           if (result.success) {
             loadAllData();
             showToast(result.message, 'success');
-            // Bei Bedarf in Cloud spiegeln
+
+            // Sofort 1:1 per set() in Firebase sichern!
             const userIdentifier = getUserIdentifier();
             if (userIdentifier && firebaseUser) {
-              await handlePushToCloud();
+              setIsSyncing(true);
+              try {
+                await firebaseService.saveUserData(
+                  userIdentifier,
+                  storageService.getShifts(),
+                  storageService.getProfile(),
+                  storageService.getResolvedClaims(),
+                  storageService.getPayoutOverrides(),
+                  storageService.getSalaryConfig(),
+                  storageService.getPresets(),
+                  vaultKeyRef.current,
+                  true
+                );
+                setLastSyncTime(new Date());
+                setCloudShiftCount(storageService.getShifts().length);
+              } finally {
+                setIsSyncing(false);
+              }
             }
             resolve();
           } else {
@@ -584,12 +609,13 @@ export const App: React.FC = () => {
     );
     if (!confirmRestore) return;
 
+    storageService.saveDeletedShifts({});
     storageService.saveShifts(backup.shifts);
     setShifts(backup.shifts);
 
     let restoredProfile: UserProfile = userProfile;
     if (backup.profile) {
-      restoredProfile = { ...storageService.getProfile(), ...backup.profile } as UserProfile;
+      restoredProfile = { ...DEFAULT_USER_PROFILE, ...backup.profile } as UserProfile;
       storageService.saveProfile(restoredProfile);
       setUserProfile(restoredProfile);
     }
@@ -603,13 +629,19 @@ export const App: React.FC = () => {
     }
     let restoredSalary: SalaryConfig = salaryConfig;
     if (backup.salaryConfig) {
-      restoredSalary = { ...storageService.getSalaryConfig(), ...backup.salaryConfig } as SalaryConfig;
+      restoredSalary = { ...DEFAULT_SALARY_CONFIG, ...backup.salaryConfig } as SalaryConfig;
       storageService.saveSalaryConfig(restoredSalary);
       setSalaryConfig(restoredSalary);
     }
+    let restoredPresets: PresetShift[] = presets;
+    if (backup.presets && backup.presets.length > 0) {
+      restoredPresets = backup.presets;
+      storageService.savePresets(restoredPresets);
+      setPresets(restoredPresets);
+    }
 
     const userIdentifier = getUserIdentifier();
-    if (userIdentifier) {
+    if (userIdentifier && firebaseUser) {
       await firebaseService.saveUserData(
         userIdentifier,
         backup.shifts,
@@ -617,9 +649,9 @@ export const App: React.FC = () => {
         backup.resolvedClaims || resolvedClaims,
         backup.payoutOverrides || payoutOverrides,
         restoredSalary,
+        restoredPresets,
         vaultKey,
-        false,
-        storageService.getDeletedShifts()
+        true
       );
     }
 
@@ -811,8 +843,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           payoutOverrides,
           salaryConfig,
+          presets,
           vaultKey,
-          false,
+          true,
           storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
@@ -840,8 +873,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           payoutOverrides,
           salaryConfig,
+          presets,
           vaultKey,
-          false,
+          true,
           storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
@@ -875,8 +909,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         salaryConfig,
+        presets,
         vaultKey,
-        false,
+        true,
         storageService.getDeletedShifts()
       ).catch(console.warn);
       setLastSyncTime(new Date());
@@ -898,8 +933,9 @@ export const App: React.FC = () => {
               resolvedClaims,
               payoutOverrides,
               salaryConfig,
+              presets,
               vaultKey,
-              false,
+              true,
               storageService.getDeletedShifts()
             ).catch(console.warn);
             setLastSyncTime(new Date());
@@ -910,7 +946,7 @@ export const App: React.FC = () => {
     );
   };
 
-  // Posten abhaken / öffnen (mit Millisekunden-Sofort-Speicherung in Firebase & Set-Union)
+  // Posten abhaken / öffnen (mit Millisekunden-Sofort-Speicherung in Firebase via set())
   const handleToggleClaim = (claimId: string) => {
     const isCurrentlyResolved = Boolean(resolvedClaims[claimId]?.isResolved);
     const updated = storageService.setClaimResolved(claimId, !isCurrentlyResolved);
@@ -923,7 +959,7 @@ export const App: React.FC = () => {
     }
 
     if (firebaseUser) {
-      // In derselben Millisekunde sofort abfeuern
+      // In derselben Millisekunde sofort per set() abfeuern
       firebaseService.saveUserData(
         getUserIdentifier(),
         shifts,
@@ -931,8 +967,9 @@ export const App: React.FC = () => {
         updated,
         payoutOverrides,
         salaryConfig,
+        presets,
         vaultKey,
-        false,
+        true,
         storageService.getDeletedShifts()
       ).then(res => {
         if (res.success) {
@@ -959,8 +996,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           updated,
           salaryConfig,
+          presets,
           vaultKey,
-          false,
+          true,
           storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
@@ -986,8 +1024,9 @@ export const App: React.FC = () => {
           resolvedClaims,
           updated,
           salaryConfig,
+          presets,
           vaultKey,
-          false,
+          true,
           storageService.getDeletedShifts()
         );
         setLastSyncTime(new Date());
@@ -1011,8 +1050,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         salaryConfig,
+        presets,
         vaultKey,
-        false,
+        true,
         storageService.getDeletedShifts()
       ).catch(console.warn);
       setLastSyncTime(new Date());
@@ -1022,6 +1062,21 @@ export const App: React.FC = () => {
   const handleSavePresets = (newPresets: PresetShift[]) => {
     storageService.savePresets(newPresets);
     setPresets(newPresets);
+    if (firebaseUser) {
+      firebaseService.saveUserData(
+        getUserIdentifier(),
+        shifts,
+        userProfile,
+        resolvedClaims,
+        payoutOverrides,
+        salaryConfig,
+        newPresets,
+        vaultKey,
+        true,
+        storageService.getDeletedShifts()
+      ).catch(console.warn);
+      setLastSyncTime(new Date());
+    }
   };
 
   const handleSaveSalaryConfig = (config: SalaryConfig) => {
@@ -1035,8 +1090,9 @@ export const App: React.FC = () => {
         resolvedClaims,
         payoutOverrides,
         config,
+        presets,
         vaultKey,
-        false,
+        true,
         storageService.getDeletedShifts()
       ).catch(console.warn);
       setLastSyncTime(new Date());

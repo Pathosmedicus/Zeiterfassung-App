@@ -31,18 +31,66 @@ export const MonthTable: React.FC<MonthTableProps> = ({
   const feiertage = getFeiertageFuerJahr(jahr);
   const shiftMap = new Map(shifts.map(s => [s.datum, s]));
 
-  // Inline Editing State
+  // Inline Editing State (Desktop)
   const [editingDatum, setEditingDatum] = useState<string | null>(null);
   const [editKommen, setEditKommen] = useState<string>('');
   const [editGehen, setEditGehen] = useState<string>('');
   const [editPause, setEditPause] = useState<number>(30);
 
+  // Mobiles Bearbeitungs-Modal (Bottom-Sheet / Pop-up)
+  const [mobileModalDatum, setMobileModalDatum] = useState<string | null>(null);
+  const [modalKommen, setModalKommen] = useState<string>('07:30');
+  const [modalGehen, setModalGehen] = useState<string>('16:00');
+  const [modalPause, setModalPause] = useState<number>(30);
+  const [modalSchichtTyp, setModalSchichtTyp] = useState<string>('Individuell');
+
+  const openEditModal = (datum: string, shift?: ShiftEntry) => {
+    setMobileModalDatum(datum);
+    if (shift) {
+      setModalKommen(shift.kommen || '');
+      setModalGehen(shift.gehen || '');
+      setModalPause(shift.pauseMinuten ?? 0);
+      setModalSchichtTyp(shift.schichtTyp || 'Individuell');
+    } else {
+      setModalKommen('07:30');
+      setModalGehen('16:00');
+      setModalPause(30);
+      setModalSchichtTyp('Regeldienst');
+    }
+  };
+
+  const handleSaveModal = () => {
+    if (!mobileModalDatum || !modalKommen || !modalGehen) return;
+    const netto = berechneNetto(modalKommen, modalGehen, modalPause);
+    const existing = shiftMap.get(mobileModalDatum);
+    onSaveShift({
+      datum: mobileModalDatum,
+      kommen: modalKommen,
+      gehen: modalGehen,
+      pauseMinuten: modalPause,
+      nettoStunden: netto,
+      schichtTyp: modalSchichtTyp || existing?.schichtTyp || 'Individuell'
+    });
+    setMobileModalDatum(null);
+  };
+
+  const handleDeleteModal = () => {
+    if (!mobileModalDatum) return;
+    onDeleteShift(mobileModalDatum);
+    setMobileModalDatum(null);
+  };
+
   const startInlineEdit = (datum: string, shift?: ShiftEntry) => {
+    // Auf Mobilgeräten (Touch / kleine Bildschirme) sofort das komfortable Modal öffnen
+    if (window.innerWidth < 768) {
+      openEditModal(datum, shift);
+      return;
+    }
     setEditingDatum(datum);
     if (shift) {
-      setEditKommen(shift.kommen);
-      setEditGehen(shift.gehen);
-      setEditPause(shift.pauseMinuten);
+      setEditKommen(shift.kommen || '');
+      setEditGehen(shift.gehen || '');
+      setEditPause(shift.pauseMinuten ?? 0);
     } else {
       setEditKommen('07:30');
       setEditGehen('16:00');
@@ -62,13 +110,14 @@ export const MonthTable: React.FC<MonthTableProps> = ({
       return;
     }
 
+    const existing = shiftMap.get(datum);
     onSaveShift({
       datum,
       kommen: editKommen,
       gehen: editGehen,
       pauseMinuten: editPause,
       nettoStunden: netto,
-      schichtTyp: 'Individuell'
+      schichtTyp: existing?.schichtTyp || 'Individuell'
     });
 
     setEditingDatum(null);
@@ -177,6 +226,8 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                     <td className="py-1 px-1">
                       <input
                         type="time"
+                        inputMode="numeric"
+                        autoFocus
                         value={editKommen}
                         onChange={e => setEditKommen(e.target.value)}
                         className="w-full px-2 py-1 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
@@ -185,6 +236,7 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                     <td className="py-1 px-1">
                       <input
                         type="time"
+                        inputMode="numeric"
                         value={editGehen}
                         onChange={e => setEditGehen(e.target.value)}
                         className="w-full px-2 py-1 rounded-lg bg-black/60 border border-cyan-400 text-xs font-bold text-center text-white focus:outline-none"
@@ -193,6 +245,8 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                     <td className="py-1 px-1">
                       <input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         min="0"
                         step="5"
                         value={editPause}
@@ -206,6 +260,7 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                     <td className="py-2 px-2 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
+                          type="button"
                           onClick={() => saveInlineEdit(datumStr)}
                           className="p-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
                           title="Speichern"
@@ -213,6 +268,7 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                           <Check className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
                           onClick={cancelInlineEdit}
                           className="p-1 rounded-md bg-white/10 text-slate-300 hover:text-white transition-colors"
                           title="Abbrechen"
@@ -228,7 +284,8 @@ export const MonthTable: React.FC<MonthTableProps> = ({
               return (
                 <tr
                   key={datumStr}
-                  className={`transition-colors duration-150 group ${
+                  onClick={() => startInlineEdit(datumStr, shift)}
+                  className={`transition-colors duration-150 group cursor-pointer ${
                     isHoliday
                       ? 'bg-cyan-500/[0.06] hover:bg-cyan-500/10'
                       : isWeekend
@@ -257,22 +314,13 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                       </span>
                     )}
                   </td>
-                  <td
-                    onClick={() => startInlineEdit(datumStr, shift)}
-                    className="py-2.5 px-3 text-center font-medium cursor-pointer text-slate-200 hover:text-cyan-300 transition-colors font-mono"
-                  >
+                  <td className="py-2.5 px-3 text-center font-medium text-slate-200 hover:text-cyan-300 transition-colors font-mono">
                     {shift ? shift.kommen : <span className="text-slate-600">-</span>}
                   </td>
-                  <td
-                    onClick={() => startInlineEdit(datumStr, shift)}
-                    className="py-2.5 px-3 text-center font-medium cursor-pointer text-slate-200 hover:text-cyan-300 transition-colors font-mono"
-                  >
+                  <td className="py-2.5 px-3 text-center font-medium text-slate-200 hover:text-cyan-300 transition-colors font-mono">
                     {shift ? shift.gehen : <span className="text-slate-600">-</span>}
                   </td>
-                  <td
-                    onClick={() => startInlineEdit(datumStr, shift)}
-                    className="py-2.5 px-2 text-center cursor-pointer"
-                  >
+                  <td className="py-2.5 px-2 text-center">
                     {shift && shift.pauseMinuten > 0 ? (
                       <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 border border-rose-500/30 text-rose-300">
                         {shift.pauseMinuten}m
@@ -295,14 +343,22 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                       {shift ? (
                         <>
                           <button
-                            onClick={() => startInlineEdit(datumStr, shift)}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(datumStr, shift);
+                            }}
                             className="p-1 rounded-md text-slate-400 hover:text-cyan-300 transition-colors"
                             title="Bearbeiten"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => onDeleteShift(datumStr)}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteShift(datumStr);
+                            }}
                             className="p-1 rounded-md text-slate-400 hover:text-rose-400 transition-colors"
                             title="Löschen"
                           >
@@ -311,7 +367,11 @@ export const MonthTable: React.FC<MonthTableProps> = ({
                         </>
                       ) : (
                         <button
-                          onClick={() => startInlineEdit(datumStr)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(datumStr);
+                          }}
                           className="p-1 rounded-md text-slate-600 hover:text-cyan-300 transition-colors"
                           title="Schicht hinzufügen"
                         >
@@ -337,6 +397,137 @@ export const MonthTable: React.FC<MonthTableProps> = ({
           </tfoot>
         </table>
       </div>
+
+      {/* Mobiles Bearbeitungs-Modal / Bottom-Sheet */}
+      {mobileModalDatum && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          onClick={() => setMobileModalDatum(null)}
+        >
+          <div 
+            className="w-full max-w-lg bg-zinc-900 border border-white/15 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in slide-in-from-bottom duration-250 max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Zieh-Indikator für Mobilgeräte */}
+            <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto sm:hidden mb-2" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block">
+                  {new Date(mobileModalDatum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                </span>
+                <h3 className="text-base font-bold text-white font-display">
+                  {shiftMap.get(mobileModalDatum) ? 'Dienst bearbeiten' : 'Neuen Dienst eintragen'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileModalDatum(null)}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Eingabefelder mit nativer Smartphone-Tastatur & inputMode */}
+            <div className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Kommen (Uhrzeit)
+                  </label>
+                  <input
+                    type="time"
+                    inputMode="numeric"
+                    value={modalKommen}
+                    onChange={e => setModalKommen(e.target.value)}
+                    className="w-full px-3.5 py-3 rounded-xl bg-black/60 border border-white/20 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 text-white font-mono text-base font-bold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Gehen (Uhrzeit)
+                  </label>
+                  <input
+                    type="time"
+                    inputMode="numeric"
+                    value={modalGehen}
+                    onChange={e => setModalGehen(e.target.value)}
+                    className="w-full px-3.5 py-3 rounded-xl bg-black/60 border border-white/20 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 text-white font-mono text-base font-bold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Pause (Minuten)
+                  </label>
+                  <div className="flex gap-1.5">
+                    {[0, 15, 30, 45, 60].map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setModalPause(p)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          modalPause === p
+                            ? 'bg-cyan-500 text-black'
+                            : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        {p}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  min="0"
+                  step="5"
+                  value={modalPause}
+                  onChange={e => setModalPause(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-full px-3.5 py-3 rounded-xl bg-black/60 border border-white/20 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 text-white font-mono text-base font-bold outline-none"
+                />
+              </div>
+
+              {/* Live-Berechnung der Netto-Arbeitszeit */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-300">
+                  Berechnete Arbeitszeit:
+                </span>
+                <span className="text-base font-black text-cyan-300 font-display">
+                  {berechneNetto(modalKommen, modalGehen, modalPause).toFixed(2)} h
+                </span>
+              </div>
+            </div>
+
+            {/* Aktions-Buttons: Speichern & Löschen */}
+            <div className="flex items-center gap-2 pt-2">
+              {shiftMap.get(mobileModalDatum) && (
+                <button
+                  type="button"
+                  onClick={handleDeleteModal}
+                  className="flex-1 py-3 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>🗑️ Dienst löschen</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveModal}
+                className="flex-[2] py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>💾 Speichern</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
