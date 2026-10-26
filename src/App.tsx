@@ -232,9 +232,7 @@ export const App: React.FC = () => {
       setShifts(cleanShifts);
       setCloudShiftCount(cleanShifts.length);
 
-      // Dynamischer Startmonat: Neuester Monat mit Diensten statt statischer Default
-      const targetMonth = storageService.determineInitialMonth(cleanShifts);
-      setCurrentYearMonth(targetMonth);
+      // Schichten gespeichert & gezählt (Monatsnavigation bleibt frei durch den Nutzer steuerbar)
     }
 
     // 2. Profil aktualisieren

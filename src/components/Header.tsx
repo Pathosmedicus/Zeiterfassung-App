@@ -87,6 +87,65 @@ export const Header: React.FC<HeaderProps> = ({
   const displayName = activeSession?.name || userName || firebaseUser?.displayName || 'Mitarbeiter';
   const displayEmail = activeSession?.email || firebaseUser?.email || '';
 
+  const availableMonths = React.useMemo(() => {
+    const list: { key: string; label: string }[] = [];
+    const startYear = 2025;
+    const endYear = 2026;
+    for (let y = startYear; y <= endYear; y++) {
+      const startM = y === 2025 ? 8 : 1;
+      const endM = 12;
+      for (let m = startM; m <= endM; m++) {
+        const key = `${y}-${String(m).padStart(2, '0')}`;
+        const shortName = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][m - 1];
+        list.push({ key, label: `${shortName} ${String(y).slice(2)}` });
+      }
+    }
+    return list;
+  }, []);
+
+  const activePillRef = React.useRef<HTMLButtonElement | null>(null);
+
+  React.useEffect(() => {
+    if (activePillRef.current) {
+      activePillRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [currentYearMonth]);
+
+  const lastWheelTime = React.useRef<number>(0);
+  const handleWheel = (e: React.WheelEvent) => {
+    const now = Date.now();
+    if (now - lastWheelTime.current < 160) return;
+
+    if (e.deltaY < -10 || e.deltaX < -10) {
+      lastWheelTime.current = now;
+      handleNextMonth();
+    } else if (e.deltaY > 10 || e.deltaX > 10) {
+      lastWheelTime.current = now;
+      handlePrevMonth();
+    }
+  };
+
+  const touchStartX = React.useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(diff) > 35) {
+      if (diff > 0) {
+        handlePrevMonth();
+      } else {
+        handleNextMonth();
+      }
+    }
+    touchStartX.current = null;
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-[#070a13]/90 backdrop-blur-2xl border-b border-white/10 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5">
@@ -173,8 +232,14 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Untere Zeile: Monatsauswahl & Direkter Stunden-Gesamtzähler */}
         <div className="flex items-center justify-between gap-3 glass p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl">
-          {/* Monats-Stepper */}
-          <div className="flex items-center gap-1">
+          {/* Monats-Stepper mit Mausrad & Touch-Swipe */}
+          <div
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="flex items-center gap-1 select-none"
+            title="Monat wechseln: Klicken oder mit Mausrad scrollen"
+          >
             <button
               onClick={handlePrevMonth}
               className="p-1.5 rounded-xl hover:bg-white/10 text-slate-300 hover:text-white transition-all active:scale-90"
@@ -228,6 +293,29 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Horizontale Monats-Scroll-Leiste (Quick Month Scroller) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 scrollbar-none no-scrollbar">
+          {availableMonths.map(m => {
+            const isActive = m.key === currentYearMonth;
+            return (
+              <button
+                key={m.key}
+                ref={isActive ? activePillRef : null}
+                type="button"
+                onClick={() => onMonthChange(m.key)}
+                className={`px-3 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25 ring-1 ring-cyan-400/50 scale-105'
+                    : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5'
+                }`}
+              >
+                <span>{m.label}</span>
+                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+              </button>
+            );
+          })}
         </div>
       </div>
     </header>
