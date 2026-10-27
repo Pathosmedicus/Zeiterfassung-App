@@ -9,7 +9,8 @@ const MONATSNAMEN = [
 
 /**
  * Erzeugt das offizielle Stundenzettel-PDF als gestochen scharfe Vektorgrafik.
- * Exakte 1:1 Nachbildung des Formulars der Mühlenkreiskliniken Minden.
+ * Exakte 1:1 Nachbildung des Formulars der Mühlenkreiskliniken Minden,
+ * optimal zentriert auf der DIN A4 Seite.
  */
 export function generateTimesheetPDF(
   jahr: number,
@@ -21,10 +22,39 @@ export function generateTimesheetPDF(
   const tageImMonat = new Date(jahr, monat, 0).getDate();
   const shiftMap = new Map(shifts.map(s => [s.datum, s]));
 
+  const pageW = 210;
+  const pageH = 297;
   const marginL = 15;
-  let curY = 14;
+  const centerX = pageW / 2; // 105 mm
 
-  // Header: Name, Personalnummer & Abteilung
+  // Geometrie der Tabelle
+  const titleH = 8.5;
+  const headH = 6.2;
+  const rowH = 5.8;
+  const sepH = 2.4;
+  const sumH = 7.0;
+
+  // Spaltenbreiten (Summe = 180mm auf 210mm A4-Breite, exakt 15mm Rand links/rechts)
+  // [Datum, Von, Kommen, Bis, Gehen, Pause, Geleistete Std, Std in Zahl]
+  const colW = [22, 11, 22, 11, 22, 24, 36, 32];
+  const totalW = colW.reduce((a, b) => a + b, 0); // 180 mm
+  const colX: number[] = [];
+  let accX = marginL;
+  for (const w of colW) {
+    colX.push(accX);
+    accX += w;
+  }
+
+  // Gesamte vertikale Höhe berechnen für perfekte vertikale Zentrierung auf der A4-Seite
+  const tableH = titleH + headH + (tageImMonat * rowH) + sepH + sumH;
+  const headerH = 23; // Briefkopf (Name, Personalnummer, Institutszeile)
+  const footerH = 22; // Abstand zur Unterschrift + Linien + Beschriftung
+  const totalContentH = headerH + tableH + footerH;
+
+  // curY so berechnen, dass der Inhalt vertikal harmonisch und zentriert auf der Seite sitzt
+  let curY = Math.max(16, Math.floor((pageH - totalContentH) / 2));
+
+  // --- 1. HEADER: Name, Personalnummer & Institutsbezeichnung ---
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
@@ -36,10 +66,10 @@ export function generateTimesheetPDF(
   const nameW = doc.getTextWidth(fullName);
   if (fullName.trim()) {
     doc.setLineWidth(0.2);
-    doc.line(marginL + 35, curY + 0.8, marginL + 35 + Math.max(nameW, 50), curY + 0.8);
+    doc.line(marginL + 35, curY + 0.8, marginL + 35 + Math.max(nameW, 55), curY + 0.8);
   }
 
-  curY += 6;
+  curY += 6.5;
   doc.setFont("helvetica", "normal");
   doc.text("Personalnummer:", marginL, curY);
   doc.setFont("helvetica", "bold");
@@ -47,14 +77,14 @@ export function generateTimesheetPDF(
   doc.text(pNrText, marginL + 35, curY);
   const nrW = doc.getTextWidth(pNrText);
   if (pNrText.trim()) {
-    doc.line(marginL + 35, curY + 0.8, marginL + 35 + Math.max(nrW, 35), curY + 0.8);
+    doc.line(marginL + 35, curY + 0.8, marginL + 35 + Math.max(nrW, 40), curY + 0.8);
   }
 
-  // Zusätzliche Klinik-/Abteilungszeile (offizieller Institutskopf)
-  curY += 5;
+  // Offizielle Instituts-/Klinikzeile – perfekt horizontal über der Tabelle zentriert
+  curY += 6.0;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
+  doc.setFontSize(8.5);
+  doc.setTextColor(70, 70, 70);
   const abt = (userProfile.abteilung && userProfile.abteilung !== 'Radiologie' && userProfile.abteilung !== 'Radiologie & Nuklearmedizin')
     ? userProfile.abteilung
     : 'Universitätsinstitut für Radiologie, Neuroradiologie und Nuklearmedizin';
@@ -62,48 +92,34 @@ export function generateTimesheetPDF(
     ? userProfile.klinik
     : 'Mühlenkreiskliniken Minden';
   const abtText = `${abt} • ${kl}`;
-  doc.text(abtText, marginL, curY);
+  doc.text(abtText, centerX, curY, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
-  curY += 5;
+  curY += 4.5;
 
-  // Spaltenbreiten (Summe = 180mm auf 210mm A4-Breite)
-  // [Datum, Von, Kommen, Bis, Gehen, Pause, Geleistete Std, Std in Zahl]
-  const colW = [22, 11, 22, 11, 22, 24, 36, 32];
-  const totalW = colW.reduce((a, b) => a + b, 0);
-  const colX: number[] = [];
-  let accX = marginL;
-  for (const w of colW) {
-    colX.push(accX);
-    accX += w;
-  }
-
-  // Titelzeile: "Stundenübersichtstabelle"
-  const titleH = 8.5;
+  // --- 2. TABELLE: Stundenübersichtstabelle ---
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.setFillColor(255, 255, 255);
   doc.rect(marginL, curY, totalW, titleH, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("Stundenübersichtstabelle", marginL + totalW / 2, curY + 6.0, { align: "center" });
+  doc.text("Stundenübersichtstabelle", centerX, curY + titleH / 2, { align: "center", baseline: "middle" });
   curY += titleH;
 
-  // Header-Zeile
-  const headH = 6.2;
+  // Header-Zeile ("Pause", "Geleistete Stunden", "Stunden in Zahl")
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   const headers = ["", "", "", "", "", "Pause", "Geleistete Stunden", "Stunden in Zahl"];
   for (let c = 0; c < 8; c++) {
     doc.rect(colX[c], curY, colW[c], headH);
     if (headers[c]) {
-      doc.text(headers[c], colX[c] + colW[c] / 2, curY + 4.3, { align: "center" });
+      doc.text(headers[c], colX[c] + colW[c] / 2, curY + headH / 2, { align: "center", baseline: "middle" });
     }
   }
   curY += headH;
 
-  // Tageszeilen
-  const rowH = 5.7;
+  // Tageszeilen (exakt mittig zentrierter Text)
   const bodyStartY = curY;
   let summeMinuten = 0;
   let summeDezimal = 0;
@@ -137,20 +153,22 @@ export function generateTimesheetPDF(
       }
     }
 
+    const cellCenterY = curY + rowH / 2;
+
     // Spalte 0: Datum
     doc.setFillColor(255, 255, 255);
     doc.rect(colX[0], curY, colW[0], rowH);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(0, 0, 0);
-    doc.text(anzeigeDatum, colX[0] + colW[0] / 2, curY + 4.0, { align: "center" });
+    doc.text(anzeigeDatum, colX[0] + colW[0] / 2, cellCenterY, { align: "center", baseline: "middle" });
 
     // Spalte 2: Kommen
     if (eintrag && eintrag.kommen) {
       doc.setFillColor(146, 208, 80); // #92D050 Klinik-Grün
       doc.rect(colX[2], curY, colW[2], rowH, "FD");
       doc.setFont("helvetica", "bold");
-      doc.text(eintrag.kommen, colX[2] + colW[2] / 2, curY + 4.0, { align: "center" });
+      doc.text(eintrag.kommen, colX[2] + colW[2] / 2, cellCenterY, { align: "center", baseline: "middle" });
     } else {
       doc.rect(colX[2], curY, colW[2], rowH);
     }
@@ -160,7 +178,7 @@ export function generateTimesheetPDF(
       doc.setFillColor(146, 208, 80);
       doc.rect(colX[4], curY, colW[4], rowH, "FD");
       doc.setFont("helvetica", "bold");
-      doc.text(eintrag.gehen, colX[4] + colW[4] / 2, curY + 4.0, { align: "center" });
+      doc.text(eintrag.gehen, colX[4] + colW[4] / 2, cellCenterY, { align: "center", baseline: "middle" });
     } else {
       doc.rect(colX[4], curY, colW[4], rowH);
     }
@@ -171,7 +189,7 @@ export function generateTimesheetPDF(
       doc.rect(colX[5], curY, colW[5], rowH, "FD");
       doc.setFont("helvetica", "bold");
       doc.setTextColor(255, 255, 255);
-      doc.text(pauseHHMM, colX[5] + colW[5] / 2, curY + 4.0, { align: "center" });
+      doc.text(pauseHHMM, colX[5] + colW[5] / 2, cellCenterY, { align: "center", baseline: "middle" });
       doc.setTextColor(0, 0, 0);
     } else {
       doc.rect(colX[5], curY, colW[5], rowH);
@@ -186,7 +204,7 @@ export function generateTimesheetPDF(
       doc.rect(colX[6], curY, colW[6], rowH);
       doc.setFont("helvetica", "normal");
     }
-    doc.text(arbeitszeitHHMM, colX[6] + colW[6] / 2, curY + 4.0, { align: "center" });
+    doc.text(arbeitszeitHHMM, colX[6] + colW[6] / 2, cellCenterY, { align: "center", baseline: "middle" });
 
     // Spalte 7: Stunden in Zahl
     if (eintrag && eintrag.nettoStunden > 0) {
@@ -197,7 +215,7 @@ export function generateTimesheetPDF(
       doc.rect(colX[7], curY, colW[7], rowH);
       doc.setFont("helvetica", "normal");
     }
-    doc.text(dezimalStr, colX[7] + colW[7] / 2, curY + 4.0, { align: "center" });
+    doc.text(dezimalStr, colX[7] + colW[7] / 2, cellCenterY, { align: "center", baseline: "middle" });
 
     curY += rowH;
   }
@@ -210,46 +228,49 @@ export function generateTimesheetPDF(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(0, 0, 0);
-  doc.text("Von", colX[1] + colW[1] / 2, bodyStartY + totalBodyH / 2, { align: "center" });
-  doc.text("Bis", colX[3] + colW[3] / 2, bodyStartY + totalBodyH / 2, { align: "center" });
+  doc.text("Von", colX[1] + colW[1] / 2, bodyStartY + totalBodyH / 2, { align: "center", baseline: "middle" });
+  doc.text("Bis", colX[3] + colW[3] / 2, bodyStartY + totalBodyH / 2, { align: "center", baseline: "middle" });
 
   // Schwarzer Trennbalken
-  const sepH = 2.4;
   doc.setFillColor(0, 0, 0);
   doc.rect(marginL, curY, totalW, sepH, "FD");
   curY += sepH;
 
   // Gesamtzeile
-  const sumH = 6.8;
   const first6W = colW[0] + colW[1] + colW[2] + colW[3] + colW[4] + colW[5];
+  const sumCenterY = curY + sumH / 2;
   doc.setFillColor(255, 255, 255);
   doc.rect(marginL, curY, first6W, sumH, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
-  doc.text("Gesamt", marginL + first6W / 2, curY + 4.7, { align: "center" });
+  doc.text("Gesamt", marginL + first6W / 2, sumCenterY, { align: "center", baseline: "middle" });
 
   const gesStd = Math.floor(summeMinuten / 60);
   const gesMin = summeMinuten % 60;
   doc.setFillColor(146, 208, 80);
   doc.rect(colX[6], curY, colW[6], sumH, "FD");
-  doc.text(`${gesStd}:${String(gesMin).padStart(2, '0')}`, colX[6] + colW[6] / 2, curY + 4.7, { align: "center" });
+  doc.text(`${gesStd}:${String(gesMin).padStart(2, '0')}`, colX[6] + colW[6] / 2, sumCenterY, { align: "center", baseline: "middle" });
 
   doc.setFillColor(146, 208, 80);
   doc.rect(colX[7], curY, colW[7], sumH, "FD");
-  doc.text(summeDezimal.toFixed(2).replace('.', ','), colX[7] + colW[7] / 2, curY + 4.7, { align: "center" });
+  doc.text(summeDezimal.toFixed(2).replace('.', ','), colX[7] + colW[7] / 2, sumCenterY, { align: "center", baseline: "middle" });
   curY += sumH;
 
-  // Unterschriftsfeld
-  curY += 14;
+  // --- 3. UNTERSCHRIFTSFELD (symmetrisch & harmonisch zentriert) ---
+  curY += 15;
   doc.setLineWidth(0.3);
-  doc.line(marginL, curY, marginL + 65, curY);
-  doc.line(marginL + 95, curY, marginL + totalW, curY);
+  const sigLineWidth = 70;
+  // Linke Linie: Datum und Ort
+  doc.line(marginL, curY, marginL + sigLineWidth, curY);
+  // Rechte Linie: Unterschrift (bündig zum rechten Rand der Tabelle)
+  const sigRightX = marginL + totalW - sigLineWidth;
+  doc.line(sigRightX, curY, marginL + totalW, curY);
 
   curY += 4.5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
   doc.text("Datum und Ort", marginL, curY);
-  doc.text("Unterschrift", marginL + 95, curY);
+  doc.text("Unterschrift", sigRightX, curY);
 
   return doc;
 }
