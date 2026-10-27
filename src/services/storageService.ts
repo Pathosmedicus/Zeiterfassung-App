@@ -8,6 +8,7 @@ import {
   ResolvedClaimStatus,
   AppUserSession
 } from '../types';
+import { APP_VERSION } from '../version';
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
   name: '',
@@ -675,7 +676,7 @@ export const storageService = {
     const resolvedClaims = this.getResolvedClaims();
 
     return {
-      version: '3.2.0',
+      version: APP_VERSION.replace('v', ''),
       timestamp: new Date().toISOString(),
       userProfile: profile,
       salaryConfig: salary,

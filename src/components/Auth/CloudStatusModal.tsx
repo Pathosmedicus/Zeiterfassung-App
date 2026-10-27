@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { AppUserSession, CloudBackupItem } from '../../types';
+import { APP_VERSION } from '../../version';
 
 interface CloudStatusModalProps {
   isOpen: boolean;
@@ -135,6 +136,11 @@ export const CloudStatusModal: React.FC<CloudStatusModalProps> = ({
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-medium">Nutzer-Profil:</span>
             <span className="text-cyan-300 font-medium">{userName}</span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-medium">App-Version:</span>
+            <span className="text-slate-200 font-mono font-bold">{APP_VERSION}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">

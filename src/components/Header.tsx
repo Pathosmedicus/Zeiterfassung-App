@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { MonthSalaryStats, AppUserSession } from '../types';
+import { APP_VERSION } from '../version';
 
 interface HeaderProps {
   currentYearMonth: string; // YYYY-MM
@@ -32,6 +33,7 @@ interface HeaderProps {
   onManualSync?: () => void;
   onOpenSyncModal?: () => void;
   onOpenCloudModal?: () => void;
+  onOpenVersionModal?: () => void;
   lastSyncTime?: Date | null;
   onLockApp?: () => void;
 }
@@ -56,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
   onManualSync,
   onOpenSyncModal,
   onOpenCloudModal,
+  onOpenVersionModal,
   lastSyncTime,
   onLockApp
 }) => {
@@ -164,6 +167,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="hidden sm:inline-flex items-center text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
                   Radiologie
                 </span>
+                <button
+                  type="button"
+                  onClick={onOpenVersionModal}
+                  className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all cursor-pointer active:scale-95"
+                  title={`Version ${APP_VERSION} – Klicken für Update-Details & Neuladen`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span>{APP_VERSION}</span>
+                </button>
               </div>
               <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
                 <span className="text-cyan-300 font-semibold">{displayName}</span>

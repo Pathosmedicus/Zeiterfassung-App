@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertOctagon, ShieldCheck, Calendar } from 'lucide-react';
+import { APP_VERSION, APP_BUILD_DATE } from '../../version';
 
 interface AuthLockScreenProps {
   onGoogleLogin: () => Promise<void>;
@@ -38,14 +39,19 @@ export const AuthLockScreen: React.FC<AuthLockScreenProps> = ({
               </div>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight font-display">
-              Zeiterfassung Radiologie
-            </h1>
-            <p className="text-xs text-cyan-300 font-semibold mt-0.5">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight font-display">
+                Zeiterfassung Radiologie
+              </h1>
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                {APP_VERSION}
+              </span>
+            </div>
+            <p className="text-xs text-cyan-300 font-semibold mt-1">
               Multi-User & Geschützter Arbeitsbereich
             </p>
             <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
-              Jeder Kollege hat einen strikt isolierten Speicher (0 Bytes fremder Datenzugriff).
+              Jeder Mitarbeiter hat einen strikt isolierten Speicher (0 Bytes fremder Datenzugriff).
             </p>
           </div>
 
@@ -101,6 +107,12 @@ export const AuthLockScreen: React.FC<AuthLockScreenProps> = ({
             <p className="text-[11px] text-slate-400">
               Automatische Zuordnung & strikt isolierter Cloud-Speicher
             </p>
+          </div>
+
+          {/* Version-Footer zur einfachen Verfolgung von Aktualisierungen */}
+          <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+            <span>Stand: {APP_BUILD_DATE}</span>
+            <span className="text-cyan-400 font-semibold">{APP_VERSION}</span>
           </div>
         </div>
       </div>

@@ -32,6 +32,7 @@ import {
 } from '../types';
 import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './vaultService';
 import { deduplicateShifts } from './storageService';
+import { APP_VERSION } from '../version';
 
 // Fallback Firebase-Konfiguration für GitHub Pages (osmedicus.github.io)
 const FALLBACK_FIREBASE_CONFIG = {
@@ -482,7 +483,7 @@ export const firebaseService = {
         presets: presets || [],
         backupHistory,
         deletedShifts: deletedShifts || {},
-        clientVersion: '3.2.0',
+        clientVersion: APP_VERSION,
         updatedAt: new Date().toISOString(),
         lastUpdated: serverTimestamp(),
         lastDevice: navigator.userAgent

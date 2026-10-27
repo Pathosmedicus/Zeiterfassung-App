@@ -28,6 +28,8 @@ import { PresetsConfig } from './components/Settings/PresetsConfig';
 import { SalaryConfig as SalaryConfigComponent } from './components/Settings/SalaryConfig';
 import { BackupManager } from './components/Settings/BackupManager';
 import { VaultConfig } from './components/Settings/VaultConfig';
+import { AppVersionCard } from './components/Settings/AppVersionCard';
+import { VersionModal } from './components/Common/VersionModal';
 
 // Sicherheits-Architektur, Multi-User & Auth-Wall
 import { AuthLockScreen } from './components/Auth/AuthLockScreen';
@@ -67,6 +69,7 @@ export const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState<boolean>(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState<boolean>(false);
   const [cloudShiftCount, setCloudShiftCount] = useState<number | null>(null);
   const [backupHistory, setBackupHistory] = useState<CloudBackupItem[]>([]);
   const [vaultKey, setVaultKey] = useState<string>(() => vaultService.getDefaultPass());
@@ -1194,6 +1197,12 @@ export const App: React.FC = () => {
         showToast={showToast}
       />
 
+      {/* App-Version & Update-Modal */}
+      <VersionModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+      />
+
       {/* Sticky Header mit Name, Blue-Logout-Button, Sync-Trigger und Monatsnavigation */}
       <Header
         currentYearMonth={currentYearMonth}
@@ -1210,6 +1219,7 @@ export const App: React.FC = () => {
         onManualSync={() => handleManualSync(true)}
         onOpenSyncModal={() => setIsCloudModalOpen(true)}
         onOpenCloudModal={() => setIsCloudModalOpen(true)}
+        onOpenVersionModal={() => setIsVersionModalOpen(true)}
         lastSyncTime={lastSyncTime}
         onLockApp={handleLogout}
       />
@@ -1356,6 +1366,9 @@ export const App: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* App-Version & Aktualisierungs-Verfolgung */}
+            <AppVersionCard onShowToast={showToast} />
 
             <Stammdaten
               userProfile={userProfile}
