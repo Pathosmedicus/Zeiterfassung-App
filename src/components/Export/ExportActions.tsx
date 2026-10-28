@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { FileText, FileSpreadsheet, Printer, Mail, Download, Sparkles, TrendingUp } from 'lucide-react';
+import { FileText, FileSpreadsheet, Printer, Mail, Download, Sparkles, TrendingUp, CalendarDays } from 'lucide-react';
 import { ShiftEntry, UserProfile, SalaryConfig } from '../../types';
 import { downloadTimesheetPDF } from '../../services/pdfService';
 import { exportTimesheetExcel, exportSalaryReportExcel } from '../../services/excelService';
+import { shiftsToCsv, shiftsToIcs } from '../../services/shiftUtils';
 
 interface ExportActionsProps {
   currentYearMonth: string;
@@ -16,6 +17,18 @@ const MONATSNAMEN = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember"
 ];
+
+function downloadTextFile(filename: string, content: string, mime: string): void {
+  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export const ExportActions: React.FC<ExportActionsProps> = ({
   currentYearMonth,
@@ -64,6 +77,33 @@ export const ExportActions: React.FC<ExportActionsProps> = ({
       onShowToast(`Fehler beim Jahresabgleich: ${err?.message}`, 'error');
     } finally {
       setLoadingAction(null);
+    }
+  };
+
+  const handleDownloadCsv = () => {
+    try {
+      const hasShifts = shifts.some(s => s.datum.startsWith(currentYearMonth) && s.nettoStunden > 0);
+      if (!hasShifts) {
+        onShowToast(`Keine Dienste im ${monatName} ${jahr} vorhanden.`, 'info');
+        return;
+      }
+      downloadTextFile(`Stundenzettel_${currentYearMonth}.csv`, shiftsToCsv(shifts, currentYearMonth), 'text/csv');
+      onShowToast('✅ CSV-Datei heruntergeladen!', 'success');
+    } catch (err: any) {
+      onShowToast(`Fehler beim CSV-Export: ${err?.message}`, 'error');
+    }
+  };
+
+  const handleDownloadIcs = () => {
+    try {
+      if (!shifts.some(s => s.nettoStunden > 0)) {
+        onShowToast('Keine Dienste für den Kalender-Export vorhanden.', 'info');
+        return;
+      }
+      downloadTextFile('Dienstplan.ics', shiftsToIcs(shifts), 'text/calendar');
+      onShowToast('✅ Kalenderdatei (.ics) heruntergeladen!', 'success');
+    } catch (err: any) {
+      onShowToast(`Fehler beim Kalender-Export: ${err?.message}`, 'error');
     }
   };
 
@@ -136,6 +176,24 @@ export const ExportActions: React.FC<ExportActionsProps> = ({
         >
           <TrendingUp className="w-4 h-4 text-cyan-400" />
           <span>Jahres-Gehaltsabgleich {jahr}</span>
+        </button>
+
+        <button
+          onClick={handleDownloadCsv}
+          disabled={loadingAction !== null}
+          className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white font-bold text-xs border border-white/10 active:scale-95 transition-all"
+        >
+          <Download className="w-4 h-4 text-emerald-400" />
+          <span>CSV ({monatName})</span>
+        </button>
+
+        <button
+          onClick={handleDownloadIcs}
+          disabled={loadingAction !== null}
+          className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white font-bold text-xs border border-white/10 active:scale-95 transition-all"
+        >
+          <CalendarDays className="w-4 h-4 text-violet-400" />
+          <span>Kalender (.ics)</span>
         </button>
 
         <button
