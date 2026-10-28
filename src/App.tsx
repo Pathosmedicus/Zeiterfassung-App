@@ -332,6 +332,11 @@ export const App: React.FC = () => {
         storageService.savePresets(cloudData.presets);
         setPresets(cloudData.presets);
       }
+
+      // 6b. E-Mail-Vorlage 1:1 übernehmen
+      if (cloudData.emailTemplate && typeof cloudData.emailTemplate === 'object') {
+        storageService.saveEmailTemplate(cloudData.emailTemplate);
+      }
     }
 
     // 7. Rollback-Backups aktualisieren
@@ -371,7 +376,8 @@ export const App: React.FC = () => {
           storageService.getPresets(),
           vaultKeyRef.current,
           true,
-          storageService.getDeletedShifts()
+          storageService.getDeletedShifts(),
+          storageService.getEmailTemplate()
         ),
         CLOUD_PUSH_TIMEOUT_MS,
         { success: false, message: 'Zeitüberschreitung beim Speichern in der Cloud.' }
@@ -653,6 +659,9 @@ export const App: React.FC = () => {
       if (cloudData.backupHistory) {
         setBackupHistory(cloudData.backupHistory);
       }
+      if (cloudData.emailTemplate && typeof cloudData.emailTemplate === 'object') {
+        storageService.saveEmailTemplate(cloudData.emailTemplate);
+      }
 
       const initialMonth = storageService.determineInitialMonth(cloudData.shifts);
       setCurrentYearMonth(initialMonth);
@@ -903,6 +912,7 @@ export const App: React.FC = () => {
       const session: AppUserSession = {
         id: userId,
         name: userName || (isOwner ? 'Mohammad Almatar' : 'Mitarbeiter'),
+        email: isOwner ? MOHAMMAD_EMAIL : (userId.includes('@') ? userId : undefined),
         authProvider: 'pin',
         isOwner,
         isOnboarded: isOwner || storageService.isUserOnboarded(userId),
@@ -951,6 +961,7 @@ export const App: React.FC = () => {
       const session: AppUserSession = {
         id: userId,
         name: res.userName || (isOwner ? 'Mohammad Almatar' : 'Mitarbeiter'),
+        email: isOwner ? MOHAMMAD_EMAIL : (userId.includes('@') ? userId : undefined),
         authProvider: 'biometric',
         isOwner,
         isOnboarded: isOwner || storageService.isUserOnboarded(userId),
@@ -1409,6 +1420,7 @@ export const App: React.FC = () => {
                 userProfile={userProfile}
                 shifts={shifts}
                 onShowToast={showToast}
+                onSaveEmailTemplate={() => void pushLocalToCloud()}
               />
             </div>
           </Suspense>

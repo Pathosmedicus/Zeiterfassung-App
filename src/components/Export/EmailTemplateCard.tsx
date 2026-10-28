@@ -9,6 +9,7 @@ interface EmailTemplateCardProps {
   shifts: ShiftEntry[];
   userProfile: UserProfile;
   onShowToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  onSaveEmailTemplate?: (template: EmailTemplate) => void;
 }
 
 const MONATSNAMEN = [
@@ -26,7 +27,8 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
   currentYearMonth,
   shifts,
   userProfile,
-  onShowToast
+  onShowToast,
+  onSaveEmailTemplate
 }) => {
   const [jStr, mStr] = currentYearMonth.split('-');
   const jahr = parseInt(jStr, 10);
@@ -37,21 +39,39 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
   const [history, setHistory] = useState<EmailHistoryItem[]>(() => storageService.getEmailHistory());
   const [showHistory, setShowHistory] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const saveDebounceRef = React.useRef<any>(null);
 
   useEffect(() => {
     setTemplate(storageService.getEmailTemplate());
     setHistory(storageService.getEmailHistory());
+    return () => {
+      if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    };
   }, []);
+
+  // Jede Tasten-Eingabe speichert sich SOFORT und ohne Datenverlust automatisch!
+  const handleFieldChange = (field: keyof EmailTemplate, val: string) => {
+    const updated = { ...template, [field]: val };
+    setTemplate(updated);
+    storageService.saveEmailTemplate(updated);
+
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      onSaveEmailTemplate?.(updated);
+    }, 400);
+  };
 
   const handleSaveTemplate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     storageService.saveEmailTemplate(template);
-    onShowToast('✅ E-Mail-Vorlage gespeichert.', 'success');
+    onSaveEmailTemplate?.(template);
+    onShowToast('✅ E-Mail-Vorlage dauerhaft gespeichert.', 'success');
   };
 
   const handleResetDefault = () => {
     setTemplate(DEFAULT_TEMPLATE);
     storageService.saveEmailTemplate(DEFAULT_TEMPLATE);
+    onSaveEmailTemplate?.(DEFAULT_TEMPLATE);
     onShowToast('Voreingestellte Standard-Vorlage wiederhergestellt.', 'info');
   };
 
@@ -68,6 +88,10 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
 
   const handleSendEmail = () => {
     try {
+      // 0. Vorlage vor dem Versand persistent sichern
+      storageService.saveEmailTemplate(template);
+      onSaveEmailTemplate?.(template);
+
       // 1. Vektor-PDF herunterladen
       downloadTimesheetPDF(jahr, monat, shifts, userProfile);
 
@@ -109,9 +133,15 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
             <Mail className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white tracking-wide font-display">
-              E-Mail-Vorlage & Versand
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white tracking-wide font-display">
+                E-Mail-Vorlage & Versand
+              </h3>
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Auto-Save aktiv
+              </span>
+            </div>
             <p className="text-[11px] text-slate-400">
               Vordefinierte Vorlage für die monatliche Stundenzettel-Einreichung
             </p>
@@ -121,7 +151,7 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
           <button
             type="button"
             onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 transition-all cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
             <span>{showPreview ? 'Editor' : 'Vorschau'}</span>
@@ -129,7 +159,7 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
           <button
             type="button"
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-400 hover:text-white transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-400 hover:text-white transition-all cursor-pointer"
           >
             <Clock className="w-3.5 h-3.5" />
             <span>Verlauf ({history.length})</span>
@@ -146,8 +176,7 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
           <input
             type="email"
             value={template.recipient}
-            onChange={e => setTemplate({ ...template, recipient: e.target.value })}
-            onBlur={() => handleSaveTemplate()}
+            onChange={e => handleFieldChange('recipient', e.target.value)}
             placeholder="z.B. personalabteilung@klinik.de"
             className="w-full px-4 py-2.5 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-xs font-semibold focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/50 transition-all"
           />
@@ -161,8 +190,7 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
           <input
             type="text"
             value={template.subject}
-            onChange={e => setTemplate({ ...template, subject: e.target.value })}
-            onBlur={() => handleSaveTemplate()}
+            onChange={e => handleFieldChange('subject', e.target.value)}
             placeholder="Stundenübersicht {MONAT} {JAHR}"
             className="w-full px-4 py-2.5 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-xs font-bold focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/50 transition-all"
             required
@@ -175,10 +203,9 @@ export const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({
             Nachrichtentext
           </label>
           <textarea
-            rows={4}
+            rows={5}
             value={template.body}
-            onChange={e => setTemplate({ ...template, body: e.target.value })}
-            onBlur={() => handleSaveTemplate()}
+            onChange={e => handleFieldChange('body', e.target.value)}
             className="w-full px-4 py-3 rounded-2xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-xs leading-relaxed focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/50 font-mono transition-all"
             required
           />

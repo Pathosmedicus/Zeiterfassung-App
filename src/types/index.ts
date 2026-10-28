@@ -198,6 +198,7 @@ export interface CloudUserData {
   salaryConfig?: Partial<SalaryConfig>;
   backupHistory?: CloudBackupItem[];
   deletedShifts?: Record<string, DeletedShiftItem>;
+  emailTemplate?: EmailTemplate;
   lastUpdated?: any;
   lastDevice?: string;
 }
@@ -211,6 +212,7 @@ export interface AppBackup {
   shifts: ShiftEntry[];
   payoutOverrides?: Record<string, MonthPayoutOverride>;
   resolvedClaims?: Record<string, ResolvedClaimStatus>;
+  emailTemplate?: EmailTemplate;
   ma_name?: string;
   ma_vorname?: string;
   ma_personalnummer?: string;

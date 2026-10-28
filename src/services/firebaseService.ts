@@ -28,7 +28,8 @@ import {
   SalaryConfig,
   PresetShift,
   CloudUserData,
-  CloudBackupItem
+  CloudBackupItem,
+  EmailTemplate
 } from '../types';
 import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './vaultService';
 import { deduplicateShifts } from './storageService';
@@ -305,6 +306,7 @@ function parseCloudUserData(data: any): CloudUserData {
     salaryConfig,
     backupHistory,
     deletedShifts,
+    emailTemplate: data.emailTemplate && typeof data.emailTemplate === 'object' ? data.emailTemplate : undefined,
     lastUpdated: data.lastUpdated,
     lastDevice: data.lastDevice
   };
@@ -432,7 +434,8 @@ export const firebaseService = {
     presets?: PresetShift[],
     vaultPassphrase?: string,
     forceOverwrite: boolean = false,
-    deletedShifts: Record<string, { datum: string; deletedAt: string }> = {}
+    deletedShifts: Record<string, { datum: string; deletedAt: string }> = {},
+    emailTemplate?: EmailTemplate
   ): Promise<{ success: boolean; message: string }> {
     if (!db || !emailOrUid) {
       return { success: false, message: 'Datenbank nicht initialisiert.' };
@@ -485,6 +488,7 @@ export const firebaseService = {
         presets: presets || [],
         backupHistory,
         deletedShifts: deletedShifts || {},
+        emailTemplate: emailTemplate || null,
         clientVersion: APP_VERSION,
         updatedAt: new Date().toISOString(),
         lastUpdated: serverTimestamp(),

@@ -131,7 +131,10 @@ export function normalizeEmail(emailOrId?: string | null): string {
  */
 function getUserKey(baseKey: string, customUserId?: string): string {
   const target = customUserId || activeSession?.email || activeUserId || '';
-  const norm = normalizeEmail(target);
+  let norm = normalizeEmail(target);
+  if (norm === 'mohammad' || norm === 'mohammad almatar' || norm === 'mohammadmattar1971@gmail.com') {
+    norm = 'mohammadmattar1971@gmail.com';
+  }
   return `zeiterfassung_v2_${norm}_${baseKey}`;
 }
 
@@ -683,7 +686,8 @@ export const storageService = {
       presets,
       shifts,
       payoutOverrides,
-      resolvedClaims
+      resolvedClaims,
+      emailTemplate: this.getEmailTemplate()
     };
   },
 
@@ -735,6 +739,9 @@ export const storageService = {
       } else {
         this.saveAllResolvedClaims({});
       }
+      if (backupJson.emailTemplate && typeof backupJson.emailTemplate === 'object') {
+        this.saveEmailTemplate(backupJson.emailTemplate);
+      }
 
       return {
         success: true,
@@ -752,6 +759,27 @@ export const storageService = {
     if (raw) {
       try { return JSON.parse(raw); } catch {}
     }
+
+    // Fallbacks prüfen (frühere Versionen oder abweichende Schreibweisen)
+    const fallbackKeys = [
+      'zeiterfassung_v2_mohammadmattar1971@gmail.com_email_tpl',
+      'zeiterfassung_v2_mohammad_email_tpl',
+      'zeiterfassung_email_tpl_v3',
+      'email_template_v1'
+    ];
+    for (const fb of fallbackKeys) {
+      const fbRaw = localStorage.getItem(fb);
+      if (fbRaw) {
+        try {
+          const parsed = JSON.parse(fbRaw);
+          if (parsed && typeof parsed.body === 'string') {
+            try { localStorage.setItem(key, fbRaw); } catch {}
+            return parsed;
+          }
+        } catch {}
+      }
+    }
+
     return {
       recipient: '',
       subject: 'Stundenübersicht {MONAT} {JAHR}',
@@ -761,7 +789,17 @@ export const storageService = {
 
   saveEmailTemplate(template: { recipient: string; subject: string; body: string }): void {
     if (!activeUserId) return;
-    localStorage.setItem(getUserKey('email_tpl'), JSON.stringify(template));
+    const serialized = JSON.stringify(template);
+    const key = getUserKey('email_tpl');
+    localStorage.setItem(key, serialized);
+
+    // Wenn Mohammad angemeldet ist, auch unter beiden Aliassen redundant sichern
+    if (this.isMohammadUser()) {
+      try {
+        localStorage.setItem('zeiterfassung_v2_mohammadmattar1971@gmail.com_email_tpl', serialized);
+        localStorage.setItem('zeiterfassung_v2_mohammad_email_tpl', serialized);
+      } catch {}
+    }
   },
 
   getEmailHistory(): Array<{ id: string; zielMonat: string; datumGesendet: string }> {
