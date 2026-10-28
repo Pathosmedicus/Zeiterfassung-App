@@ -39,7 +39,7 @@ export const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
               {isSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
               {isError && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
               {!isSuccess && !isError && <Info className="w-5 h-5 text-cyan-400 shrink-0" />}
-              <span className="text-xs font-semibold truncate text-white">{t.text}</span>
+              <span className="text-xs font-semibold text-white break-words">{t.text}</span>
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">

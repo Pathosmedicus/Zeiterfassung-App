@@ -49,6 +49,14 @@ import {
 import { firebaseService } from './services/firebaseService';
 import { calculateMonthSalary } from './services/salaryEngine';
 import {
+  mergeShiftsWithTombstones,
+  sameShiftSet,
+  sameDeletedMap,
+  checkRestTime,
+  annualLimitStatus
+} from './services/shiftUtils';
+import { StampClock } from './components/Erfassen/StampClock';
+import {
   TabType,
   ShiftEntry,
   UserProfile,
@@ -60,6 +68,34 @@ import {
   CloudBackupItem,
   AppUserSession
 } from './types';
+
+// Maximale Wartezeit für einen Cloud-Push (offline hängt Firestore sonst unbegrenzt)
+const CLOUD_PUSH_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>(resolve => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    promise.then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      }
+    );
+  });
+}
+
+// Grundlohn-Summe eines Kalenderjahres (Basis für die Jahresgrenze-Hinweise)
+function annualBasisWage(year: number, shifts: ShiftEntry[], config: SalaryConfig): number {
+  let total = 0;
+  for (let month = 1; month <= 12; month++) {
+    total += calculateMonthSalary(year, month, shifts, config).basisLohn;
+  }
+  return Math.round(total * 100) / 100;
+}
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('stundenzettel');
@@ -116,11 +152,16 @@ export const App: React.FC = () => {
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
   const showToast = useCallback((
     text: string,
     type: 'success' | 'error' | 'info' = 'info',
     actionText?: string,
-    onAction?: () => void
+    onAction?: () => void,
+    durationMs: number = 4500
   ) => {
     const id = `${Date.now()}_${Math.random()}`;
     const newToast: ToastMessage = { id, text, type, actionText, onAction };
@@ -128,12 +169,8 @@ export const App: React.FC = () => {
 
     setTimeout(() => {
       dismissToast(id);
-    }, 4500);
-  }, []);
-
-  const dismissToast = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
+    }, durationMs);
+  }, [dismissToast]);
 
   // Daten initial aus dem Scoped Storage des aktuellen Nutzers laden
   const loadAllData = useCallback(() => {
@@ -163,7 +200,7 @@ export const App: React.FC = () => {
   // Exklusives Entschlüsseln von Mohammads Seed (nur historische Abrechnungen & Nachforderungen für Minijob-Radar)
   const unlockMohammadData = useCallback(async (keyToUse?: string, force: boolean = false) => {
     if (hasUnlockedRef.current && !force) return;
-    const activeKey = keyToUse || vaultKeyRef.current || '1971';
+    const activeKey = keyToUse || vaultKeyRef.current;
     try {
       const seed = await vaultService.unlockSeed(activeKey);
       if (seed) {
@@ -195,62 +232,75 @@ export const App: React.FC = () => {
     }
   }, [loadAllData, unlockMohammadData]);
 
-  // Helper zum Anwenden von Daten aus der Google Cloud (1:1 Snapshot ohne fehlerhaftes Merge-Chaos)
-  const applyCloudData = useCallback((cloudData: CloudUserData) => {
-    if (!cloudData) return;
+  // Helper zum Anwenden von Daten aus der Google Cloud.
+  // Schichten werden pro Tag mit dem lokalen Stand zusammengeführt (neuerer Zeitstempel gewinnt,
+  // Lösch-Tombstones werden respektiert), damit offline erfasste Dienste nicht verloren gehen.
+  // Alle übrigen Daten übernimmt die Cloud 1:1 – es sei denn, es liegen noch nicht synchronisierte
+  // lokale Änderungen vor (Offline-Queue); dann bleiben diese erhalten und werden nachgereicht.
+  // Rückgabe: true, wenn der lokale Stand Daten enthält, die die Cloud noch nicht kennt (Push nötig).
+  const applyCloudData = useCallback((cloudData: CloudUserData): boolean => {
+    if (!cloudData) return false;
 
-    // 0. Tombstones für gelöschte Schichten
-    if (cloudData.deletedShifts && typeof cloudData.deletedShifts === 'object') {
-      storageService.saveDeletedShifts(cloudData.deletedShifts);
-    }
+    const hasPendingLocalChanges = storageService.isCloudDirty();
 
-    // 1. Schichten aus der Cloud direkt als verlässlichen Snapshot 1:1 übernehmen
-    if (cloudData.shifts && Array.isArray(cloudData.shifts)) {
-      const cleanShifts = deduplicateShifts(cloudData.shifts);
-      storageService.saveShifts(cleanShifts);
-      setShifts(cleanShifts);
-      setCloudShiftCount(cleanShifts.length);
-    }
+    // 1. Schichten & Lösch-Tombstones zusammenführen
+    const cloudDeleted =
+      cloudData.deletedShifts && typeof cloudData.deletedShifts === 'object' ? cloudData.deletedShifts : {};
+    const cloudShifts = deduplicateShifts(Array.isArray(cloudData.shifts) ? cloudData.shifts : []);
+    const merged = mergeShiftsWithTombstones(
+      storageService.getShifts(),
+      cloudShifts,
+      storageService.getDeletedShifts(),
+      cloudDeleted
+    );
+    storageService.saveDeletedShifts(merged.deleted);
+    storageService.saveShifts(merged.shifts);
+    const finalShifts = storageService.getShifts();
+    setShifts(finalShifts);
+    setCloudShiftCount(cloudShifts.length);
+    const needsPush = !sameShiftSet(finalShifts, cloudShifts) || !sameDeletedMap(merged.deleted, cloudDeleted);
 
-    // 2. Profil übernehmen & auf offizielle Institutsbezeichnung normieren
-    if (cloudData.profile && (cloudData.profile.name || cloudData.profile.personalnummer)) {
-      const updatedProfile = {
-        ...DEFAULT_USER_PROFILE,
-        ...cloudData.profile
-      } as UserProfile;
-      if (!updatedProfile.abteilung || updatedProfile.abteilung === 'Radiologie' || updatedProfile.abteilung === 'Radiologie & Nuklearmedizin') {
-        updatedProfile.abteilung = DEFAULT_USER_PROFILE.abteilung;
+    if (!hasPendingLocalChanges) {
+      // 2. Profil übernehmen & auf offizielle Institutsbezeichnung normieren
+      if (cloudData.profile && (cloudData.profile.name || cloudData.profile.personalnummer)) {
+        const updatedProfile = {
+          ...DEFAULT_USER_PROFILE,
+          ...cloudData.profile
+        } as UserProfile;
+        if (!updatedProfile.abteilung || updatedProfile.abteilung === 'Radiologie' || updatedProfile.abteilung === 'Radiologie & Nuklearmedizin') {
+          updatedProfile.abteilung = DEFAULT_USER_PROFILE.abteilung;
+        }
+        if (!updatedProfile.klinik || updatedProfile.klinik === 'Klinikum' || updatedProfile.klinik === 'Klinikum Minden' || updatedProfile.klinik === 'Universitätsklinikum') {
+          updatedProfile.klinik = DEFAULT_USER_PROFILE.klinik;
+        }
+        storageService.saveProfile(updatedProfile);
+        setUserProfile(updatedProfile);
       }
-      if (!updatedProfile.klinik || updatedProfile.klinik === 'Klinikum' || updatedProfile.klinik === 'Klinikum Minden' || updatedProfile.klinik === 'Universitätsklinikum') {
-        updatedProfile.klinik = DEFAULT_USER_PROFILE.klinik;
+
+      // 3. Status erledigter Nachforderungen (resolvedClaims) 1:1 übernehmen
+      if (cloudData.resolvedClaims && typeof cloudData.resolvedClaims === 'object') {
+        storageService.saveAllResolvedClaims(cloudData.resolvedClaims);
+        setResolvedClaims(cloudData.resolvedClaims);
       }
-      storageService.saveProfile(updatedProfile);
-      setUserProfile(updatedProfile);
-    }
 
-    // 3. Status erledigter Nachforderungen (resolvedClaims) 1:1 übernehmen
-    if (cloudData.resolvedClaims && typeof cloudData.resolvedClaims === 'object') {
-      storageService.saveAllResolvedClaims(cloudData.resolvedClaims);
-      setResolvedClaims(cloudData.resolvedClaims);
-    }
+      // 4. Bank-Ist Auszahlungs-Overrides 1:1 übernehmen
+      if (cloudData.payoutOverrides && typeof cloudData.payoutOverrides === 'object') {
+        storageService.saveAllPayoutOverrides(cloudData.payoutOverrides);
+        setPayoutOverrides(cloudData.payoutOverrides);
+      }
 
-    // 4. Bank-Ist Auszahlungs-Overrides 1:1 übernehmen
-    if (cloudData.payoutOverrides && typeof cloudData.payoutOverrides === 'object') {
-      storageService.saveAllPayoutOverrides(cloudData.payoutOverrides);
-      setPayoutOverrides(cloudData.payoutOverrides);
-    }
+      // 5. Gehaltskonfiguration 1:1 übernehmen
+      if (cloudData.salaryConfig && typeof cloudData.salaryConfig === 'object') {
+        const mergedSalary = { ...DEFAULT_SALARY_CONFIG, ...cloudData.salaryConfig };
+        storageService.saveSalaryConfig(mergedSalary);
+        setSalaryConfig(mergedSalary);
+      }
 
-    // 5. Gehaltskonfiguration 1:1 übernehmen
-    if (cloudData.salaryConfig && typeof cloudData.salaryConfig === 'object') {
-      const mergedSalary = { ...DEFAULT_SALARY_CONFIG, ...cloudData.salaryConfig };
-      storageService.saveSalaryConfig(mergedSalary);
-      setSalaryConfig(mergedSalary);
-    }
-
-    // 6. Presets 1:1 übernehmen
-    if (cloudData.presets && Array.isArray(cloudData.presets) && cloudData.presets.length > 0) {
-      storageService.savePresets(cloudData.presets);
-      setPresets(cloudData.presets);
+      // 6. Presets 1:1 übernehmen
+      if (cloudData.presets && Array.isArray(cloudData.presets) && cloudData.presets.length > 0) {
+        storageService.savePresets(cloudData.presets);
+        setPresets(cloudData.presets);
+      }
     }
 
     // 7. Rollback-Backups aktualisieren
@@ -259,9 +309,82 @@ export const App: React.FC = () => {
     }
 
     setLastSyncTime(new Date());
+    return needsPush;
   }, []);
 
-  // Manueller oder automatischer Cloud-Pull (Smart-Merge & Zero Data Loss)
+  // ZENTRALER CLOUD-PUSH: sendet IMMER den aktuellen lokalen Speicherstand (Quelle der Wahrheit).
+  // Das "ausstehend"-Flag (Offline-Queue) wird vor dem Senden gesetzt und erst nach bestätigtem
+  // Erfolg gelöscht. Schlägt der Push fehl, bleiben alle Daten lokal erhalten und werden beim
+  // nächsten Abgleich (Fokus, Wieder-Online, nächste Änderung) automatisch nachgereicht.
+  const pushSeqRef = useRef<number>(0);
+  const lastAutoPushRef = useRef<number>(0);
+
+  const pushLocalToCloud = useCallback(async (
+    opts: { identifier?: string; spinner?: boolean; notify?: boolean } = {}
+  ): Promise<boolean> => {
+    const identifier = opts.identifier || getUserIdentifier();
+    if (!identifier || !firebaseService.getCurrentUser()) return false;
+
+    const seq = ++pushSeqRef.current;
+    storageService.setCloudDirty(true);
+    if (opts.spinner) setIsSyncing(true);
+    try {
+      const res = await withTimeout(
+        firebaseService.saveUserData(
+          identifier,
+          storageService.getShifts(),
+          storageService.getProfile(),
+          storageService.getResolvedClaims(),
+          storageService.getPayoutOverrides(),
+          storageService.getSalaryConfig(),
+          storageService.getPresets(),
+          vaultKeyRef.current,
+          true,
+          storageService.getDeletedShifts()
+        ),
+        CLOUD_PUSH_TIMEOUT_MS,
+        { success: false, message: 'Zeitüberschreitung beim Speichern in der Cloud.' }
+      );
+      if (res.success) {
+        // Nur löschen, wenn zwischenzeitlich kein neuerer Push gestartet wurde
+        if (seq === pushSeqRef.current) storageService.setCloudDirty(false);
+        setLastSyncTime(new Date());
+        return true;
+      }
+    } catch (e) {
+      console.warn('Cloud-Push fehlgeschlagen:', e);
+    } finally {
+      if (opts.spinner) setIsSyncing(false);
+    }
+
+    if (opts.notify !== false) {
+      showToast(
+        '⚠️ Cloud nicht erreichbar – Änderungen sind lokal gesichert und werden automatisch synchronisiert.',
+        'info',
+        undefined,
+        undefined,
+        7000
+      );
+    }
+    return false;
+  }, [getUserIdentifier, showToast]);
+
+  // Immer die aktuellste Push-Funktion für Effekte mit eigenem Closure bereithalten
+  const pushRef = useRef(pushLocalToCloud);
+  pushRef.current = pushLocalToCloud;
+
+  // Hintergrund-Push nach einem Cloud-Snapshot (mit Drosselung gegen Endlosschleifen zwischen Geräten)
+  const requestBackgroundPush = useCallback(() => {
+    const t = Date.now();
+    if (t - lastAutoPushRef.current < 5000) {
+      storageService.setCloudDirty(true);
+      return;
+    }
+    lastAutoPushRef.current = t;
+    void pushRef.current({ notify: false });
+  }, []);
+
+  // Manueller oder automatischer Cloud-Abgleich (Smart-Merge & Zero Data Loss)
   const handleManualSync = useCallback(async (showNotification: boolean = true) => {
     const userIdentifier = getUserIdentifier();
     if (!userIdentifier || !firebaseUser) {
@@ -277,37 +400,19 @@ export const App: React.FC = () => {
     try {
       const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
       if (cloudData) {
-        applyCloudData(cloudData);
+        const needsPush = applyCloudData(cloudData) || storageService.isCloudDirty();
+        const pushedOk = needsPush ? await pushLocalToCloud({ notify: showNotification }) : true;
 
-        if (showNotification) {
+        if (showNotification && pushedOk) {
           showToast('☁️ Daten mit Gmail-Cloud synchronisiert!', 'success');
         }
       } else {
         // Erstinitialisierung für diesen Gmail-Nutzer
-        const currentShifts = storageService.getShifts();
-        const currentProfile = storageService.getProfile();
-        const currentClaims = storageService.getResolvedClaims();
-        const currentOverrides = storageService.getPayoutOverrides();
-        const currentSalary = storageService.getSalaryConfig();
-        const currentDeleted = storageService.getDeletedShifts();
-
-        if (currentShifts.length > 0) {
-          await firebaseService.saveUserData(
-            userIdentifier,
-            currentShifts,
-            currentProfile,
-            currentClaims,
-            currentOverrides,
-            currentSalary,
-            storageService.getPresets(),
-            vaultKeyRef.current,
-            true,
-            currentDeleted
-          );
-        }
+        const hasLocalData = storageService.getShifts().length > 0;
+        const pushedOk = hasLocalData ? await pushLocalToCloud({ notify: showNotification }) : true;
         setLastSyncTime(new Date());
 
-        if (showNotification) {
+        if (showNotification && pushedOk) {
           showToast('☁️ Gmail-Cloud verbunden! Dein Account ist sicher eingerichtet.', 'success');
         }
       }
@@ -321,7 +426,7 @@ export const App: React.FC = () => {
         setIsSyncing(false);
       }
     }
-  }, [getUserIdentifier, firebaseUser, applyCloudData, showToast]);
+  }, [getUserIdentifier, firebaseUser, applyCloudData, showToast, pushLocalToCloud]);
 
   // Firebase Auth Listener mit strikter Nutzer-Isolation & Smart-Merge beim Login
   useEffect(() => {
@@ -362,8 +467,8 @@ export const App: React.FC = () => {
           setIsSyncing(true);
           const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
           if (cloudData) {
-            // Firebase hat gespeicherte Daten -> 1:1 direkt anwenden
-            applyCloudData(cloudData);
+            // Firebase hat gespeicherte Daten -> mit dem lokalen Stand zusammenführen (nichts geht verloren)
+            const needsPush = applyCloudData(cloudData) || storageService.isCloudDirty();
 
             // Wer bereits ein ausgefülltes Profil oder Schichten in der Cloud hat, ist kein Neuling mehr
             const hasCloudProfile = Boolean(cloudData.profile?.vorname);
@@ -371,6 +476,11 @@ export const App: React.FC = () => {
             if (!isOwner && (hasCloudProfile || hasCloudShifts)) {
               storageService.setUserOnboarded(true, userIdentifier);
               setShowOnboarding(false);
+            }
+
+            // Lokale Änderungen, die noch nicht in der Cloud sind (z. B. offline erfasst), nachreichen
+            if (needsPush) {
+              await pushRef.current({ identifier: userIdentifier, notify: false });
             }
           } else {
             // Firebase ist komplett leer (null) für diesen Nutzer
@@ -412,6 +522,8 @@ export const App: React.FC = () => {
           }
         } catch (e) {
           console.warn("Initialer Cloud-Abgleich fehlgeschlagen:", e);
+          // Offline / Verbindungsfehler: lokal gespeicherte Daten anzeigen; Abgleich folgt automatisch
+          loadAllData();
         } finally {
           setIsSyncing(false);
         }
@@ -427,12 +539,15 @@ export const App: React.FC = () => {
     if (!activeUserUid || !firebaseUser) return;
     const userIdentifier = firebaseUser.email || activeUserUid;
     const unsubscribe = firebaseService.subscribeUserData(userIdentifier, (cloudData) => {
-      applyCloudData(cloudData);
+      // Lokale Daten, die der Cloud-Stand nicht kennt, werden per Hintergrund-Push nachgereicht
+      const needsPush = applyCloudData(cloudData);
+      if (needsPush) requestBackgroundPush();
     });
     return () => unsubscribe();
-  }, [activeUserUid, applyCloudData]);
+  }, [activeUserUid, applyCloudData, requestBackgroundPush]);
 
-  // Automatischer Pull bei Tab-Wechsel / Smartphone-Reaktivierung (mit 30s Drosselung)
+  // Automatischer Abgleich bei Tab-Wechsel / Smartphone-Reaktivierung (mit 30s Drosselung)
+  // und sofort nach Wiederherstellung der Internetverbindung (Offline-Queue wird nachgereicht)
   useEffect(() => {
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible' && firebaseUser) {
@@ -443,12 +558,20 @@ export const App: React.FC = () => {
       }
     };
 
+    const handleOnline = () => {
+      if (!firebaseUser) return;
+      lastFocusSyncRef.current = Date.now();
+      handleManualSync(false);
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
     window.addEventListener('focus', handleVisibilityOrFocus);
+    window.addEventListener('online', handleOnline);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       window.removeEventListener('focus', handleVisibilityOrFocus);
+      window.removeEventListener('online', handleOnline);
     };
   }, [activeUserUid, handleManualSync]);
 
@@ -469,7 +592,12 @@ export const App: React.FC = () => {
         return;
       }
 
+      // Explizites 1:1-Neuladen: Cloud-Stand inklusive Lösch-Tombstones übernehmen
+      storageService.saveDeletedShifts(
+        cloudData.deletedShifts && typeof cloudData.deletedShifts === 'object' ? cloudData.deletedShifts : {}
+      );
       storageService.saveShifts(cloudData.shifts);
+      storageService.setCloudDirty(false);
       setShifts(cloudData.shifts);
       setCloudShiftCount(cloudData.shifts.length);
 
@@ -528,13 +656,19 @@ export const App: React.FC = () => {
       );
 
       if (res.success) {
+        storageService.setCloudDirty(false);
         setLastSyncTime(new Date());
         setCloudShiftCount(currentShifts.length);
         showToast(`⬆️ ${currentShifts.length} Dienste erfolgreich in Cloud gesichert!`, 'success');
 
-        const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
-        if (cloudData?.backupHistory) {
-          setBackupHistory(cloudData.backupHistory);
+        try {
+          const cloudData = await firebaseService.loadUserData(userIdentifier, vaultKeyRef.current);
+          if (cloudData?.backupHistory) {
+            setBackupHistory(cloudData.backupHistory);
+          }
+        } catch (e) {
+          // Der Push war erfolgreich; ein Fehler beim Nachladen der Backup-Historie ist nicht kritisch
+          console.warn('Backup-Historie konnte nicht nachgeladen werden:', e);
         }
       } else {
         showToast(res.message, 'error');
@@ -566,6 +700,22 @@ export const App: React.FC = () => {
     }
   };
 
+  // Wiederherstellung: Der wiederhergestellte Stand gilt auf allen Geräten als "neueste Wahrheit".
+  // Alle Schichten erhalten einen aktuellen Zeitstempel, und Tage, die im alten Stand existierten,
+  // im wiederhergestellten aber fehlen, bekommen einen Lösch-Tombstone. Sonst würde der Merge
+  // sie von anderen Geräten wieder einspielen.
+  const applyRestoredShifts = (restored: ShiftEntry[], previous: ShiftEntry[]): ShiftEntry[] => {
+    const nowIso = new Date().toISOString();
+    storageService.saveDeletedShifts({});
+    storageService.saveShifts(restored.map(s => ({ ...s, updatedAt: nowIso })));
+    const finalShifts = storageService.getShifts();
+    const keptDates = new Set(finalShifts.map(s => s.datum));
+    for (const s of previous) {
+      if (!keptDates.has(s.datum)) storageService.markShiftDeleted(s.datum);
+    }
+    return finalShifts;
+  };
+
   // Button 4b: Lokale Backup-Datei (JSON) wiederherstellen
   const handleRestoreJsonBackup = async (file: File) => {
     return new Promise<void>((resolve, reject) => {
@@ -574,33 +724,16 @@ export const App: React.FC = () => {
         try {
           const text = event.target?.result as string;
           const parsed = JSON.parse(text);
+          const previousShifts = storageService.getShifts();
           const result = storageService.restoreBackup(parsed);
           if (result.success) {
+            applyRestoredShifts(storageService.getShifts(), previousShifts);
             loadAllData();
             showToast(result.message, 'success');
 
-            // Sofort 1:1 per set() in Firebase sichern!
-            const userIdentifier = getUserIdentifier();
-            if (userIdentifier && firebaseUser) {
-              setIsSyncing(true);
-              try {
-                await firebaseService.saveUserData(
-                  userIdentifier,
-                  storageService.getShifts(),
-                  storageService.getProfile(),
-                  storageService.getResolvedClaims(),
-                  storageService.getPayoutOverrides(),
-                  storageService.getSalaryConfig(),
-                  storageService.getPresets(),
-                  vaultKeyRef.current,
-                  true
-                );
-                setLastSyncTime(new Date());
-                setCloudShiftCount(storageService.getShifts().length);
-              } finally {
-                setIsSyncing(false);
-              }
-            }
+            // Sofort 1:1 in die Cloud sichern (inkl. Tombstones)
+            const ok = await pushLocalToCloud({ spinner: true });
+            if (ok) setCloudShiftCount(storageService.getShifts().length);
             resolve();
           } else {
             showToast(result.message, 'error');
@@ -624,13 +757,11 @@ export const App: React.FC = () => {
     );
     if (!confirmRestore) return;
 
-    storageService.saveDeletedShifts({});
-    storageService.saveShifts(backup.shifts);
-    setShifts(backup.shifts);
+    const restoredShifts = applyRestoredShifts(backup.shifts, storageService.getShifts());
+    setShifts(restoredShifts);
 
-    let restoredProfile: UserProfile = userProfile;
     if (backup.profile) {
-      restoredProfile = { ...DEFAULT_USER_PROFILE, ...backup.profile } as UserProfile;
+      const restoredProfile = { ...DEFAULT_USER_PROFILE, ...backup.profile } as UserProfile;
       storageService.saveProfile(restoredProfile);
       setUserProfile(restoredProfile);
     }
@@ -642,36 +773,23 @@ export const App: React.FC = () => {
       storageService.saveAllPayoutOverrides(backup.payoutOverrides);
       setPayoutOverrides(backup.payoutOverrides);
     }
-    let restoredSalary: SalaryConfig = salaryConfig;
     if (backup.salaryConfig) {
-      restoredSalary = { ...DEFAULT_SALARY_CONFIG, ...backup.salaryConfig } as SalaryConfig;
+      const restoredSalary = { ...DEFAULT_SALARY_CONFIG, ...backup.salaryConfig } as SalaryConfig;
       storageService.saveSalaryConfig(restoredSalary);
       setSalaryConfig(restoredSalary);
     }
-    let restoredPresets: PresetShift[] = presets;
     if (backup.presets && backup.presets.length > 0) {
-      restoredPresets = backup.presets;
-      storageService.savePresets(restoredPresets);
-      setPresets(restoredPresets);
+      storageService.savePresets(backup.presets);
+      setPresets(backup.presets);
     }
 
-    const userIdentifier = getUserIdentifier();
-    if (userIdentifier && firebaseUser) {
-      await firebaseService.saveUserData(
-        userIdentifier,
-        backup.shifts,
-        restoredProfile,
-        backup.resolvedClaims || resolvedClaims,
-        backup.payoutOverrides || payoutOverrides,
-        restoredSalary,
-        restoredPresets,
-        vaultKey,
-        true
-      );
+    const ok = await pushLocalToCloud({ spinner: true, notify: false });
+    const timeLabel = new Date(backup.timestamp).toLocaleTimeString('de-DE');
+    if (ok) {
+      showToast(`↩️ Version vom ${timeLabel} erfolgreich wiederhergestellt!`, 'success');
+    } else {
+      showToast(`↩️ Version vom ${timeLabel} lokal wiederhergestellt – Cloud-Sync folgt automatisch.`, 'info');
     }
-
-    setLastSyncTime(new Date());
-    showToast(`↩️ Version vom ${new Date(backup.timestamp).toLocaleTimeString('de-DE')} erfolgreich wiederhergestellt!`, 'success');
   };
 
   // Theme Sync
@@ -855,12 +973,37 @@ export const App: React.FC = () => {
     }
   };
 
-  // Schicht speichern
+  // Schicht speichern (inkl. Hinweise zu Ruhezeit und Jahresgrenze)
+  const buildAnnualLimitWarning = (before: ShiftEntry[], entry: ShiftEntry): string | null => {
+    const year = parseInt(entry.datum.substring(0, 4), 10);
+    if (!Number.isFinite(year) || !(entry.nettoStunden > 0)) return null;
+
+    const totalBefore = annualBasisWage(year, before, salaryConfig);
+    const totalAfter = annualBasisWage(year, [...before.filter(s => s.datum !== entry.datum), entry], salaryConfig);
+    if (totalAfter <= totalBefore) return null;
+
+    const limit = salaryConfig.annualLimit;
+    const { ratio, level } = annualLimitStatus(totalAfter, limit);
+    if (level === 'ok') return null;
+
+    const fmt = (n: number) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return level === 'over'
+      ? `Jahresgrenze von ${fmt(limit)} € überschritten (Grundlohn bisher ${fmt(totalAfter)} €).`
+      : `${Math.round(ratio * 100)} % der Jahresgrenze (${fmt(limit)} €) erreicht – Grundlohn bisher ${fmt(totalAfter)} €.`;
+  };
+
   const handleSaveShift = async (newShift: ShiftEntry) => {
+    // Hinweise VOR dem Speichern berechnen (Vergleich mit dem bisherigen Stand)
+    const previousShifts = storageService.getShifts();
+    const restWarning = checkRestTime(previousShifts, newShift);
+    const limitWarning = buildAnnualLimitWarning(previousShifts, newShift);
+
     const updated = storageService.upsertShift(newShift);
     setShifts(updated);
 
     showToast(`✅ Schicht für ${newShift.datum} gespeichert (${newShift.nettoStunden.toFixed(2)} h)`, 'success');
+    if (restWarning) showToast(`⚠️ ${restWarning}`, 'info', undefined, undefined, 9000);
+    if (limitWarning) showToast(`⚠️ ${limitWarning}`, 'info', undefined, undefined, 9000);
 
     if (newShift.nettoStunden >= 8) {
       confetti({
@@ -870,28 +1013,7 @@ export const App: React.FC = () => {
       });
     }
 
-    if (firebaseUser) {
-      try {
-        setIsSyncing(true);
-        await firebaseService.saveUserData(
-          getUserIdentifier(),
-          updated,
-          userProfile,
-          resolvedClaims,
-          payoutOverrides,
-          salaryConfig,
-          presets,
-          vaultKey,
-          true,
-          storageService.getDeletedShifts()
-        );
-        setLastSyncTime(new Date());
-      } catch (e) {
-        console.warn("Cloud-Speicherung im Hintergrund fehlgeschlagen:", e);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
+    await pushLocalToCloud({ spinner: true });
   };
 
   // Doppelte Schichten am selben Kalendertag bereinigen (Button im Monats-Stundenzettel)
@@ -899,29 +1021,7 @@ export const App: React.FC = () => {
     const res = storageService.cleanDuplicateShifts();
     setShifts(res.remainingShifts);
 
-    const userIdentifier = getUserIdentifier();
-    if (userIdentifier && firebaseUser) {
-      try {
-        setIsSyncing(true);
-        await firebaseService.saveUserData(
-          userIdentifier,
-          res.remainingShifts,
-          userProfile,
-          resolvedClaims,
-          payoutOverrides,
-          salaryConfig,
-          presets,
-          vaultKey,
-          true,
-          storageService.getDeletedShifts()
-        );
-        setLastSyncTime(new Date());
-      } catch (e) {
-        console.warn("Cloud-Sync nach Bereinigung fehlgeschlagen:", e);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
+    await pushLocalToCloud({ spinner: true });
 
     if (res.cleanedCount > 0) {
       showToast(`🧹 ${res.cleanedCount} doppelte Schichten am selben Tag erfolgreich bereinigt!`, 'success');
@@ -937,53 +1037,22 @@ export const App: React.FC = () => {
 
     const updated = storageService.deleteShift(datum);
     setShifts(updated);
-
-    if (firebaseUser) {
-      firebaseService.saveUserData(
-        getUserIdentifier(),
-        updated,
-        userProfile,
-        resolvedClaims,
-        payoutOverrides,
-        salaryConfig,
-        presets,
-        vaultKey,
-        true,
-        storageService.getDeletedShifts()
-      ).catch(console.warn);
-      setLastSyncTime(new Date());
-    }
+    void pushLocalToCloud();
 
     showToast(
       `Schicht für ${datum} gelöscht`,
       'info',
       'Rückgängig',
       () => {
-        if (shiftToDelete) {
-          const restored = storageService.upsertShift(shiftToDelete);
-          setShifts(restored);
-          if (firebaseUser) {
-            firebaseService.saveUserData(
-              getUserIdentifier(),
-              restored,
-              userProfile,
-              resolvedClaims,
-              payoutOverrides,
-              salaryConfig,
-              presets,
-              vaultKey,
-              true,
-              storageService.getDeletedShifts()
-            ).catch(console.warn);
-            setLastSyncTime(new Date());
-          }
-          showToast('Eintrag wiederhergestellt!', 'success');
-        }
+        const restored = storageService.upsertShift(shiftToDelete);
+        setShifts(restored);
+        void pushLocalToCloud();
+        showToast('Eintrag wiederhergestellt!', 'success');
       }
     );
   };
 
-  // Posten abhaken / öffnen (mit Millisekunden-Sofort-Speicherung in Firebase via set())
+  // Posten abhaken / öffnen (sofortige Sicherung in der Cloud)
   const handleToggleClaim = (claimId: string) => {
     const isCurrentlyResolved = Boolean(resolvedClaims[claimId]?.isResolved);
     const updated = storageService.setClaimResolved(claimId, !isCurrentlyResolved);
@@ -995,145 +1064,39 @@ export const App: React.FC = () => {
       showToast('↩️ Posten wieder geöffnet!', 'info');
     }
 
-    if (firebaseUser) {
-      // In derselben Millisekunde sofort per set() abfeuern
-      firebaseService.saveUserData(
-        getUserIdentifier(),
-        shifts,
-        userProfile,
-        updated,
-        payoutOverrides,
-        salaryConfig,
-        presets,
-        vaultKey,
-        true,
-        storageService.getDeletedShifts()
-      ).then(res => {
-        if (res.success) {
-          setLastSyncTime(new Date());
-        }
-      }).catch(e => {
-        console.warn("Auto-Sync für Claim fehlgeschlagen:", e);
-      });
-    }
+    void pushLocalToCloud();
   };
 
   // Auszahlungs-Override (Bank-Ist) speichern
   const handleSavePayoutOverride = async (override: MonthPayoutOverride) => {
     const updated = storageService.savePayoutOverride(override);
     setPayoutOverrides({ ...updated });
-
-    if (firebaseUser) {
-      try {
-        setIsSyncing(true);
-        await firebaseService.saveUserData(
-          getUserIdentifier(),
-          shifts,
-          userProfile,
-          resolvedClaims,
-          updated,
-          salaryConfig,
-          presets,
-          vaultKey,
-          true,
-          storageService.getDeletedShifts()
-        );
-        setLastSyncTime(new Date());
-      } catch (e) {
-        console.warn("Auto-Sync für Auszahlung fehlgeschlagen:", e);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
+    await pushLocalToCloud({ spinner: true });
   };
 
   const handleDeletePayoutOverride = async (yearMonth: string) => {
     const updated = storageService.deletePayoutOverride(yearMonth);
     setPayoutOverrides({ ...updated });
-
-    if (firebaseUser) {
-      try {
-        setIsSyncing(true);
-        await firebaseService.saveUserData(
-          getUserIdentifier(),
-          shifts,
-          userProfile,
-          resolvedClaims,
-          updated,
-          salaryConfig,
-          presets,
-          vaultKey,
-          true,
-          storageService.getDeletedShifts()
-        );
-        setLastSyncTime(new Date());
-      } catch (e) {
-        console.warn("Auto-Sync für Reset Auszahlung fehlgeschlagen:", e);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
+    await pushLocalToCloud({ spinner: true });
   };
 
   // Profile / Config Saves
   const handleSaveProfile = (profile: UserProfile) => {
     storageService.saveProfile(profile);
     setUserProfile(profile);
-    if (firebaseUser) {
-      firebaseService.saveUserData(
-        getUserIdentifier(),
-        shifts,
-        profile,
-        resolvedClaims,
-        payoutOverrides,
-        salaryConfig,
-        presets,
-        vaultKey,
-        true,
-        storageService.getDeletedShifts()
-      ).catch(console.warn);
-      setLastSyncTime(new Date());
-    }
+    void pushLocalToCloud();
   };
 
   const handleSavePresets = (newPresets: PresetShift[]) => {
     storageService.savePresets(newPresets);
     setPresets(newPresets);
-    if (firebaseUser) {
-      firebaseService.saveUserData(
-        getUserIdentifier(),
-        shifts,
-        userProfile,
-        resolvedClaims,
-        payoutOverrides,
-        salaryConfig,
-        newPresets,
-        vaultKey,
-        true,
-        storageService.getDeletedShifts()
-      ).catch(console.warn);
-      setLastSyncTime(new Date());
-    }
+    void pushLocalToCloud();
   };
 
   const handleSaveSalaryConfig = (config: SalaryConfig) => {
     storageService.saveSalaryConfig(config);
     setSalaryConfig(config);
-    if (firebaseUser) {
-      firebaseService.saveUserData(
-        getUserIdentifier(),
-        shifts,
-        userProfile,
-        resolvedClaims,
-        payoutOverrides,
-        config,
-        presets,
-        vaultKey,
-        true,
-        storageService.getDeletedShifts()
-      ).catch(console.warn);
-      setLastSyncTime(new Date());
-    }
+    void pushLocalToCloud();
   };
 
   // STRIKTE AUTH-WALL: Solange kein Nutzer aktiv ist, wird das Dashboard NIEMALS gerendert!
@@ -1230,6 +1193,7 @@ export const App: React.FC = () => {
         {/* TAB 1: 📅 Stundenzettel (direkt bearbeitbare Monatstabelle) */}
         {activeTab === 'stundenzettel' && (
           <div className="space-y-4 animate-in fade-in duration-200">
+            <StampClock shifts={shifts} onSaveShift={handleSaveShift} onShowToast={showToast} />
             <KpiCards stats={stats} salaryConfig={salaryConfig} />
             <MonthTable
               currentYearMonth={currentYearMonth}

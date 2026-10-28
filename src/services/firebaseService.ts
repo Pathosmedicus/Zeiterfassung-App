@@ -411,8 +411,10 @@ export const firebaseService = {
 
       return parseCloudUserData(data);
     } catch (e) {
+      // WICHTIG: Fehler NICHT als "kein Dokument" (null) behandeln, sonst würde ein Verbindungsabbruch
+      // zu einem leeren Neustart-Stand führen, der die Cloud-Daten überschreibt.
       console.warn("Fehler beim Laden der Cloud-Daten:", e);
-      return null;
+      throw e;
     }
   },
 

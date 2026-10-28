@@ -793,5 +793,57 @@ export const storageService = {
   clearEmailHistory(): void {
     if (!activeUserId) return;
     localStorage.removeItem(getUserKey('email_history'));
+  },
+
+  // --- OFFLINE-QUEUE: Markierung "lokale Änderungen noch nicht in der Cloud" (USER SCOPED) ---
+
+  isCloudDirty(): boolean {
+    if (!activeUserId) return false;
+    try {
+      return localStorage.getItem(getUserKey('cloud_dirty')) === 'true';
+    } catch {
+      return false;
+    }
+  },
+
+  setCloudDirty(dirty: boolean): void {
+    if (!activeUserId) return;
+    try {
+      if (dirty) {
+        localStorage.setItem(getUserKey('cloud_dirty'), 'true');
+      } else {
+        localStorage.removeItem(getUserKey('cloud_dirty'));
+      }
+    } catch {}
+  },
+
+  // --- STEMPELUHR: laufende Zeiterfassung überlebt Neuladen/Schließen der App (USER SCOPED) ---
+
+  getStamp(): { startIso: string; pauseMinuten: number } | null {
+    if (!activeUserId) return null;
+    try {
+      const raw = localStorage.getItem(getUserKey('stamp'));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.startIso !== 'string' || Number.isNaN(new Date(parsed.startIso).getTime())) {
+        return null;
+      }
+      return {
+        startIso: parsed.startIso,
+        pauseMinuten: Math.max(0, Math.min(240, Number(parsed.pauseMinuten) || 0))
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  saveStamp(stamp: { startIso: string; pauseMinuten: number }): void {
+    if (!activeUserId) return;
+    localStorage.setItem(getUserKey('stamp'), JSON.stringify(stamp));
+  },
+
+  clearStamp(): void {
+    if (!activeUserId) return;
+    localStorage.removeItem(getUserKey('stamp'));
   }
 };
