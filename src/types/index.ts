@@ -222,7 +222,7 @@ export interface AppUserSession {
   id: string; // E-Mail, Google UID oder lokale ID
   name: string;
   email?: string;
-  authProvider: 'google' | 'pin';
+  authProvider: 'google' | 'pin' | 'biometric';
   isOwner?: boolean;
   isOnboarded?: boolean;
   avatarUrl?: string;

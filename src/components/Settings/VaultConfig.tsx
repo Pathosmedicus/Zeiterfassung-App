@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Shield, KeyRound, Lock, CheckCircle2, Eye, EyeOff, UserCheck, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, KeyRound, Lock, CheckCircle2, Eye, EyeOff, UserCheck, Smartphone, Fingerprint } from 'lucide-react';
 import { vaultService, isMohammad, MOHAMMAD_EMAIL } from '../../services/vaultService';
 import { storageService } from '../../services/storageService';
+import { webAuthnService } from '../../services/webAuthnService';
 
 interface VaultConfigProps {
   onLockApp: () => void;
@@ -20,6 +21,24 @@ export const VaultConfig: React.FC<VaultConfigProps> = ({
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [isChangingPin, setIsChangingPin] = useState(false);
+  const [hasBio, setHasBio] = useState<boolean>(() => webAuthnService.hasRegisteredBiometrics());
+
+  const handleSetupBio = async () => {
+    if (!session) return;
+    const res = await webAuthnService.registerBiometrics(session.id, session.name);
+    if (res.success) {
+      setHasBio(true);
+      onShowToast('🧬 Touch ID / Face ID erfolgreich aktiviert!', 'success');
+    } else {
+      onShowToast(res.message || 'Einrichtung fehlgeschlagen.', 'error');
+    }
+  };
+
+  const handleRemoveBio = () => {
+    webAuthnService.clearBiometrics();
+    setHasBio(false);
+    onShowToast('Biometrie auf diesem Gerät entfernt.', 'info');
+  };
 
   const handleSavePin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +154,52 @@ export const VaultConfig: React.FC<VaultConfigProps> = ({
           <p className="text-[10px] text-slate-400 mt-1">
             Schützt Daten lokal & beim geräteübergreifenden Cloud-/Token-Sync
           </p>
+        </div>
+
+        {/* Biometrie-Verwaltung (Touch ID / Face ID) */}
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-violet-300 shrink-0">
+              <Fingerprint className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white">Biometrischer Login</span>
+                {hasBio ? (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                    Aktiv
+                  </span>
+                ) : (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/5 text-slate-400 border border-white/10">
+                    Nicht eingerichtet
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Mit Touch ID, Face ID oder Windows Hello blitzschnell entsperren
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasBio ? (
+              <button
+                type="button"
+                onClick={handleRemoveBio}
+                className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold transition-all cursor-pointer"
+              >
+                Entfernen
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSetupBio}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-xs shadow-md shadow-violet-500/20 transition-all active:scale-95 cursor-pointer"
+              >
+                Jetzt einrichten
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

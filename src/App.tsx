@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import { User } from 'firebase/auth';
 import { Header } from './components/Header';
@@ -6,38 +6,69 @@ import { BottomNav } from './components/BottomNav';
 import { Toast, ToastMessage } from './components/Toast';
 import { RotateCcw } from 'lucide-react';
 
-// Tab 1: Stundenzettel
-
-// Tab 2: Tabelle & KPIs
+// Tab 1: Stundenzettel (sofort geladen für maximale Startgeschwindigkeit)
 import { KpiCards } from './components/Tabelle/KpiCards';
 import { MonthTable } from './components/Tabelle/MonthTable';
-import { SalaryCharts } from './components/Tabelle/SalaryCharts';
-import { PayrollComparisonCard } from './components/Tabelle/PayrollComparisonCard';
+import { MiniCalendar } from './components/Erfassen/MiniCalendar';
+import { QuickEntry } from './components/Erfassen/QuickEntry';
+import { StampClock } from './components/Erfassen/StampClock';
 
-// Tab 2b & Neuer Haupt-Tab: Minijob-Jahresradar (7.230 €)
-import { MinijobJahresradar } from './components/Jahresradar/MinijobJahresradar';
-
-// Tab 3: Export & PDF
-import { ExportActions } from './components/Export/ExportActions';
-import { SheetPreview } from './components/Export/SheetPreview';
-import { EmailTemplateCard } from './components/Export/EmailTemplateCard';
-
-// Tab 4: Einstellungen
+// Tab 4: Einstellungen (Kernkomponenten)
 import { Stammdaten } from './components/Settings/Stammdaten';
 import { PresetsConfig } from './components/Settings/PresetsConfig';
 import { SalaryConfig as SalaryConfigComponent } from './components/Settings/SalaryConfig';
-import { BackupManager } from './components/Settings/BackupManager';
 import { VaultConfig } from './components/Settings/VaultConfig';
 import { AppVersionCard } from './components/Settings/AppVersionCard';
-import { VersionModal } from './components/Common/VersionModal';
+
+// Erinnerungen & Benachrichtigungen
+import { MonthEndReminder } from './components/Common/MonthEndReminder';
 
 // Sicherheits-Architektur, Multi-User & Auth-Wall
 import { AuthLockScreen } from './components/Auth/AuthLockScreen';
 import { OnboardingModal } from './components/Auth/OnboardingModal';
-import { SyncModal } from './components/Auth/SyncModal';
-import { CloudStatusModal } from './components/Auth/CloudStatusModal';
 import { vaultService, isMohammad, MOHAMMAD_EMAIL } from './services/vaultService';
+import { webAuthnService } from './services/webAuthnService';
 import { setDecryptedHistoricalRecords, setDecryptedInitialClaims } from './services/clinicPayrollEngine';
+
+// Code-Splitting: Schwergewichtige Sekundär-Tabs & Modals per React.lazy laden
+// (Spart über 1 MB Initial-Download durch isoliertes Laden von ExcelJS, jsPDF, Chart.js und QR-Code)
+const SalaryCharts = React.lazy(() =>
+  import('./components/Tabelle/SalaryCharts').then(m => ({ default: m.SalaryCharts }))
+);
+const PayrollComparisonCard = React.lazy(() =>
+  import('./components/Tabelle/PayrollComparisonCard').then(m => ({ default: m.PayrollComparisonCard }))
+);
+const MinijobJahresradar = React.lazy(() =>
+  import('./components/Jahresradar/MinijobJahresradar').then(m => ({ default: m.MinijobJahresradar }))
+);
+const ExportActions = React.lazy(() =>
+  import('./components/Export/ExportActions').then(m => ({ default: m.ExportActions }))
+);
+const SheetPreview = React.lazy(() =>
+  import('./components/Export/SheetPreview').then(m => ({ default: m.SheetPreview }))
+);
+const EmailTemplateCard = React.lazy(() =>
+  import('./components/Export/EmailTemplateCard').then(m => ({ default: m.EmailTemplateCard }))
+);
+const BackupManager = React.lazy(() =>
+  import('./components/Settings/BackupManager').then(m => ({ default: m.BackupManager }))
+);
+const SyncModal = React.lazy(() =>
+  import('./components/Auth/SyncModal').then(m => ({ default: m.SyncModal }))
+);
+const CloudStatusModal = React.lazy(() =>
+  import('./components/Auth/CloudStatusModal').then(m => ({ default: m.CloudStatusModal }))
+);
+const VersionModal = React.lazy(() =>
+  import('./components/Common/VersionModal').then(m => ({ default: m.VersionModal }))
+);
+
+const TabLoadingFallback: React.FC = () => (
+  <div className="flex flex-col items-center justify-center p-12 text-slate-400 space-y-3">
+    <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+    <span className="text-xs font-medium tracking-wide text-slate-400">Modul wird geladen...</span>
+  </div>
+);
 
 import {
   storageService,
@@ -55,7 +86,6 @@ import {
   checkRestTime,
   annualLimitStatus
 } from './services/shiftUtils';
-import { StampClock } from './components/Erfassen/StampClock';
 import {
   TabType,
   ShiftEntry,
@@ -99,6 +129,7 @@ function annualBasisWage(year: number, shifts: ShiftEntry[], config: SalaryConfi
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('stundenzettel');
+  const [stundenzettelView, setStundenzettelView] = useState<'tabelle' | 'kalender'>('tabelle');
 
   // Multi-User Sitzung & Autorisierung
   const [activeSession, setActiveSession] = useState<AppUserSession | null>(() => storageService.getActiveSession());
@@ -902,6 +933,54 @@ export const App: React.FC = () => {
     }
   };
 
+  // Biometrischer Login (Touch ID / Face ID / Windows Hello)
+  const handleBiometricLogin = async (): Promise<boolean> => {
+    try {
+      setAuthError(null);
+      const res = await webAuthnService.authenticate();
+      if (!res.success || !res.userId) {
+        if (res.message) {
+          setAuthError(res.message);
+          showToast(res.message, 'error');
+        }
+        return false;
+      }
+
+      const userId = res.userId;
+      const isOwner = isMohammad(userId);
+      const session: AppUserSession = {
+        id: userId,
+        name: res.userName || (isOwner ? 'Mohammad Almatar' : 'Mitarbeiter'),
+        authProvider: 'biometric',
+        isOwner,
+        isOnboarded: isOwner || storageService.isUserOnboarded(userId),
+        lastLogin: new Date().toISOString()
+      };
+
+      storageService.setActiveSession(session);
+      setActiveSession(session);
+
+      if (isOwner) {
+        await unlockMohammadData(vaultService.getDefaultPass());
+      } else {
+        setDecryptedHistoricalRecords([]);
+        setDecryptedInitialClaims([]);
+        if (!storageService.isUserOnboarded(userId)) {
+          setShowOnboarding(true);
+        }
+      }
+
+      loadAllData();
+      showToast(`✨ Biometrisch entsperrt: Willkommen, ${session.name}!`, 'success');
+      return true;
+    } catch (err: any) {
+      const msg = err.message || 'Biometrische Authentifizierung fehlgeschlagen.';
+      setAuthError(msg);
+      showToast(msg, 'error');
+      return false;
+    }
+  };
+
   // BLAUER LOGOUT-BUTTON / PROFIL-WECHSEL: Dashboard leeren & zurück zum Anmeldebildschirm
   const handleLogout = useCallback(async () => {
     hasUnlockedRef.current = false;
@@ -1105,6 +1184,8 @@ export const App: React.FC = () => {
       <>
         <AuthLockScreen
           onGoogleLogin={handleGoogleLogin}
+          onUnlockWithPin={handleUnlockWithPin}
+          onBiometricLogin={handleBiometricLogin}
           authError={authError}
           isSyncing={isSyncing}
           onClearError={() => setAuthError(null)}
@@ -1132,39 +1213,45 @@ export const App: React.FC = () => {
       )}
 
       {/* Geräteübergreifender Sync-Modal (PC ↔ Handy) */}
-      <SyncModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        onSyncComplete={loadAllData}
-        showToast={showToast}
-      />
+      <Suspense fallback={null}>
+        <SyncModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          onSyncComplete={loadAllData}
+          showToast={showToast}
+        />
+      </Suspense>
 
       {/* Gmail-Cloud Status Menü (Regel 4: Zero Data Loss, Smart-Merge & Rollback) */}
-      <CloudStatusModal
-        isOpen={isCloudModalOpen}
-        onClose={() => setIsCloudModalOpen(false)}
-        firebaseUser={firebaseUser}
-        activeSession={activeSession}
-        localShiftCount={shifts.length}
-        cloudShiftCount={cloudShiftCount}
-        lastSyncTime={lastSyncTime}
-        backupHistory={backupHistory}
-        isSyncing={isSyncing}
-        onSmartMergeSync={async () => { await handleManualSync(true); }}
-        onPullFromCloud={handlePullFromCloud}
-        onPushToCloud={handlePushToCloud}
-        onDownloadJsonBackup={handleDownloadJsonBackup}
-        onRestoreJsonBackup={handleRestoreJsonBackup}
-        onRestoreBackupVersion={handleRestoreBackupVersion}
-        onOpenOfflineSyncModal={() => setIsSyncModalOpen(true)}
-        showToast={showToast}
-      />
+      <Suspense fallback={null}>
+        <CloudStatusModal
+          isOpen={isCloudModalOpen}
+          onClose={() => setIsCloudModalOpen(false)}
+          firebaseUser={firebaseUser}
+          activeSession={activeSession}
+          localShiftCount={shifts.length}
+          cloudShiftCount={cloudShiftCount}
+          lastSyncTime={lastSyncTime}
+          backupHistory={backupHistory}
+          isSyncing={isSyncing}
+          onSmartMergeSync={async () => { await handleManualSync(true); }}
+          onPullFromCloud={handlePullFromCloud}
+          onPushToCloud={handlePushToCloud}
+          onDownloadJsonBackup={handleDownloadJsonBackup}
+          onRestoreJsonBackup={handleRestoreJsonBackup}
+          onRestoreBackupVersion={handleRestoreBackupVersion}
+          onOpenOfflineSyncModal={() => setIsSyncModalOpen(true)}
+          showToast={showToast}
+        />
+      </Suspense>
 
       {/* App-Version & Update-Modal */}
-      <VersionModal
-        isOpen={isVersionModalOpen}
-        onClose={() => setIsVersionModalOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <VersionModal
+          isOpen={isVersionModalOpen}
+          onClose={() => setIsVersionModalOpen(false)}
+        />
+      </Suspense>
 
       {/* Sticky Header mit Name, Blue-Logout-Button, Sync-Trigger und Monatsnavigation */}
       <Header
@@ -1190,99 +1277,162 @@ export const App: React.FC = () => {
       {/* Hauptinhalt */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 pt-4 pb-28">
 
-        {/* TAB 1: 📅 Stundenzettel (direkt bearbeitbare Monatstabelle) */}
+        {/* Monatsabschluss-Erinnerung (>= 24. des Monats oder <= 6. Folgemonat) */}
+        <MonthEndReminder
+          shifts={shifts}
+          onNavigateTab={setActiveTab}
+          onShowToast={showToast}
+        />
+
+        {/* TAB 1: 📅 Stundenzettel (direkt bearbeitbare Monatstabelle oder Kalender + Schnelleingabe) */}
         {activeTab === 'stundenzettel' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <StampClock shifts={shifts} onSaveShift={handleSaveShift} onShowToast={showToast} />
             <KpiCards stats={stats} salaryConfig={salaryConfig} />
-            <MonthTable
-              currentYearMonth={currentYearMonth}
-              shifts={shifts}
-              onDeleteShift={handleDeleteShift}
-              onSaveShift={handleSaveShift}
-              onCleanDuplicates={handleCleanDuplicates}
-            />
+
+            {/* Ansichts-Umschalter: Tabelle vs. Kalender & Schnelleingabe */}
+            <div className="flex items-center gap-2 p-1.5 bg-white/[0.04] backdrop-blur-md rounded-2xl border border-white/10">
+              <button
+                type="button"
+                onClick={() => setStundenzettelView('tabelle')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  stundenzettelView === 'tabelle'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>📋</span> Tabellenansicht
+              </button>
+              <button
+                type="button"
+                onClick={() => setStundenzettelView('kalender')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  stundenzettelView === 'kalender'
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>📅</span> Kalender & Schnelleingabe
+              </button>
+            </div>
+
+            {stundenzettelView === 'tabelle' ? (
+              <MonthTable
+                currentYearMonth={currentYearMonth}
+                shifts={shifts}
+                onDeleteShift={handleDeleteShift}
+                onSaveShift={handleSaveShift}
+                onCleanDuplicates={handleCleanDuplicates}
+              />
+            ) : (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <MiniCalendar
+                  currentYearMonth={currentYearMonth}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                  shifts={shifts}
+                />
+                <QuickEntry
+                  selectedDate={selectedDate}
+                  onDateChange={setSelectedDate}
+                  shifts={shifts}
+                  presets={presets}
+                  onSaveShift={handleSaveShift}
+                  onDeleteShift={handleDeleteShift}
+                />
+              </div>
+            )}
           </div>
         )}
 
         {/* TAB 2: ⚡ Abrechnungsabgleich */}
         {activeTab === 'abgleich' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <PayrollComparisonCard
-              userProfile={userProfile}
-              currentYearMonth={currentYearMonth}
-              shifts={shifts}
-              salaryConfig={salaryConfig}
-              payoutOverrides={payoutOverrides}
-              onSavePayoutOverride={handleSavePayoutOverride}
-              onDeletePayoutOverride={handleDeletePayoutOverride}
-              resolvedClaims={resolvedClaims}
-              onToggleClaim={handleToggleClaim}
-              onShowToast={showToast}
-              onSelectMonth={handleMonthChange}
-              isSyncing={isSyncing}
-              lastSyncTime={lastSyncTime}
-              onManualSync={() => handleManualSync(true)}
-            />
-          </div>
+          <Suspense fallback={<TabLoadingFallback />}>
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <PayrollComparisonCard
+                userProfile={userProfile}
+                currentYearMonth={currentYearMonth}
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                payoutOverrides={payoutOverrides}
+                onSavePayoutOverride={handleSavePayoutOverride}
+                onDeletePayoutOverride={handleDeletePayoutOverride}
+                resolvedClaims={resolvedClaims}
+                onToggleClaim={handleToggleClaim}
+                onShowToast={showToast}
+                onSelectMonth={handleMonthChange}
+                isSyncing={isSyncing}
+                lastSyncTime={lastSyncTime}
+                onManualSync={() => handleManualSync(true)}
+              />
+            </div>
+          </Suspense>
         )}
 
         {/* TAB 4: 📈 Statistik */}
         {activeTab === 'statistik' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <SalaryCharts
-              currentYearMonth={currentYearMonth}
-              shifts={shifts}
-              salaryConfig={salaryConfig}
-              isDarkMode={isDarkMode}
-            />
-          </div>
+          <Suspense fallback={<TabLoadingFallback />}>
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <SalaryCharts
+                currentYearMonth={currentYearMonth}
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                isDarkMode={isDarkMode}
+              />
+            </div>
+          </Suspense>
         )}
 
         {/* TAB 2b: 🎯 Direktzugriff auf Minijob-Jahresradar */}
         {activeTab === 'jahresradar' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <MinijobJahresradar
-              shifts={shifts}
-              salaryConfig={salaryConfig}
-              userProfile={userProfile}
-              currentYearMonth={currentYearMonth}
-              onSaveSalaryConfig={handleSaveSalaryConfig}
-              onSelectMonth={handleMonthChange}
-              onShowToast={showToast}
-            />
-          </div>
+          <Suspense fallback={<TabLoadingFallback />}>
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <MinijobJahresradar
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                userProfile={userProfile}
+                currentYearMonth={currentYearMonth}
+                onSaveSalaryConfig={handleSaveSalaryConfig}
+                onSelectMonth={handleMonthChange}
+                onShowToast={showToast}
+              />
+            </div>
+          </Suspense>
         )}
 
         {/* TAB 3: ✉️ E-Mail Vorlage */}
         {activeTab === 'email' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <EmailTemplateCard
-              currentYearMonth={currentYearMonth}
-              userProfile={userProfile}
-              shifts={shifts}
-              onShowToast={showToast}
-            />
-          </div>
+          <Suspense fallback={<TabLoadingFallback />}>
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <EmailTemplateCard
+                currentYearMonth={currentYearMonth}
+                userProfile={userProfile}
+                shifts={shifts}
+                onShowToast={showToast}
+              />
+            </div>
+          </Suspense>
         )}
 
         {/* TAB 4: 📄 Export */}
         {activeTab === 'export' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <ExportActions
-              currentYearMonth={currentYearMonth}
-              userProfile={userProfile}
-              shifts={shifts}
-              salaryConfig={salaryConfig}
-              onShowToast={showToast}
-            />
+          <Suspense fallback={<TabLoadingFallback />}>
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <ExportActions
+                currentYearMonth={currentYearMonth}
+                userProfile={userProfile}
+                shifts={shifts}
+                salaryConfig={salaryConfig}
+                onShowToast={showToast}
+              />
 
-            <SheetPreview
-              currentYearMonth={currentYearMonth}
-              userProfile={userProfile}
-              shifts={shifts}
-            />
-          </div>
+              <SheetPreview
+                currentYearMonth={currentYearMonth}
+                userProfile={userProfile}
+                shifts={shifts}
+              />
+            </div>
+          </Suspense>
         )}
 
         {/* TAB 5: ⚙️ Einstellungen */}
@@ -1323,7 +1473,7 @@ export const App: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setIsSyncModalOpen(true)}
-                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold"
+                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold cursor-pointer"
                   >
                     Sync-Code (PC ↔ Handy)
                   </button>
@@ -1352,11 +1502,13 @@ export const App: React.FC = () => {
               onShowToast={showToast}
             />
 
-            <BackupManager
-              currentYearMonth={currentYearMonth}
-              onDataReload={loadAllData}
-              onShowToast={showToast}
-            />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <BackupManager
+                currentYearMonth={currentYearMonth}
+                onDataReload={loadAllData}
+                onShowToast={showToast}
+              />
+            </Suspense>
           </div>
         )}
       </main>
