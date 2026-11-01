@@ -12,14 +12,14 @@ export const APP_NAME = 'Zeiterfassung Radiologie';
 export const APP_CHANGELOG: VersionRelease[] = [
   {
     version: 'v3.3.0',
-    date: '27.10.2026',
-    title: 'Stundenzettel-Direktmodus & Zentrierter A4-Export',
+    date: '01.11.2026',
+    title: 'Intelligenter Excel/CSV-Importer, Stundenzettel-Direktmodus & A4-Export',
     highlights: [
+      'Intelligenter Excel-, CSV-, PDF- & Copy-Paste-Importer (2025–2026) mit Multi-Sheet-Vorschau im Stundenzettel & in den Optionen',
       'Versionsnummer-Badge & Update-Verfolgung zur sofortigen Cache-Prüfung',
       'Tab „Stundenzettel“ ersetzt „Erfassen“ mit direkter Inline-Bearbeitung je Tabellenzeile',
       'Offizieller Stundenzettel PDF-Export perfekt auf DIN A4 vertikal & horizontal zentriert',
-      'Reiner, sicherer Google-Login mit strikter Multi-User Isolation',
-      'Eigene spezialisierte Tabs für „Statistik“ und „Abrechnungsabgleich“'
+      'Reiner, sicherer Google-Login mit strikter Multi-User Isolation'
     ]
   },
   {

@@ -10,6 +10,7 @@ interface MonthTableProps {
   onDeleteShift: (datum: string) => void;
   onSelectDateForQuickEntry?: (datum: string) => void;
   onCleanDuplicates?: () => void;
+  onOpenExcelImport?: () => void;
 }
 
 const WOCHENTAGE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
@@ -227,7 +228,8 @@ export const MonthTable: React.FC<MonthTableProps> = ({
   shifts,
   onSaveShift,
   onDeleteShift,
-  onCleanDuplicates
+  onCleanDuplicates,
+  onOpenExcelImport
 }) => {
   const [jahrStr, monatStr] = currentYearMonth.split('-');
   const jahr = parseInt(jahrStr, 10);
@@ -275,6 +277,17 @@ export const MonthTable: React.FC<MonthTableProps> = ({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {onOpenExcelImport && (
+            <button
+              type="button"
+              onClick={onOpenExcelImport}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-emerald-200 border border-emerald-400/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md shadow-emerald-950/30"
+              title="Alte Excel-Tabellen (.xlsx, .xls), CSV, PDF-Stundenzettel oder Copy-Paste importieren"
+            >
+              <span>📊 Excel / alte Tabelle importieren</span>
+            </button>
+          )}
+
           {onCleanDuplicates && (
             <button
               type="button"

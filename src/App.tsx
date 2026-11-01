@@ -62,6 +62,10 @@ const CloudStatusModal = React.lazy(() =>
 const VersionModal = React.lazy(() =>
   import('./components/Common/VersionModal').then(m => ({ default: m.VersionModal }))
 );
+const ExcelImportModal = React.lazy(() =>
+  import('./components/Common/ExcelImportModal').then(m => ({ default: m.ExcelImportModal }))
+);
+import type { ImportMergeMode } from './components/Common/ExcelImportModal';
 
 const TabLoadingFallback: React.FC = () => (
   <div className="flex flex-col items-center justify-center p-12 text-slate-400 space-y-3">
@@ -137,6 +141,8 @@ export const App: React.FC = () => {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState<boolean>(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState<boolean>(false);
+  const [isExcelImportModalOpen, setIsExcelImportModalOpen] = useState<boolean>(false);
+  const [pendingImportFiles, setPendingImportFiles] = useState<File[] | null>(null);
   const [cloudShiftCount, setCloudShiftCount] = useState<number | null>(null);
   const [backupHistory, setBackupHistory] = useState<CloudBackupItem[]>([]);
   const [vaultKey, setVaultKey] = useState<string>(() => vaultService.getDefaultPass());
@@ -1120,6 +1126,79 @@ export const App: React.FC = () => {
     }
   };
 
+  // Excel / CSV / PDF Stundenzettel Import öffnen
+  const handleOpenExcelImport = useCallback((files?: File[]) => {
+    if (files && files.length > 0) {
+      setPendingImportFiles(files);
+    } else {
+      setPendingImportFiles(null);
+    }
+    setIsExcelImportModalOpen(true);
+  }, []);
+
+  // Bestätigten Import aus dem Vorschau-Modal speichern (Lokal + Firebase Cloud via set())
+  const handleConfirmExcelImport = useCallback(async (
+    importedShifts: ShiftEntry[],
+    mode: ImportMergeMode
+  ) => {
+    if (!importedShifts || importedShifts.length === 0) return;
+    const nowIso = new Date().toISOString();
+    const previousShifts = storageService.getShifts();
+
+    if (mode === 'replace_all') {
+      // Alle vorhandenen Schichten durch die importierten ersetzen (inkl. Lösch-Tombstones für entfernte Tage)
+      applyRestoredShifts(importedShifts, previousShifts);
+    } else {
+      const dayMap = new Map<string, ShiftEntry>();
+      for (const s of previousShifts) {
+        dayMap.set(s.datum, s);
+      }
+
+      for (const imp of importedShifts) {
+        if (!imp.datum) continue;
+        const exists = dayMap.has(imp.datum);
+        if (exists && mode === 'merge_skip') {
+          continue;
+        }
+        storageService.clearShiftDeleted(imp.datum);
+        dayMap.set(imp.datum, {
+          ...imp,
+          updatedAt: nowIso
+        });
+      }
+
+      const merged = Array.from(dayMap.values()).sort((a, b) => a.datum.localeCompare(b.datum));
+      storageService.saveShifts(merged);
+    }
+
+    const finalShifts = storageService.getShifts();
+    setShifts(finalShifts);
+
+    // Springe automatisch auf den neuesten importierten Monat, damit der Nutzer das Ergebnis sofort sieht
+    const targetMonth = storageService.determineInitialMonth(importedShifts);
+    if (targetMonth) {
+      setCurrentYearMonth(targetMonth);
+      setSelectedDate(`${targetMonth}-01`);
+    }
+
+    confetti({
+      particleCount: 45,
+      spread: 60,
+      origin: { y: 0.8 }
+    });
+
+    showToast(
+      `✅ ${importedShifts.length} Schichten gespeichert & mit Cloud synchronisiert!`,
+      'success'
+    );
+
+    // Sofort per set() in den isolierten Firebase-Pfad (users/{userKey}) pushen
+    const ok = await pushLocalToCloud({ spinner: true });
+    if (ok) {
+      setCloudShiftCount(finalShifts.length);
+    }
+  }, [pushLocalToCloud, showToast]);
+
   // Schicht löschen (mit sofortigem Cloud-Tombstone & Zero-Zombie-Schutz)
   const handleDeleteShift = (datum: string) => {
     const shiftToDelete = shifts.find(s => s.datum === datum);
@@ -1264,6 +1343,20 @@ export const App: React.FC = () => {
         />
       </Suspense>
 
+      {/* Excel / CSV / PDF Stundenzettel Import-Modal mit Vorschau */}
+      <Suspense fallback={null}>
+        <ExcelImportModal
+          isOpen={isExcelImportModalOpen}
+          onClose={() => setIsExcelImportModalOpen(false)}
+          currentYearMonth={currentYearMonth}
+          existingShifts={shifts}
+          initialFiles={pendingImportFiles}
+          onClearInitialFiles={() => setPendingImportFiles(null)}
+          onConfirmImport={handleConfirmExcelImport}
+          onShowToast={showToast}
+        />
+      </Suspense>
+
       {/* Sticky Header mit Name, Blue-Logout-Button, Sync-Trigger und Monatsnavigation */}
       <Header
         currentYearMonth={currentYearMonth}
@@ -1334,9 +1427,19 @@ export const App: React.FC = () => {
                 onDeleteShift={handleDeleteShift}
                 onSaveShift={handleSaveShift}
                 onCleanDuplicates={handleCleanDuplicates}
+                onOpenExcelImport={() => handleOpenExcelImport()}
               />
             ) : (
               <div className="space-y-4 animate-in fade-in duration-150">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenExcelImport()}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-emerald-200 border border-emerald-400/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md shadow-emerald-950/30"
+                  >
+                    <span>📊 Excel / alte Tabelle importieren</span>
+                  </button>
+                </div>
                 <MiniCalendar
                   currentYearMonth={currentYearMonth}
                   selectedDate={selectedDate}
@@ -1519,6 +1622,8 @@ export const App: React.FC = () => {
                 currentYearMonth={currentYearMonth}
                 onDataReload={loadAllData}
                 onShowToast={showToast}
+                onOpenExcelImport={handleOpenExcelImport}
+                onSyncAfterChange={() => { void pushLocalToCloud({ spinner: true }); }}
               />
             </Suspense>
           </div>

@@ -12,6 +12,14 @@ import {
   shiftsToIcs,
   getShiftSpan
 } from '../src/services/shiftUtils.ts';
+import {
+  excelSerialToIsoDate,
+  parseFlexibleDate,
+  parseFlexibleTime,
+  parseFlexiblePause,
+  parseSheetRows,
+  parsePastedTimesheetText
+} from '../src/services/timesheetImporter.ts';
 
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
@@ -192,6 +200,50 @@ test('iCal: 0-h-Schichten werden nicht exportiert, lange Zeilen werden gefaltet 
   );
   eq((ics.match(/BEGIN:VEVENT/g) || []).length, 1);
   truthy(ics.split('\r\n').every(l => Array.from(l).length <= 75));
+});
+
+// ---------- EXCEL / CSV IMPORTER ----------
+test('Importer: Excel-Seriendatum 45956, deutsche Daten & Nur-Tag mit Blattkontext', () => {
+  eq(excelSerialToIsoDate(45956), '2025-10-26');
+  eq(parseFlexibleDate('26.10.2026', '26.10.2026').isoDate, '2026-10-26');
+  eq(parseFlexibleDate('26.10.25', '26.10.25').isoDate, '2025-10-26');
+  eq(parseFlexibleDate(15, '15', 2025, 8, true).isoDate, '2025-08-15');
+});
+
+test('Importer: Dezimalzeiten (0.5 -> 12:00), Sekunden & Punkt-Notation', () => {
+  eq(parseFlexibleTime(0.5, '0.5', true), '12:00');
+  eq(parseFlexibleTime('12:00:00', '12:00:00', true), '12:00');
+  eq(parseFlexibleTime('12.00', '12.00', true), '12:00');
+  eq(parseFlexibleTime('24:00', '24:00', true), '00:00');
+});
+
+test('Importer: Pausen in Minuten (15, 30, 45) und Stunden (0,25 / 0,5 / 0:30)', () => {
+  eq(parseFlexiblePause(30, '30'), 30);
+  eq(parseFlexiblePause('0,25', '0,25'), 15);
+  eq(parseFlexiblePause('0,5', '0,5'), 30);
+  eq(parseFlexiblePause('0:30', '0:30'), 30);
+  eq(parseFlexiblePause(0.0208333333, '00:30'), 30);
+});
+
+test('Importer: Smart Column Mapping, Klinikformat & Summenzeilen-Filter', () => {
+  const rows = [
+    ['Tag', 'Arbeitsbeginn', 'Arbeitsende', 'Pause in Std', 'Stunden'],
+    ['1', 0.3125, '16:00:00', '0,5', '8,00'],
+    ['2', '', '', '0', '0,00'],
+    ['Gesamt', '', '', '', '8,00']
+  ];
+  const fmt = rows.map(r => r.map(c => String(c)));
+  const res = parseSheetRows(rows, fmt, 'Aug 25', 'Stundenzettel.xlsx', '2026-10');
+  eq(res.shifts.length, 1);
+  eq(res.shifts[0].datum, '2025-08-01');
+  eq(res.shifts[0].kommen, '07:30');
+  eq(res.shifts[0].gehen, '16:00');
+  eq(res.shifts[0].pauseMinuten, 30);
+  eq(res.shifts[0].nettoStunden, 8);
+
+  const pasted = parsePastedTimesheetText('26.10.2026\t16:00\t24:00\t0:30', '2026-10');
+  eq(pasted.shifts.length, 1);
+  eq(pasted.shifts[0].nettoStunden, 7.5);
 });
 
 let passed = 0;
